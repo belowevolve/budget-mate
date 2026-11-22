@@ -1,0 +1,12 @@
+@reference "../index.css";
+
+@layer components {
+  .workspace-menu-item {
+    @apply flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-sm font-semibold data-highlighted:bg-subtle;
+  }
+}
+
+@keyframes workspace-title-in {
+  from { opacity: 0.6; translate: 0 3px; }
+  to { opacity: 1; translate: 0 0; }
+}

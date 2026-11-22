@@ -1,0 +1,117 @@
+@layer components {
+  :where(button, a, summary, input, select, textarea, [role="tab"], [role="option"]):focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-text {
+    @apply inline-flex h-auto min-h-11 items-center justify-center gap-2 rounded-full border-0 px-4 py-2 text-center text-sm font-bold shadow-none disabled:opacity-60;
+  }
+
+  .btn-primary { @apply bg-primary text-on-primary hover:bg-primary-hover; }
+  .btn-secondary { @apply bg-subtle text-primary hover:bg-selected; }
+  .btn-text { @apply bg-transparent text-primary hover:bg-subtle; }
+
+  .btn-icon {
+    @apply grid size-10 shrink-0 place-items-center rounded-full border-0 bg-subtle p-0 text-primary shadow-none hover:bg-selected;
+  }
+
+  .surface-panel { @apply min-w-0 rounded-[21px] border border-line bg-paper sm:rounded-3xl; }
+  .card-padding { @apply p-3 sm:p-4; }
+  .section-heading { @apply text-base leading-tight font-extrabold tracking-tight wrap-anywhere sm:text-lg; }
+  .empty-card { @apply flex flex-col items-center justify-center gap-2 px-3 py-5 text-center sm:px-4 sm:py-6; }
+
+  .empty-icon,
+  .dialog-icon {
+    @apply inline-grid shrink-0 place-items-center bg-subtle text-primary;
+  }
+  .empty-icon { @apply mb-1 size-11 rounded-2xl; }
+  .dialog-icon { @apply size-8 rounded-xl; }
+
+  .field-input {
+    @apply min-h-11 w-full min-w-0 rounded-xl border border-field-line bg-field px-3 text-sm text-ink;
+
+    &:focus-visible { @apply border-primary outline-2 outline-offset-[-2px] outline-primary; }
+    &[data-invalid]:focus-visible { @apply border-danger outline-danger; }
+  }
+  .body-text { @apply text-sm leading-relaxed text-muted; }
+  .error-text { @apply text-sm leading-relaxed text-danger wrap-anywhere; }
+
+  .compact-dialog {
+    @apply grid min-w-0 gap-2.5 overflow-hidden rounded-2xl border border-line bg-paper p-3 text-ink sm:p-4;
+    width: min(27rem, calc(100vw - 1rem));
+    max-height: min(36rem, calc(var(--visual-viewport-height, 100dvh) - 0.75rem));
+    --sheet-backdrop: var(--color-scrim);
+
+    &::backdrop { background: var(--color-scrim); }
+
+    &[data-presentation="dialog"] {
+      transition: opacity 140ms ease, translate 160ms ease;
+
+      &:is([data-starting-style], [data-ending-style]) {
+        opacity: 0;
+        translate: 0 8px;
+      }
+
+      @media (prefers-reduced-motion: reduce) { transition: none; }
+    }
+
+    &[data-presentation="sheet"] {
+      width: 100%;
+      max-width: 100%;
+      /* Let the ui-sdk sheet viewport receive the drag as native scrolling. */
+      overflow: clip;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+
+      & .dialog-body { overscroll-behavior-y: auto; }
+    }
+  }
+
+  .dialog-header { @apply grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2; }
+  .dialog-body { @apply min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain; }
+
+  .category-accent {
+    &[data-category="groceries"] { --category-accent: var(--color-category-groceries); }
+    &[data-category="dining"] { --category-accent: var(--color-category-dining); }
+    &[data-category="shopping"] { --category-accent: var(--color-category-shopping); }
+    &[data-category="transport"] { --category-accent: var(--color-category-transport); }
+    &[data-category="home"] { --category-accent: var(--color-category-home); }
+    &[data-category="health"] { --category-accent: var(--color-category-health); }
+    &[data-category="other"] { --category-accent: var(--color-category-other); }
+    &[data-category="income"] { --category-accent: var(--color-category-income); }
+    &[data-category="transfer"] { --category-accent: var(--color-category-transfer); }
+  }
+
+  .category-icon {
+    @apply inline-grid size-8 shrink-0 place-items-center rounded-xl text-primary;
+    background: color-mix(in srgb, var(--category-accent, var(--color-primary)) 16%, var(--color-paper));
+  }
+
+  .choice-trigger {
+    @apply inline-flex h-auto min-h-11 max-w-full items-center gap-1.5 rounded-xl border border-field-line bg-paper px-2.5 text-sm font-bold text-primary after:content-none hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-open:bg-subtle;
+  }
+
+  .choice-popover {
+    @apply max-h-(--available-height) overflow-y-auto overscroll-contain rounded-2xl border border-line bg-paper p-1.5 text-ink shadow-popup;
+    min-width: min(max(10rem, var(--anchor-width, 0px)), calc(100vw - 1.5rem));
+    max-width: min(27rem, calc(100vw - 1.5rem));
+
+    &[data-presentation="sheet"] {
+      --sheet-backdrop: var(--color-scrim);
+      width: 100%;
+      max-width: none;
+      max-height: min(28rem, calc(var(--visual-viewport-height, 100dvh) - 2rem));
+      padding: 0.75rem 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+      overscroll-behavior-y: auto;
+    }
+  }
+
+  .choice-item {
+    @apply flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-sm font-semibold wrap-anywhere data-highlighted:bg-subtle data-selected:bg-selected data-selected:font-extrabold data-selected:text-primary;
+  }
+}

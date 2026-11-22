@@ -1,0 +1,68 @@
+@reference "../../index.css";
+
+@layer components {
+  .operation-list {
+    @apply relative min-w-0 list-none;
+    overflow-anchor: none;
+  }
+
+  .operation-list-heading {
+    @apply absolute inset-x-0 flex items-end px-0.5 pt-2 pb-1 text-xs font-extrabold tracking-normal text-muted first-letter:uppercase;
+  }
+
+  .operation-list-row {
+    @apply absolute inset-x-0 min-w-0 border-x border-b border-line bg-paper px-0.5 py-0.5;
+
+    &[data-group-start] { @apply rounded-t-xl border-t; }
+    &[data-group-end] { @apply rounded-b-xl; }
+  }
+
+  .operation-entry {
+    @apply grid h-auto min-h-12 w-full min-w-0 items-center gap-1.5 rounded-lg border-0 bg-transparent px-1.5 py-1 text-left text-ink shadow-none sm:gap-2;
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+
+    &:is(button) {
+      grid-template-columns: auto minmax(0, 1fr) minmax(0, auto) 1rem;
+      @apply hover:bg-subtle focus-visible:outline-offset-[-3px] aria-pressed:bg-selected;
+    }
+  }
+
+  .operation-category-icon,
+  .operation-offset-icon {
+    @apply grid size-7 place-items-center rounded-lg sm:size-8;
+  }
+
+  .operation-offset-icon { @apply bg-transfer-soft text-transfer; }
+  .operation-caption { @apply block truncate text-xs leading-tight font-medium text-muted; }
+  .operation-caption-route { @apply line-clamp-2 whitespace-normal wrap-anywhere; }
+  .operation-indicator { @apply grid size-4 place-items-center text-muted; }
+
+  .operation-amount {
+    @apply max-w-[min(11rem,39vw)] min-w-0 text-right text-xs font-extrabold wrap-anywhere tabular-nums sm:text-sm;
+    &[data-income] { @apply text-income; }
+  }
+
+  .operation-swipe-row {
+    @apply relative isolate min-w-0 overflow-hidden rounded-lg;
+    touch-action: pan-y pinch-zoom;
+
+    &[data-refund-only]:has(.operation-swipe-content[data-swipe="end"]) { @apply bg-primary; }
+  }
+
+  .operation-swipe-actions {
+    @apply absolute inset-y-0 right-0 grid w-24 grid-cols-1;
+    &[data-two-actions] { @apply w-48 grid-cols-2; }
+  }
+
+  .operation-swipe-button {
+    @apply flex h-full min-h-11 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-none border-0 p-1 text-center text-xs leading-tight font-bold whitespace-normal shadow-none;
+  }
+
+  .operation-swipe-refund { @apply bg-primary text-on-primary hover:bg-primary-hover; }
+  .operation-swipe-transfer { @apply bg-transfer-soft text-transfer hover:bg-selected; }
+
+  .operation-swipe-content {
+    @apply relative rounded-[inherit] bg-paper transition-transform duration-150 data-swiping:transition-none motion-reduce:transition-none;
+    transform: translateX(var(--swipe-x, 0px));
+  }
+}

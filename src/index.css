@@ -1,0 +1,76 @@
+@layer ui-sdk;
+@import "tailwindcss";
+@import "shadcn/tailwind.css";
+@import "@ui-sdk/core/web.css" layer(components);
+@import "./components/ui.css";
+
+@theme static {
+  --color-*: initial;
+  --font-sans: 'Manrope Variable', system-ui, sans-serif;
+  --color-surface: #f7f8f2;
+  --color-paper: #fffefa;
+  --color-ink: #1a261b;
+  --color-muted: #535e51;
+  --color-line: #e3e8dd;
+  --color-field: #fafcf8;
+  --color-field-line: #828f82;
+  --color-primary: #29583b;
+  --color-primary-hover: #1e472e;
+  --color-on-primary: #fffefa;
+  --color-subtle: #edf2e9;
+  --color-selected: #dce9da;
+  --color-income: #23623b;
+  --color-income-soft: #e1efdf;
+  --color-expense: #5a4372;
+  --color-expense-soft: #efe9f7;
+  --color-transfer: #3d5960;
+  --color-transfer-soft: #e7eff0;
+  --color-danger: #8c2435;
+  --color-danger-soft: #fae9ed;
+  --color-danger-strong: #742631;
+  --color-warning: #793817;
+  --color-warning-soft: #f8e4d2;
+  --color-inverse: #26372a;
+  --color-on-inverse: #fffefa;
+  --color-on-inverse-muted: #d0e6d5;
+  --color-scrim: #13271b74;
+  --color-chart-income: #5e8668;
+  --color-chart-expense: #866eb0;
+  --color-category-groceries: #477254;
+  --color-category-dining: #8d75c4;
+  --color-category-shopping: #cd8d56;
+  --color-category-transport: #5292a6;
+  --color-category-home: #db788a;
+  --color-category-health: #ac8e44;
+  --color-category-other: #8f9a88;
+  --color-category-income: var(--color-category-groceries);
+  --color-category-transfer: #647c82;
+  --shadow-popup: 0 8px 28px color-mix(in srgb, var(--color-inverse) 15%, transparent);
+  --shadow-top-bar: 0 3px 12px color-mix(in srgb, var(--color-inverse) 8%, transparent);
+}
+
+@layer components {
+  :root {
+    color-scheme: light;
+    --ui-font-sans: var(--font-sans);
+    --ui-primary: var(--color-primary);
+    --ui-primary-foreground: var(--color-on-primary);
+    --ui-background: var(--color-paper);
+    --ui-foreground: var(--color-ink);
+    --ui-ring: var(--color-primary);
+    --ui-ring-border: var(--color-primary);
+    --ui-muted: var(--color-subtle);
+    --ui-muted-foreground: var(--color-muted);
+    --ui-border: var(--color-line);
+    --ui-input: var(--color-field-line);
+    --ui-destructive: var(--color-danger);
+    --ui-overlay: var(--color-scrim);
+    --ui-shadow: var(--shadow-popup);
+  }
+}
+
+@layer base {
+  body { @apply min-h-dvh min-w-0 bg-surface font-sans text-ink; }
+  h1, h2, [data-slot="dialog-title"] { @apply font-extrabold tracking-tight; }
+  button { @apply cursor-pointer disabled:cursor-default; }
+}
