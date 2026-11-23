@@ -3,7 +3,7 @@ import { confirmCreditRemindersFromStatement } from '../credits/creditAccounts'
 import { ensureSbpKey, mergeStatements } from '../finance'
 import type { ParsedStatement } from '../statements'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
-import type { Notify } from '../notifications/presentation'
+import type { Notify } from '../shared/ui/feedback'
 
 export type ImportPreview = {
   id: string

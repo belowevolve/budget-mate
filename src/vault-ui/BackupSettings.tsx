@@ -90,7 +90,7 @@ export default function BackupSettings({ vault }: { vault: VaultAccess }) {
       const url = URL.createObjectURL(backup)
       const link = document.createElement('a')
       link.href = url
-      link.download = 'budgetmate.bmvault'
+      link.download = 'budget-mate.bmvault'
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
     } catch (error) {

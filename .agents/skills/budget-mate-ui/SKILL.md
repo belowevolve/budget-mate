@@ -1,9 +1,9 @@
 ---
-name: budgetmates-ui
-description: Applies Budgetmates UI conventions when changing a scrolling list, category picker, bottom sheet, or mobile operation layout. Preserves shadcn scroll fade on the scrollable part.
+name: budget-mate-ui
+description: Applies budget mate UI conventions when changing a scrolling list, category picker, bottom sheet, or mobile operation layout. Preserves shadcn scroll fade on the scrollable part.
 ---
 
-# Budgetmates UI
+# budget mate UI
 
 - Apply the shared shadcn utilities `scroll-edges-y` and `scroll-edges-x` to every user-facing scroll viewport. In a ui-sdk Select, fade the list alone. In a sheet, fade the scrolling body while keeping its grip and footer outside the mask.
 - Reuse `surface-panel list-panel` for framed lists of places and bindings. The list inside the frame owns scrolling and fading, while the frame, search and actions stay visible. Use `settings-row` for the rows and the shared `SearchField` for the native search input, magnifier and clear action.

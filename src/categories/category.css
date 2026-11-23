@@ -1,0 +1,29 @@
+@layer components {
+  .category-accent {
+    &[data-category="groceries"] { --category-accent: var(--color-category-groceries); }
+    &[data-category="dining"] { --category-accent: var(--color-category-dining); }
+    &[data-category="shopping"] { --category-accent: var(--color-category-shopping); }
+    &[data-category="transport"] { --category-accent: var(--color-category-transport); }
+    &[data-category="home"] { --category-accent: var(--color-category-home); }
+    &[data-category="health"] { --category-accent: var(--color-category-health); }
+    &[data-category="other"] { --category-accent: var(--color-category-other); }
+    &[data-category="income"] { --category-accent: var(--color-category-income); }
+    &[data-category="transfer"] { --category-accent: var(--color-category-transfer); }
+  }
+
+  .category-icon {
+    @apply inline-grid size-8 shrink-0 place-items-center rounded-xl text-primary;
+    background: color-mix(in srgb, var(--category-accent, var(--color-primary)) 16%, var(--color-paper));
+  }
+
+  .category-option {
+    @apply grid min-h-11 w-full min-w-0 place-items-center rounded-xl border border-transparent bg-transparent p-0 text-muted shadow-none hover:bg-subtle focus-visible:outline-offset-[-2px];
+    &[data-checked] { @apply border-primary bg-selected text-primary; }
+  }
+
+  .category-icon-option {
+    @apply border-line;
+    & .category-icon { @apply size-6 bg-transparent text-inherit; }
+    & svg { @apply size-[18px]; }
+  }
+}

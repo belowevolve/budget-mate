@@ -5,9 +5,10 @@ import { categoryDefinition } from '../../categories/catalog'
 import { banks, formatDate, money, needsTransferReview, type Transaction } from '../../finance'
 import { operationTitle } from '../../operationPresentation'
 import { isRefundIncome } from '../../refunds'
+import { RowAction } from '../../shared/ui/RowAction'
 import { CategoryIcon } from '../CategoryIcon'
-import { JournalSwipeActions, JournalSwipeContent, JournalSwipeRow } from '../JournalSwipe'
-import { PendingStatus } from '../PendingStatus'
+import { JournalSwipeAction, JournalSwipeActions, JournalSwipeContent, JournalSwipeRow } from '../JournalSwipe'
+import { PendingStatus } from '../../shared/ui/PendingStatus'
 import type { JournalEntry } from './model'
 import './operationList.css'
 
@@ -72,8 +73,8 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   const body = (
     <>
       <span className="grid min-w-0">
-        <strong className="block truncate text-sm leading-tight font-bold" title={title}>{title}</strong>
-        <small className={counterpart ? 'operation-caption operation-caption-route' : 'operation-caption'} title={secondaryText}>
+        <strong className="block truncate text-sm leading-tight font-bold">{title}</strong>
+        <small className={counterpart ? 'operation-caption operation-caption-route' : 'operation-caption'}>
           {secondaryText}
         </small>
       </span>
@@ -90,19 +91,19 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   )
 
   const entry = changeCategory ? (
-    <div className="operation-entry operation-entry-split">
+    <div className="operation-entry-split">
       <Button className="operation-category-trigger" aria-label={`Изменить категорию: ${title}`}
         data-operation-category-trigger={row.id} onClick={() => changeCategory(row)}>{categoryIcon}</Button>
       {onSelect
-        ? <Button className="operation-entry-details" data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</Button>
-        : <div className="operation-entry-details">{body}</div>}
+        ? <RowAction className="operation-entry operation-entry-details" data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</RowAction>
+        : <div className="operation-entry operation-entry-details">{body}</div>}
     </div>
   ) : onSelect ? (
-    <Button className="operation-entry" data-operation-trigger={row.id} aria-pressed={selection?.selected}
+    <RowAction className="operation-entry" data-operation-trigger={row.id} aria-pressed={selection?.selected}
       disabled={selection?.disabled} onClick={() => onSelect(row)}>
       {categoryIcon}
       {body}
-    </Button>
+    </RowAction>
   ) : <div className="operation-entry">{categoryIcon}{body}</div>
   if (!onSelect) return entry
   const openRefund = isRefundIncome(row) ? onRefund : undefined
@@ -116,22 +117,22 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
       data-category-full={openCategories && !openRefund && !review ? '' : undefined}>
       <JournalSwipeActions value={row.id} className="operation-swipe-actions">
         {openRefund && (
-          <Button className="operation-swipe-button operation-swipe-refund" onClick={() => openRefund(row)}>
+          <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-refund" onAction={() => openRefund(row)}>
             <Link2 size={16} aria-hidden="true" />
             К расходу
-          </Button>
+          </JournalSwipeAction>
         )}
         {markTransfer && (
-          <Button className="operation-swipe-button operation-swipe-transfer" onClick={() => markTransfer(row)}>
+          <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-transfer" onAction={() => { void markTransfer(row) }}>
             <ArrowLeftRight size={16} aria-hidden="true" />
             Свой перевод
-          </Button>
+          </JournalSwipeAction>
         )}
         {openCategories && (
-          <Button className="operation-swipe-button operation-swipe-category" onClick={() => openCategories(row)}>
+          <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-category" onAction={() => openCategories(row)}>
             <Tag size={16} aria-hidden="true" />
             Категория
-          </Button>
+          </JournalSwipeAction>
         )}
       </JournalSwipeActions>
       <JournalSwipeContent value={row.id} className="operation-swipe-content">

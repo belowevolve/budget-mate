@@ -17,39 +17,59 @@
     &[data-group-end] { @apply rounded-b-xl; }
   }
 
+  :is(.operation-entry, .operation-entry-split) {
+    --operation-icon-size: calc(var(--spacing) * 7);
+    --operation-gutter: calc(var(--spacing) * 2);
+    --operation-gap: calc(var(--spacing) * 2);
+
+    @variant sm {
+      --operation-icon-size: calc(var(--spacing) * 8);
+    }
+  }
+
   .operation-entry {
-    @apply grid h-auto min-h-12 w-full min-w-0 items-center gap-1.5 rounded-lg border-0 bg-transparent px-1.5 py-1 text-left text-ink shadow-none sm:gap-2;
+    @apply grid h-auto min-h-12 w-full min-w-0 items-center rounded-lg py-1 text-start;
+    padding-inline: var(--operation-gutter);
+    gap: var(--operation-gap);
     grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
 
     &:is(button) {
       grid-template-columns: auto minmax(0, 1fr) minmax(0, auto) 1rem;
-      @apply hover:bg-subtle focus-visible:outline-offset-[-3px] aria-pressed:bg-selected;
     }
   }
 
   .operation-category-icon,
   .operation-offset-icon {
-    @apply grid size-7 place-items-center rounded-lg sm:size-8;
+    @apply grid place-items-center rounded-lg;
+    inline-size: var(--operation-icon-size);
+    block-size: var(--operation-icon-size);
   }
 
   .operation-offset-icon { @apply bg-transfer-soft text-transfer; }
-  .operation-entry-split {
-    @apply gap-0 p-0;
-    grid-template-columns: 2.5rem minmax(0, 1fr);
-  }
+  .operation-entry-split { @apply relative min-w-0; }
 
   .operation-category-trigger {
-    @apply grid h-full min-h-12 w-full place-items-center rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-subtle focus-visible:outline-offset-[-3px];
+    @apply absolute top-1/2 z-1 grid min-h-0 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 shadow-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary;
+    inset-inline-start: var(--operation-gutter);
+    inline-size: var(--operation-icon-size);
+    block-size: var(--operation-icon-size);
+
+    @variant hover {
+      & > :is(.operation-category-icon, .operation-offset-icon) { @apply bg-selected; }
+    }
   }
 
   .operation-entry-details {
-    @apply grid h-auto min-h-12 min-w-0 items-center gap-1.5 rounded-none border-0 bg-transparent pr-1.5 pl-0.5 text-left text-ink shadow-none sm:gap-2;
+    padding-inline-start: calc(var(--operation-gutter) + var(--operation-icon-size) + var(--operation-gap));
     grid-template-columns: minmax(0, 1fr) minmax(0, auto);
 
     &:is(button) {
-      @apply hover:bg-subtle focus-visible:outline-offset-[-3px];
       grid-template-columns: minmax(0, 1fr) minmax(0, auto) 1rem;
     }
+  }
+
+  @media (hover: hover) {
+    .operation-entry-split:has(.operation-category-trigger:hover) > .row-action { @apply bg-subtle; }
   }
 
   .operation-caption { @apply block truncate text-xs leading-tight font-medium text-muted; }

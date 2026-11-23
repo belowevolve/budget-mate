@@ -1,5 +1,5 @@
 {
-  "name": "budgetmates",
+  "name": "budget-mate",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -14,8 +14,8 @@
     "@reatom/core": "1001.3.0",
     "@reatom/react": "1001.0.1",
     "@tanstack/react-virtual": "3.13.26",
-    "@ui-sdk/core": "0.1.0-beta.13",
-    "@ui-sdk/react": "0.1.0-beta.13",
+    "@ui-sdk/core": "0.1.0-beta.14",
+    "@ui-sdk/react": "0.1.0-beta.14",
     "lucide-react": "1.77.0",
     "pdfjs-dist": "6.5.438",
     "react": "^19.3.1",

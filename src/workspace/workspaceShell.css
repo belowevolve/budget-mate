@@ -17,13 +17,6 @@
   .settings-page:has([data-settings-fill]) { @apply h-full; }
   .settings-content:has(> [data-settings-fill]) { @apply h-full min-h-0 grid-rows-[minmax(0,1fr)]; }
 
-  .settings-row {
-    @apply flex h-auto min-h-11 w-full min-w-0 justify-start gap-2.5 rounded-none border-0 bg-transparent px-3 py-1.5 text-left text-sm font-semibold text-ink shadow-none hover:bg-subtle focus-visible:outline-offset-[-3px];
-    & > span:first-of-type { @apply flex-1; }
-    &[data-slot="listbox-item"] {
-      @apply shrink-0 cursor-pointer data-highlighted:bg-subtle data-selected:bg-selected data-selected:text-primary;
-    }
-  }
 }
 
 @keyframes workspace-title-in {

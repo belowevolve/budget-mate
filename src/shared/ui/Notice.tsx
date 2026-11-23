@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Button } from '@ui-sdk/react/button'
 import { ChevronRight, type LucideIcon } from 'lucide-react'
-import { noticeIcons, type NotificationKind } from '../notifications/presentation'
+import { noticeIcons, type NotificationKind } from './feedback'
 
 export default function Notice({ title, children, action, open, tone = 'info', icon }: {
   title: string

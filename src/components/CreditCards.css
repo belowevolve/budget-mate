@@ -1,0 +1,27 @@
+@reference "../index.css";
+
+@layer components {
+  .credit-cards {
+    @apply grid min-w-0 max-w-6xl gap-3;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  }
+
+  .credit-card {
+    @apply grid min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-3;
+  }
+
+  .credit-facts {
+    @apply grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,max-content)] items-baseline gap-x-2 gap-y-1.5 text-xs;
+
+    & > dt { @apply text-muted wrap-anywhere; }
+    & > dd { @apply max-w-[9rem] text-end font-bold wrap-anywhere tabular-nums; }
+  }
+
+  .credit-payment-actions {
+    @apply flex min-w-0 flex-wrap items-center gap-1.5;
+
+    &[data-reminder] > :is(.btn-secondary, .btn-icon) {
+      @apply flex-none bg-paper hover:bg-selected;
+    }
+  }
+}

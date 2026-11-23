@@ -9,9 +9,11 @@ import {
 import CreditEditor from '../credits/CreditEditor'
 import { creditCalendarUrl, creditToday, reatomCreditPayment } from '../credits/model'
 import { banks, formatDate, money, type Ledger } from '../finance'
-import type { Notify } from '../notifications/presentation'
+import type { Notify } from '../shared/ui/feedback'
+import { Panel } from '../shared/ui/Panel'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
-import Notice from './Notice'
+import Notice from '../shared/ui/Notice'
+import './CreditCards.css'
 
 function CreditPayment({ account, reminder, today, write, notify, editor }: {
   account: CreditAccount; reminder?: CreditReminder; today: string; write: VaultWrite; notify: Notify; editor: ReactNode
@@ -41,7 +43,7 @@ function CreditPayment({ account, reminder, today, write, notify, editor }: {
       </div>}
       {reminder?.paid?.source === 'bank' && <p className="text-xs">Подтверждено выпиской</p>}
       {reminder && !reminder.paid && !amount && <p className="text-xs">Сумма пока неизвестна</p>}
-      <div className="flex min-w-0 gap-1.5">
+      <div className="credit-payment-actions" data-reminder={reminder ? '' : undefined}>
         {reminder && reminder.paid?.source !== 'bank' && (
           <Button className="btn-secondary min-w-0 flex-1 px-2 text-xs whitespace-normal" disabled={!ready} onClick={async () => {
             try {
@@ -56,7 +58,7 @@ function CreditPayment({ account, reminder, today, write, notify, editor }: {
         )}
         {editor}
         {calendarUrl && (
-          <Button className="btn-icon min-h-11 self-stretch" aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
+          <Button className="btn-icon min-h-11 min-w-11" aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
             render={<a href={calendarUrl} target="_blank" rel="noreferrer" />}>
             <CalendarPlus size={16} className="shrink-0" aria-hidden="true" />
           </Button>
@@ -76,39 +78,41 @@ function CreditCardDetails({ account, today, write, notify }: {
     compactTrigger={Boolean(reminder)} onSaved={(hasDate) => notify(hasDate ? 'Дата напоминания сохранена' : 'Ручное напоминание удалено')} />
 
   return (
-    <section className="surface-panel card-padding grid max-w-full gap-2.5">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="dialog-icon"><CreditCard size={17} aria-hidden="true" /></span>
-        <div className="min-w-0 flex-1">
-          <h2 className="section-heading">{bank}</h2>
-          {label && label !== bank && <p className="truncate text-xs text-muted" title={label}>{label}</p>}
+    <Panel padded className="credit-card">
+      <div className="grid min-w-0 content-start gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="dialog-icon"><CreditCard size={17} aria-hidden="true" /></span>
+          <div className="min-w-0 flex-1">
+            <h2 className="section-heading">{bank}</h2>
+            {label && label !== bank && <p className="text-xs text-muted wrap-anywhere">{label}</p>}
+          </div>
         </div>
+        {(snapshot?.gracePeriodEnd || snapshot?.gracePaymentAmountMinor !== undefined ||
+          snapshot?.minimumPaymentDate || snapshot?.minimumPaymentAmountMinor !== undefined || debtMinor !== undefined) && (
+          <dl className="credit-facts">
+            {snapshot?.gracePeriodEnd && <><dt>Грейс до</dt><dd>{formatDate(snapshot.gracePeriodEnd)}</dd></>}
+            {snapshot?.gracePaymentAmountMinor !== undefined && <><dt>Платёж для грейса</dt><dd>{money(snapshot.gracePaymentAmountMinor, currency, true)}</dd></>}
+            {snapshot?.minimumPaymentAmountMinor !== undefined && <><dt>Минимальный платёж</dt><dd>{money(snapshot.minimumPaymentAmountMinor, currency, true)}</dd></>}
+            {snapshot?.minimumPaymentDate && <><dt>Срок мин. платежа</dt><dd>{formatDate(snapshot.minimumPaymentDate)}</dd></>}
+            {debtMinor !== undefined && <>
+              <dt>
+                {snapshot?.totalOutstandingAmountMinor !== undefined ? 'Долг по выписке' : 'Расходы минус пополнения'}
+                {snapshot?.totalOutstandingAsOf && snapshot.totalOutstandingAsOf !== snapshot.observedOn &&
+                  <span className="block">{formatDate(snapshot.totalOutstandingAsOf)}</span>}
+              </dt>
+              <dd>{snapshot?.totalOutstandingAmountMinor !== undefined ? '' : '≈ '}{money(debtMinor, currency, true)}</dd>
+            </>}
+          </dl>
+        )}
+        {!snapshot?.gracePeriodEnd && !snapshot?.minimumPaymentDate && !reminder && (
+          <p className="text-xs text-muted">{account.bank === 'ozon' && debtMinor === undefined
+            ? 'В выписке нет данных о долге и сроке платежа.'
+            : 'Срок платежа в выписке не указан.'}</p>
+        )}
+        {snapshot?.observedOn && <p className="text-xs text-muted">Выписка от {formatDate(snapshot.observedOn)}</p>}
       </div>
-      {(snapshot?.gracePeriodEnd || snapshot?.gracePaymentAmountMinor !== undefined ||
-        snapshot?.minimumPaymentDate || snapshot?.minimumPaymentAmountMinor !== undefined || debtMinor !== undefined) && (
-        <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,max-content)] items-baseline gap-x-2 gap-y-1.5 text-xs [&>dd]:max-w-[40vw] [&>dd]:text-right [&>dd]:font-bold [&>dd]:wrap-anywhere [&>dd]:tabular-nums [&>dt]:text-muted [&>dt]:wrap-anywhere">
-          {snapshot?.gracePeriodEnd && <><dt>Грейс до</dt><dd>{formatDate(snapshot.gracePeriodEnd)}</dd></>}
-          {snapshot?.gracePaymentAmountMinor !== undefined && <><dt>Платёж для грейса</dt><dd>{money(snapshot.gracePaymentAmountMinor, currency, true)}</dd></>}
-          {snapshot?.minimumPaymentAmountMinor !== undefined && <><dt>Минимальный платёж</dt><dd>{money(snapshot.minimumPaymentAmountMinor, currency, true)}</dd></>}
-          {snapshot?.minimumPaymentDate && <><dt>Срок мин. платежа</dt><dd>{formatDate(snapshot.minimumPaymentDate)}</dd></>}
-          {debtMinor !== undefined && <>
-            <dt>
-              {snapshot?.totalOutstandingAmountMinor !== undefined ? 'Долг по выписке' : 'Расходы минус пополнения'}
-              {snapshot?.totalOutstandingAsOf && snapshot.totalOutstandingAsOf !== snapshot.observedOn &&
-                <span className="block">{formatDate(snapshot.totalOutstandingAsOf)}</span>}
-            </dt>
-            <dd>{snapshot?.totalOutstandingAmountMinor !== undefined ? '' : '≈ '}{money(debtMinor, currency, true)}</dd>
-          </>}
-        </dl>
-      )}
-      {!snapshot?.gracePeriodEnd && !snapshot?.minimumPaymentDate && !reminder && (
-        <p className="text-xs text-muted">{account.bank === 'ozon' && debtMinor === undefined
-          ? 'В выписке нет данных о долге и сроке платежа.'
-          : 'Срок платежа в выписке не указан.'}</p>
-      )}
-      {snapshot?.observedOn && <p className="text-xs text-muted">Выписка от {formatDate(snapshot.observedOn)}</p>}
       <CreditPayment account={account} reminder={reminder} today={today} write={write} notify={notify} editor={editor} />
-    </section>
+    </Panel>
   )
 }
 
@@ -127,15 +131,17 @@ export default function CreditCards({ ledger, write, notify, onImport }: {
         </div>
       )}
       {!tracked.length && !available.length && (
-        <section className="surface-panel empty-card">
+        <Panel className="empty-card">
           <span className="empty-icon"><CreditCard size={19} aria-hidden="true" /></span>
           <h2 className="section-heading">Данных по кредиткам нет</h2>
           <Button className="btn-primary" onClick={onImport}>Импортировать PDF</Button>
-        </section>
+        </Panel>
       )}
-      <div className="grid min-w-0 items-start gap-3 min-[570px]:grid-cols-2">
-        {tracked.map((account) => <CreditCardDetails key={account.accountKey} account={account} today={today} write={write} notify={notify} />)}
-      </div>
+      {tracked.length > 0 && (
+        <div className="credit-cards">
+          {tracked.map((account) => <CreditCardDetails key={account.accountKey} account={account} today={today} write={write} notify={notify} />)}
+        </div>
+      )}
     </div>
   )
 }

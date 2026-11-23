@@ -2,12 +2,16 @@ import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
-import { ChevronRight, MapPin, Unlink, X } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronRight, MapPin, Plus, Unlink, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { categoryDefinition } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
-import { SheetGrip } from '../components/SheetGrip'
-import { useDialogBack } from '../components/useDialogBack'
+import { CategoryIcon } from '../components/CategoryIcon'
+import { SheetGrip } from '../shared/ui/SheetGrip'
 import type { Transaction } from '../finance'
+import { SearchSelect } from '../shared/ui/SearchSelect'
+import { useDialogBackRecovery } from '../shared/ui/popupBack'
+import { useDesktopPicker } from '../shared/ui/useDesktopPicker'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { assignPlace, filterPlaces, indexPlaces, isIndividualPlaceAlias, merchantAlias, placeAliasLabel, PlaceError, savePlace, unassignPlace, type Place } from './model'
 import { PlaceFields, PlaceOptions, PlaceSearchToolbar } from './PlaceSettings'
@@ -30,8 +34,12 @@ export default reatomFactoryComponent<Props>(() => {
 
   return function OperationPlaceEditor({ row, places = [], write, disabled }) {
     const catalog = useCategoryCatalog()
-    const back = useDialogBack()
+    const back = useDialogBackRecovery()
+    const desktop = useDesktopPicker()
+    const trigger = useRef<HTMLButtonElement>(null)
     const [open, setOpen] = useState(false)
+    const [pickerOpen, setPickerOpen] = useState(false)
+    const [nextLayer, setNextLayer] = useState<'create' | 'picker' | null>(null)
     const [mode, setMode] = useState<PlacePickerMode>('choose')
     const [chosenId, setChosenId] = useState<string | null>(null)
     const [query, setQuery] = useState('')
@@ -51,6 +59,7 @@ export default reatomFactoryComponent<Props>(() => {
     const error = failure instanceof PlaceError ? failure.message : failure && messageFor(failure, 'Не удалось обновить место.')
     const hasToolbar = !isNew || Boolean(error)
     const canSave = isNew ? Boolean(draft.name.trim()) : Boolean(visibleChoiceId && visibleChoiceId !== current?.id)
+    const canBind = Boolean(chosenId && chosenId !== current?.id)
 
     function showMode(next: PlacePickerMode) {
       save.error.set(undefined)
@@ -59,16 +68,28 @@ export default reatomFactoryComponent<Props>(() => {
     }
     const createPlace = wrap(() => showMode('create'))
 
-    function submit(update: PlaceUpdate) {
+    function submit(update: PlaceUpdate, onSaved = () => setOpen(false)) {
       if (save.pending() > 0) return
-      void save(write, update, () => setOpen(false)).catch(() => undefined)
+      save.error.set(undefined)
+      void save(write, update, onSaved).catch(() => undefined)
     }
+
+    function backToPlaces() {
+      if (desktop) {
+        setNextLayer('picker')
+        setOpen(false)
+      } else showMode('choose')
+    }
+
+    const placeLabel = current?.name ?? 'Привязать место'
+    const placeIcon = <MapPin size={17} className="size-7 shrink-0 rounded-lg bg-subtle p-1.5" aria-hidden="true" />
+    const closePicker = () => setPickerOpen(false)
 
     return (
       <Dialog presentation="auto" open={open} onOpenChange={wrap((next, details) => {
         if (save.pending() > 0) {
           details.cancel()
-          if (details.reason === 'back') back.rearm()
+          back.onCanceledClose(details.reason)
           return
         }
         if (next) {
@@ -77,13 +98,76 @@ export default reatomFactoryComponent<Props>(() => {
           setQuery('')
         }
         setOpen(next)
+      })} onOpenChangeComplete={wrap((shown) => {
+        if (!shown && nextLayer === 'picker') {
+          showMode('choose')
+          setChosenId(current?.id ?? null)
+          setNextLayer(null)
+          setPickerOpen(true)
+        }
       })}>
-        <DialogTrigger className="choice-trigger w-full min-w-0 text-left" disabled={disabled}>
-          <MapPin size={17} className="size-7 shrink-0 rounded-lg bg-subtle p-1.5" aria-hidden="true" />
-          <span className="min-w-0 truncate">{current?.name ?? 'Привязать место'}</span>
-          <ChevronRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
-        </DialogTrigger>
+        {desktop && ordered.length > 0 ? (
+          <SearchSelect label="Место расхода" searchLabel="Поиск мест" noResults="Места не найдены" placeholder="Привязать место"
+            triggerIcon={placeIcon} triggerRef={trigger} disabled={disabled} open={pickerOpen}
+            value={pickerOpen ? chosenId : current?.id ?? null}
+            options={ordered.map(({ id, name, category }) => ({
+              value: id, label: name, detail: categoryDefinition(catalog, category).label,
+              icon: <CategoryIcon category={category} className="size-7 rounded-lg" />,
+            }))}
+            onValueChange={setChosenId}
+            onOpenChange={wrap((next, details) => {
+              if (save.pending() > 0 || details.reason === 'item-press') {
+                details.cancel()
+                return
+              }
+              if (next) {
+                showMode('choose')
+                setChosenId(current?.id ?? null)
+              }
+              setPickerOpen(next)
+            })}
+            onOpenChangeComplete={wrap((shown) => {
+              if (!shown && nextLayer === 'create') {
+                setNextLayer(null)
+                setOpen(true)
+              }
+            })}
+            searchAction={
+              <Button className="btn-icon size-9 rounded-lg" aria-label="Создать место" disabled={pending} onClick={wrap(() => {
+                showMode('create')
+                setNextLayer('create')
+                closePicker()
+              })}>
+                <Plus size={16} aria-hidden="true" />
+              </Button>
+            }
+            footer={
+              <div className="search-select-footer">
+                {error && <p role="alert" className="error-text">{error}</p>}
+                <div className="search-select-actions">
+                  {current && (
+                    <Button className="btn-secondary" disabled={pending}
+                      onClick={wrap(() => submit((items) => unassignPlace(items, alias), closePicker))}>
+                      <Unlink size={15} aria-hidden="true" /> Отвязать
+                    </Button>
+                  )}
+                  <Button className="btn-primary" disabled={pending || !canBind} onClick={wrap(() => {
+                    if (chosenId && canBind) submit((items) => assignPlace(items, chosenId, alias), closePicker)
+                  })}>
+                    {current ? 'Сменить место' : 'Привязать'}
+                  </Button>
+                </div>
+              </div>
+            } />
+        ) : (
+          <DialogTrigger ref={trigger} className="choice-trigger w-full min-w-0 text-left" disabled={disabled}>
+            {placeIcon}
+            <span className="min-w-0 truncate">{placeLabel}</span>
+            <ChevronRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
+          </DialogTrigger>
+        )}
         <DialogContent key={back.contentKey} initialFocus="content"
+          finalFocus={desktop ? () => trigger.current : undefined}
           className={`compact-dialog grid-rows-[auto_minmax(0,1fr)] ${isNew ? '' : 'h-dvh'}`}>
           <div className="dialog-header">
             <SheetGrip />
@@ -122,7 +206,7 @@ export default reatomFactoryComponent<Props>(() => {
             )}
             <div className={`grid min-w-0 gap-2 ${hasSecondaryAction ? 'grid-cols-[auto_minmax(0,1fr)]' : ''}`}>
               {mode === 'create' && (
-                <Button type="button" className="btn-secondary" disabled={pending} onClick={wrap(() => showMode('choose'))}>К списку</Button>
+                <Button type="button" className="btn-secondary" disabled={pending} onClick={wrap(backToPlaces)}>К списку</Button>
               )}
               {!isNew && current && (
                 <Button type="button" className="btn-secondary" disabled={pending}

@@ -13,7 +13,7 @@ export const creditToday = atom(localDate(), 'credit.today').extend(withConnectH
 
 export class CreditFormError extends Error {}
 
-const creditCalendarTitle = 'Напоминание budgetmate'
+const creditCalendarTitle = 'Напоминание budget mate'
 
 function parseAmount(value: string): number | undefined {
   const match = /^(\d+)(?:[,.](\d{1,2}))?$/.exec(value.trim().replace(/\s+/g, ''))
@@ -77,18 +77,18 @@ export function downloadCreditReminder(reminder: CreditReminder) {
   const timestamp = calendarTimestamp(new Date())
   const date = reminder.dueOn.replaceAll('-', '')
   const content = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//budgetmate//Local reminders//RU',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//budget mate//Local reminders//RU',
     'BEGIN:VEVENT', `UID:${reminder.id}@budgetmate.local`, `DTSTAMP:${timestamp}`,
     `DTSTART:${date}T090000`, 'DURATION:PT15M',
     `SUMMARY:${creditCalendarTitle}`, 'CLASS:PRIVATE',
     'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY',
-    'DESCRIPTION:Проверь напоминание в budgetmate', 'END:VALARM',
+    'DESCRIPTION:Проверь напоминание в budget mate', 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR', '',
   ].join('\r\n')
   const url = URL.createObjectURL(new Blob([content], { type: 'text/calendar;charset=utf-8' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = 'budgetmate-reminder.ics'
+  link.download = 'budget-mate-reminder.ics'
   link.click()
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }

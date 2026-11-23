@@ -33,8 +33,8 @@ export default defineConfig(({ command }) => ({
       injectRegister: 'script',
       devOptions: { enabled: true, suppressWarnings: true },
       manifest: {
-        name: 'budgetmate',
-        short_name: 'budgetmate',
+        name: 'budget mate',
+        short_name: 'budget mate',
         description: 'Учёт расходов и доходов с локальным импортом банковских выписок.',
         lang: 'ru',
         start_url: './',

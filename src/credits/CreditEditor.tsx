@@ -10,10 +10,10 @@ import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '
 import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Download, Plus, X } from 'lucide-react'
-import { Choice, type ChoiceOption, type ChoiceProps } from '../components/Choice'
-import { SheetGrip } from '../components/SheetGrip'
-import { useAndroidPickerBack, useDialogBack } from '../components/useDialogBack'
+import { Choice, type ChoiceOption } from '../shared/ui/Choice'
+import { SheetGrip } from '../shared/ui/SheetGrip'
 import { banks } from '../finance'
+import { useAndroidPopupBack } from '../shared/ui/popupBack'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { upcomingBankPayment, type CreditAccount } from './creditAccounts'
 import { CreditFormError, downloadCreditReminder, reatomCreditReminderForm } from './model'
@@ -33,7 +33,7 @@ function ReminderDateField({ value, disabled, onChange }: {
   onChange: (date: string) => void
 }) {
   const [controller] = useState(createDatePickerController)
-  const watchBack = useAndroidPickerBack(() => { controller.close({ reason: 'back' }) })
+  const watchBack = useAndroidPopupBack(() => { controller.close({ reason: 'back' }) })
 
   return (
     <Field name="dueOn" className="grid min-w-0 gap-1">
@@ -75,10 +75,9 @@ function ReminderDateField({ value, disabled, onChange }: {
 
 type CreditFormProps = Pick<EditorProps, 'account' | 'options' | 'write' | 'onSaved'> & {
   form: ReturnType<typeof reatomCreditReminderForm>
-  onChoicePresence: ChoiceProps['onPresenceChange']
 }
 
-const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, write, onSaved, onChoicePresence }) => {
+const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, write, onSaved }) => {
   const { fields, submit } = form
   const dueOn = fields.dueOn()
   const amount = bindField(fields.amount)
@@ -98,7 +97,7 @@ const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, w
     <form className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-2.5" onSubmit={save}>
       <div className="dialog-body grid content-start gap-2.5" data-slot="scroll">
         {options && <Choice label="Кредитный счёт" value={fields.accountKey()} options={options} onChange={wrap(fields.accountKey.change)}
-          onPresenceChange={onChoicePresence} className="w-full min-w-0" />}
+          className="w-full min-w-0" />}
         {account && <p className="truncate text-xs text-muted" title={account.accountLabel}>{account.accountLabel || banks[account.bank]}</p>}
         <ReminderDateField value={dueOn} disabled={!ready} onChange={wrap(fields.dueOn.change)} />
         <Field name="amount" className="grid min-w-0 gap-1">
@@ -141,16 +140,11 @@ export default reatomFactoryComponent<EditorProps>((_, { name }) => {
   }, `${name}.openEditor`)
 
   return function CreditEditor(props) {
-    const back = useDialogBack()
     const { account, options, write, compactTrigger } = props
     const title = account ? 'Напоминание о платеже' : 'Добавить кредитный счёт'
     return (
-      <Dialog open={open()} presentation="auto" dismissible={!back.choicePresent} onDismissAttempt={back.onDismissAttempt}
-        onOpenChange={wrap((nextOpen, details) => {
-          if (!nextOpen && back.onDismissAttempt(details)) {
-            details.cancel()
-            return
-          }
+      <Dialog open={open()} presentation="auto"
+        onOpenChange={wrap((nextOpen) => {
           if (nextOpen) openEditor(props)
           else open.set(false)
         })}>
@@ -159,13 +153,13 @@ export default reatomFactoryComponent<EditorProps>((_, { name }) => {
           {account ? <Bell size={16} className="shrink-0" aria-hidden="true" /> : <Plus size={17} className="shrink-0" aria-hidden="true" />}
           {account ? compactTrigger ? 'Изменить' : account.reminder ? 'Изменить напоминание' : 'Напоминание' : 'Добавить счёт'}
         </DialogTrigger>
-        <DialogContent key={back.contentKey} initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
+        <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
           <div className="dialog-header">
             <SheetGrip />
             <DialogTitle className="min-w-0 text-lg leading-tight wrap-anywhere">{title}</DialogTitle>
             <DialogClose className="dialog-close" aria-label="Закрыть"><X size={17} aria-hidden="true" /></DialogClose>
           </div>
-          <CreditForm account={account} options={options} write={write} form={form} onChoicePresence={back.onChoicePresence}
+          <CreditForm account={account} options={options} write={write} form={form}
             onSaved={(hasDate) => { props.onSaved(hasDate); open.set(false) }} />
         </DialogContent>
       </Dialog>

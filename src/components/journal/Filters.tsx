@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
@@ -14,10 +14,12 @@ import { categoryDefinition } from '../../categories/catalog'
 import { banks, type Category } from '../../finance'
 import type { BankId } from '../../statements/types'
 import { CategoryIcon } from '../CategoryIcon'
-import type { ChoiceOption } from '../Choice'
-import SearchField from '../SearchField'
-import { SheetGrip } from '../SheetGrip'
-import { useAndroidPickerBack } from '../useDialogBack'
+import type { ChoiceOption } from '../../shared/ui/Choice'
+import SearchField from '../../shared/ui/SearchField'
+import { SearchSelectList, SelectSearchField } from '../../shared/ui/SearchSelect'
+import { SheetGrip } from '../../shared/ui/SheetGrip'
+import { useAndroidPopupBack } from '../../shared/ui/popupBack'
+import { useDesktopPicker } from '../../shared/ui/useDesktopPicker'
 import { journalTabs, type JournalModel, type JournalSelection, type OperationKind, type TransferScope } from './model'
 
 const transferTabs = [
@@ -61,20 +63,26 @@ function JournalTabs<Value extends string>({ label, value, options, onChange, pe
   )
 }
 
-function MultiChoice<Value extends string>({ label, placeholder, clearLabel, value, options, onChange }: {
+function MultiChoice<Value extends string>({ label, placeholder, clearLabel, searchLabel, value, options, onChange }: {
   label: string
   placeholder: string
   clearLabel: string
+  searchLabel?: string
   value: Value[]
   options: (ChoiceOption & { value: Value })[]
   onChange: (value: Value[]) => void
 }) {
   const [controller] = useState(() => createSelectController<Value, true>())
-  const watchBack = useAndroidPickerBack(() => { controller.close({ reason: 'back' }) })
+  const searchInput = useRef<HTMLInputElement>(null)
+  const watchBack = useAndroidPopupBack(() => { controller.close({ reason: 'back' }) })
+  const desktop = useDesktopPicker()
+  const search = desktop ? searchLabel : undefined
 
   return (
-    <Select multiple controller={controller} items={options} value={value} presentation="auto" onValueChange={onChange}
-      onOpenChange={watchBack}>
+    <Select multiple controller={controller} items={options} value={value} presentation={search ? undefined : 'auto'} onValueChange={onChange}
+      onOpenChange={watchBack} onOpenChangeComplete={(open) => {
+        if (open) searchInput.current?.focus({ preventScroll: true })
+      }}>
       <div className="grid min-w-0 gap-1">
         <SelectLabel className="text-xs font-bold text-muted">{label}</SelectLabel>
         <div className="flex min-w-0 items-center gap-2">
@@ -89,16 +97,26 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, val
           </SelectClear>
         </div>
       </div>
-      <SelectContent align="start" sideOffset={7} collisionPadding={10} className="choice-popover">
-        <SheetGrip />
-        <SelectList>
-          {options.map(({ value, label, icon }) => (
-            <SelectItem key={value} value={value} label={label} className="choice-item focus-visible:outline-offset-[-2px]">
-              <span className="flex min-w-0 items-center gap-2">{icon}<span>{label}</span></span>
-              <SelectItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></SelectItemIndicator>
-            </SelectItem>
-          ))}
-        </SelectList>
+      <SelectContent align="start" sideOffset={7} collisionPadding={10}
+        className={search ? 'choice-popover search-select-popover' : 'choice-popover'}>
+        {search ? (
+          <>
+            <SelectSearchField label={search} noResults="Категории не найдены" inputRef={searchInput} />
+            <SearchSelectList label={label} options={options} />
+          </>
+        ) : (
+          <>
+            <SheetGrip />
+            <SelectList>
+              {options.map(({ value, label, icon }) => (
+                <SelectItem key={value} value={value} label={label} className="choice-item focus-visible:outline-offset-[-2px]">
+                  <span className="flex min-w-0 items-center gap-2">{icon}<span>{label}</span></span>
+                  <SelectItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></SelectItemIndicator>
+                </SelectItem>
+              ))}
+            </SelectList>
+          </>
+        )}
         <div className="shrink-0 px-0.5 pt-2 pb-3">
           <Button className="btn-primary w-full" onClick={() => { controller.close() }}>Готово</Button>
         </div>
@@ -179,7 +197,7 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
               )}
               {categoryChoices.length > 0 && (
                 <MultiChoice label="Категории" placeholder="Все категории" clearLabel="Сбросить категории" value={categories}
-                  options={categoryChoices} onChange={wrap(model.setCategories)} />
+                  searchLabel="Поиск категорий" options={categoryChoices} onChange={wrap(model.setCategories)} />
               )}
             </div>
             <div className="flex items-center justify-end gap-2">

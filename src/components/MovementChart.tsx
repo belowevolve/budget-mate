@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@ui-sdk/react/button'
 import { formatMonth, money, transactionAccountingAmount, type Transaction } from '../finance'
 import type { RefundIndex } from '../refunds'
+import { Panel } from '../shared/ui/Panel'
 
 interface ChartPeriod {
   key: string
@@ -74,7 +75,7 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
   const recentMonthsOnly = !month && rows.some((row) => row.date.slice(0, 7) < periods[0]?.key)
 
   return (
-    <section className="surface-panel card-padding" aria-labelledby="movement-title">
+    <Panel padded aria-labelledby="movement-title">
       <h2 className="section-heading" id="movement-title">
         Движение денег {recentMonthsOnly && <span className="text-xs font-semibold text-muted">· 12 мес.</span>}
       </h2>
@@ -128,6 +129,6 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
           <div><dt>Поступления</dt><dd>{money(selected.income, currency)}</dd></div>
         </dl>
       )}
-    </section>
+    </Panel>
   )
 }

@@ -3,7 +3,7 @@ import { Checkbox, CheckboxGroup, CheckboxIndicator } from '@ui-sdk/react/checkb
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Check, UserRoundPlus } from 'lucide-react'
 import { useState } from 'react'
-import { SheetGrip } from '../components/SheetGrip'
+import { SheetGrip } from '../shared/ui/SheetGrip'
 import type { BillPerson } from './bill'
 
 export default function BillSharePicker({ name, price, personId, people, assigned, disabled, onApply }: {

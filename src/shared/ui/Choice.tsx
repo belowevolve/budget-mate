@@ -3,6 +3,7 @@ import {
   createSelectController, Select, SelectClear, SelectContent, SelectItem, SelectItemIndicator, SelectList, SelectTrigger, SelectValue,
 } from '@ui-sdk/react/select'
 import { Check, ChevronDown, X } from 'lucide-react'
+import { useAndroidPopupBack } from './popupBack'
 import { SheetGrip } from './SheetGrip'
 
 export interface ChoiceOption {
@@ -20,12 +21,12 @@ export interface ChoiceProps {
   className?: string
   presentation?: 'auto'
   clear?: { value: string; label: string }
-  onPresenceChange?: (close: (() => void) | null) => void
 }
 
-export function Choice({ label, value, options, onChange, icon, className, presentation, clear, onPresenceChange }: ChoiceProps) {
+export function Choice({ label, value, options, onChange, icon, className, presentation, clear }: ChoiceProps) {
   const selectedIcon = options.find((option) => option.value === value)?.icon
   const [controller] = useState(() => createSelectController())
+  const onOpenChange = useAndroidPopupBack(() => { controller.close({ reason: 'back' }) })
   const trigger = (
     <SelectTrigger aria-label={label} className={className ? `choice-trigger group ${className}` : 'choice-trigger group'}>
       {icon ?? selectedIcon}
@@ -39,12 +40,7 @@ export function Choice({ label, value, options, onChange, icon, className, prese
       const selected = next ?? clear?.value
       if (selected != null) onChange(selected)
     }}
-      onOpenChange={(open) => {
-        if (open) onPresenceChange?.(() => { controller.close({ reason: 'back' }) })
-      }}
-      onOpenChangeComplete={(open) => {
-        if (!open) onPresenceChange?.(null)
-      }}>
+      onOpenChange={onOpenChange}>
       {clear ? (
         <div className="flex min-w-0 items-center gap-2">
           {trigger}

@@ -2,7 +2,7 @@ import { bindDrag, dragThreshold } from '@ui-sdk/core'
 import { Toast, ToastAction, ToastClose, ToastRegion, ToastTitle, type ToastData } from '@ui-sdk/react/toast'
 import { X } from 'lucide-react'
 import { useEffect, useRef, type PointerEvent } from 'react'
-import { noticeIcons, type NotificationKind } from '../notifications/presentation'
+import { noticeIcons, type NotificationKind } from '../shared/ui/feedback'
 import type { WorkspaceStore } from './workspaceState'
 import './workspaceToasts.css'
 

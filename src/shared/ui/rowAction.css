@@ -1,0 +1,13 @@
+@reference "../../index.css";
+
+@layer components {
+  .row-action {
+    @apply h-auto w-full min-w-0 rounded-[inherit] border-0 bg-transparent text-start text-ink shadow-none;
+
+    &:enabled {
+      @apply hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary;
+    }
+
+    &[aria-pressed="true"] { @apply bg-selected; }
+  }
+}

@@ -1,0 +1,32 @@
+@reference "../../index.css";
+
+@layer components {
+  .search-select-trigger { @apply w-full min-w-0 text-start; }
+
+  .search-select-popover {
+    @apply gap-1.5;
+    min-inline-size: min(max(15.5rem, var(--anchor-width, 0px)), calc(100vw - 1.5rem));
+    max-block-size: min(24rem, var(--available-height, 24rem));
+
+    .choice-item { @apply min-h-9 rounded-lg; }
+    mark { @apply bg-transparent font-extrabold text-primary; }
+  }
+
+  .search-select-tools { @apply flex min-w-0 shrink-0 items-center gap-1.5; }
+  .search-select-field {
+    @apply relative min-w-0 flex-1;
+
+    > svg { @apply pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted; }
+    .search-input { @apply h-9 min-h-9 pe-2; }
+  }
+
+  .search-select-empty { @apply px-2 py-3 text-sm text-muted; }
+  .search-select-label { @apply flex min-w-0 items-center gap-2; }
+  .search-select-text { @apply grid min-w-0 leading-snug wrap-anywhere; }
+  .search-select-detail { @apply text-xs font-medium text-muted; }
+  .search-select-footer { @apply grid shrink-0 gap-1.5 border-t border-line pt-1.5; }
+  .search-select-actions {
+    @apply flex items-center justify-end gap-1.5;
+    & > button { @apply min-h-9 px-3 py-1.5 text-xs; }
+  }
+}

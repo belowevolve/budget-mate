@@ -3,7 +3,7 @@ import { localDate, type Ledger } from '../finance'
 
 const creditTag = 'budgetmates:credit-deadline'
 const testTag = 'budgetmates:notification-test'
-const notificationTitle = 'budgetmate'
+const notificationTitle = 'budget mate'
 const notificationIcon = 'icons/budgetmate-192.png'
 export const creditReminderHash = '#credit-reminders'
 const creditReminderClick = 'budgetmates:open-credit-reminders'

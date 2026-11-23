@@ -1,0 +1,23 @@
+@layer components {
+  .body-text { @apply text-sm leading-relaxed text-muted; }
+  .error-text { @apply text-sm leading-relaxed text-danger wrap-anywhere; }
+
+  .notice {
+    @apply grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 rounded-xl bg-subtle px-3 py-2 text-ink sm:grid-cols-[auto_minmax(0,1fr)_auto];
+    &[data-tone="error"] { @apply bg-danger-soft text-danger; }
+    &[data-tone="success"] { @apply bg-income-soft text-income; }
+    &[data-tone="warning"] { @apply bg-warning-soft text-warning; }
+  }
+
+  .notice-link {
+    @apply h-auto min-h-11 w-full grid-cols-[auto_minmax(0,1fr)_auto] cursor-pointer border-0 py-2.5 text-start font-normal whitespace-normal shadow-none;
+    &:hover .notice-link-label { @apply underline; }
+  }
+
+  .notice-link-label { @apply inline-flex items-center gap-1 text-xs font-bold whitespace-nowrap; }
+
+  .pending-status {
+    @apply inline-flex items-center gap-1 align-middle text-xs font-semibold whitespace-nowrap text-warning;
+    & svg { @apply size-3 shrink-0; }
+  }
+}

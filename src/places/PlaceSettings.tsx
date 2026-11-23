@@ -9,18 +9,17 @@ import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { categoryDefinition, categoryOptions, type Category } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
-import { Choice } from '../components/Choice'
-import SearchField from '../components/SearchField'
-import { useAndroidPickerBack } from '../components/useDialogBack'
+import { Choice } from '../shared/ui/Choice'
+import SearchField from '../shared/ui/SearchField'
 import type { Transaction } from '../finance'
+import { pluralRu } from '../shared/format'
+import { SearchSelect } from '../shared/ui/SearchSelect'
+import { useDesktopPicker } from '../shared/ui/useDesktopPicker'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { filterPlaces, indexPlaces, isIndividualPlaceAlias, merchantAlias, placeAliasLabel, PlaceError, placeNameLimit, savePlace, type Place } from './model'
 
 type PlaceDraft = Pick<Place, 'name' | 'category'>
 type PlacePanel = { kind: 'create' } | { kind: 'edit'; placeId: string; focusBindings?: boolean } | { kind: 'bindings'; placeId: string }
-
-const operationPlural = new Intl.PluralRules('ru-RU')
-const operationForms = { zero: 'операций', one: 'операция', two: 'операции', few: 'операции', many: 'операций', other: 'операций' }
 
 export function PlaceFields({ value, onChange, disabled, autoFocus }: {
   value: PlaceDraft
@@ -29,12 +28,14 @@ export function PlaceFields({ value, onChange, disabled, autoFocus }: {
   autoFocus?: boolean
 }) {
   const catalog = useCategoryCatalog()
+  const desktop = useDesktopPicker()
   const options = categoryOptions(catalog, 'expense', value.category).map((option) => ({
     ...option,
     icon: <CategoryIcon category={option.value} className="size-7 rounded-lg" />,
   }))
-  const closeChoice = useRef<(() => void) | null>(null)
-  const watchChoice = useAndroidPickerBack(() => closeChoice.current?.())
+  function choose(category: string | null) {
+    if (!disabled && options.some((option) => option.value === category)) onChange({ ...value, category: category as Category })
+  }
 
   return (
     <fieldset disabled={disabled} className="grid min-w-0 gap-3">
@@ -45,14 +46,13 @@ export function PlaceFields({ value, onChange, disabled, autoFocus }: {
       </Field>
       <div className="grid min-w-0 gap-1">
         <span className="text-sm font-bold">Категория по умолчанию</span>
-        <Choice label="Категория по умолчанию" value={value.category} options={options} presentation="auto" className="w-full min-w-0"
-          onChange={(category) => {
-            if (!disabled && options.some((option) => option.value === category)) onChange({ ...value, category: category as Category })
-          }}
-          onPresenceChange={(close) => {
-            closeChoice.current = close
-            watchChoice(Boolean(close))
-          }} />
+        {desktop ? (
+          <SearchSelect label="Категория по умолчанию" searchLabel="Поиск категорий" noResults="Категории не найдены"
+            value={value.category} options={options} disabled={disabled} onValueChange={choose} />
+        ) : (
+          <Choice label="Категория по умолчанию" value={value.category} options={options} presentation="auto" className="w-full min-w-0"
+            onChange={choose} />
+        )}
       </div>
     </fieldset>
   )
@@ -210,7 +210,7 @@ function PlaceBindings({ place, places, transactions, pending, error, onBack, on
                 const kind = isIndividualPlaceAlias(alias) ? 'Отдельная операция' : 'Правило из выписки'
                 return (
                   <PlaceListItem key={alias} value={alias} label={label}>
-                    <PlaceRowLabel title={label} detail={`${kind} · ${count} ${operationForms[operationPlural.select(count)]}`} />
+                    <PlaceRowLabel title={label} detail={`${kind} · ${count} ${pluralRu(count, 'операция', 'операции', 'операций')}`} />
                   </PlaceListItem>
                 )
               })}

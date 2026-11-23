@@ -7,18 +7,19 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { categoryDefinition } from '../categories/catalog'
 import { CategoryIcon } from '../components/CategoryIcon'
-import { SheetGrip } from '../components/SheetGrip'
+import { SheetGrip } from '../shared/ui/SheetGrip'
 import Entry from '../components/journal/Entry'
-import { useDialogBack } from '../components/useDialogBack'
 import { banks, formatDate, money, needsTransferReview, type Category, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
 import type { Place } from '../places/model'
 import OperationPlaceEditor from '../places/OperationPlaceEditor'
 import { isRefundIncome, RefundError, type RefundIndex } from '../refunds'
+import { useDialogBackRecovery } from '../shared/ui/popupBack'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import OperationCategoryDialog from './OperationCategoryDialog'
 import RefundPicker from './RefundPicker'
 import type { OperationPane } from './workspaceState'
+import './operationDetails.css'
 
 type OperationDetailsProps = {
   row: Transaction
@@ -53,7 +54,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
     const categoryTrigger = useRef<HTMLElement | null>(null)
     const entryCategoryTrigger = useRef<HTMLElement | null>(null)
     const catalog = useCategoryCatalog()
-    const back = useDialogBack()
+    const back = useDialogBackRecovery()
     const show = useAction(model.show)
     // An initially open ui-sdk sheet mounts at its final snap point.
     useEffect(() => { show() }, [show])
@@ -93,6 +94,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
 
     function restoreJournalFocus() {
       return (entryCategoryTrigger.current?.isConnected ? entryCategoryTrigger.current : null)
+        ?? (pane === 'category' ? document.querySelector<HTMLElement>(`[data-operation-category-trigger="${CSS.escape(row.id)}"]`) : null)
         ?? document.querySelector<HTMLElement>(`[data-operation-trigger="${CSS.escape(row.id)}"]`)
         ?? document.querySelector<HTMLElement>('nav [aria-current="page"]')
     }
@@ -111,7 +113,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
           const backToDetails = pane === 'refund' && (nativeBack || details.reason === 'escape-key')
           if (saving || backToDetails) {
             details.cancel()
-            if (nativeBack) back.rearm()
+            back.onCanceledClose(details.reason)
             if (!saving) onOpen(row)
             return
           }
@@ -166,11 +168,8 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                   </Button>
                 )}
                 <OperationPlaceEditor row={row} places={places} write={write} disabled={pending} />
-                {(row.description !== title || title.length > 50) && (
-                  <details className="min-w-0 text-xs text-muted">
-                    <summary className="cursor-pointer py-1 font-bold text-primary">Из выписки</summary>
-                    <p className="mt-1 wrap-anywhere">{row.description}</p>
-                  </details>
+                {row.description && (row.description !== title || title.length > 50) && (
+                  <p className="statement-source"><span>Из выписки</span>{row.description}</p>
                 )}
                 {error && <p role="alert" className="error-text">{error}</p>}
               </div>

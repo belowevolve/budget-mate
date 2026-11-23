@@ -1,0 +1,32 @@
+@layer components {
+  .choice-trigger {
+    @apply inline-flex h-auto min-h-11 max-w-full items-center gap-1.5 rounded-xl border border-field-line bg-paper px-2.5 text-sm font-bold text-primary after:content-none hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary data-open:bg-subtle;
+  }
+
+  .choice-popover {
+    @apply flex max-h-(--available-height) flex-col overflow-clip rounded-2xl border border-line bg-paper p-1.5 text-ink shadow-popup;
+    min-width: min(max(10rem, var(--anchor-width, 0px)), calc(100vw - 1.5rem));
+    max-width: min(27rem, calc(100vw - 1.5rem));
+
+    & [data-slot="select-list"] { @apply min-h-0 overflow-y-auto overscroll-contain scroll-edges-y; }
+
+    &[data-presentation="sheet"] {
+      width: 100%;
+      max-width: none;
+      max-height: min(28rem, calc(var(--visual-viewport-height, 100dvh) - 2rem));
+      padding: 0.75rem;
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+
+      & [data-slot="select-list"] { @apply overscroll-y-auto; }
+    }
+  }
+
+  :is(.choice-popover, .compact-dialog[data-list-sheet])[data-presentation="sheet"] {
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  .choice-item {
+    @apply flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-sm font-semibold wrap-anywhere data-highlighted:bg-subtle data-selected:bg-selected data-selected:font-extrabold data-selected:text-primary;
+  }
+}

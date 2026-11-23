@@ -40,20 +40,24 @@ const journalSwipe = definePrimitive({
     actions: slot<{ value: string }>({
       props: { value: 'string' },
       attrs: (state, { api, key }) => api.swipe.actionsAttrs(state, key, 'end'),
-      on: {
-        click: (_event, { api, el, key }) => {
-          // Changing inert during click dispatch can suppress the action's own click.
-          window.setTimeout(() => {
-            if (el?.isConnected && api.swipe.open()?.key === key) api.swipe.close()
-          }, 0)
-        },
-      },
       bind: (el, { api, key }) => api.swipe.bindActions(el, key, 'end'),
+    }),
+    action: slot<{ value: string; onAction: () => void }>({
+      props: { value: 'string', onAction: 'callback' },
+      role: 'button',
+      focus: 'native',
+      attrs: () => ({ type: 'button' }),
+      press: ({ api, key, props }) => {
+        if (api.swipe.open()?.key !== key) return
+        props.onAction()
+        api.swipe.close()
+      },
     }),
   }),
   agent: { actions: [] },
 })
 
 export const {
-  Root: JournalSwipe, Row: JournalSwipeRow, Content: JournalSwipeContent, Actions: JournalSwipeActions,
-} = createParts(journalSwipe, { row: 'div', content: 'div', actions: 'div' })
+  Root: JournalSwipe, Row: JournalSwipeRow, Content: JournalSwipeContent,
+  Actions: JournalSwipeActions, Action: JournalSwipeAction,
+} = createParts(journalSwipe, { row: 'div', content: 'div', actions: 'div', action: 'button' })

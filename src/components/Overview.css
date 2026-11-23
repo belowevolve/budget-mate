@@ -2,7 +2,9 @@
 
 @layer components {
   .overview-row {
-    @apply grid h-auto min-h-12 w-full min-w-0 grid-cols-[2rem_minmax(0,1fr)_minmax(0,max-content)] items-center gap-2 rounded-xl border-0 bg-transparent px-0.5 py-1.5 text-left text-ink shadow-none;
+    @apply grid min-h-12 grid-cols-[2rem_minmax(0,1fr)_minmax(0,max-content)] items-center gap-2 rounded-none px-3 py-1.5 text-start sm:px-4;
+
+    &:is(button) { grid-template-columns: 2rem minmax(0, 1fr) minmax(0, max-content) 1rem; }
   }
 
   .overview-row-amount {

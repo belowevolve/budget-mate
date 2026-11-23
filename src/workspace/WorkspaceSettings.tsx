@@ -5,12 +5,13 @@ import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Archive, Bell, ChevronRight, Fingerprint, LockKeyhole, MapPin, Phone, SunMoon, Tags, X, type LucideIcon } from 'lucide-react'
 import CategoryEditor from '../categories/CategoryEditor'
-import { SheetGrip } from '../components/SheetGrip'
+import { SheetGrip } from '../shared/ui/SheetGrip'
 import BrowserReminderSettings from '../credits/BrowserReminderSettings'
 import type { Ledger } from '../finance'
-import type { Notify } from '../notifications/presentation'
+import type { Notify } from '../shared/ui/feedback'
 import type { Place } from '../places/model'
 import PlaceSettings from '../places/PlaceSettings'
+import { Panel } from '../shared/ui/Panel'
 import { currentThemePreference, isThemePreference, saveThemePreference, themeLabels } from '../theme'
 import type { VaultUnlockMethods } from '../vault'
 import { AccessSettings } from '../vault-ui/AccessSettings'
@@ -27,13 +28,13 @@ const links = [
 
 function SettingsCard({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
   return (
-    <section className="surface-panel card-padding grid gap-2.5" aria-label={title}>
+    <Panel padded className="grid gap-2.5" aria-label={title}>
       <h2 className="section-heading flex items-center gap-2.5">
         <span className="dialog-icon"><Icon size={17} aria-hidden="true" /></span>
         {title}
       </h2>
       {children}
-    </section>
+    </Panel>
   )
 }
 
@@ -120,7 +121,7 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
       )}
       {view === 'categories' && <CategoryEditor write={vault.write} />}
       {view === 'places' && <PlaceSettings places={places} write={vault.write} transactions={ledger.transactions} onEditBindings={onEditPlaceBindings} />}
-      {view === 'access' && <div className="surface-panel card-padding"><AccessSettings vault={vault} methods={methods} canReplaceKey={canReplaceKey} /></div>}
+      {view === 'access' && <Panel padded><AccessSettings vault={vault} methods={methods} canReplaceKey={canReplaceKey} /></Panel>}
     </div>
   )
 }

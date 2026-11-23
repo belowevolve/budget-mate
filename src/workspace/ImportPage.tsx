@@ -4,7 +4,7 @@ import { Statements } from '../components/Statements'
 import type { Ledger } from '../finance'
 import type { VaultWrite } from '../vault-ui/vaultModel'
 import { reatomImport } from './importModel'
-import type { Notify } from '../notifications/presentation'
+import type { Notify } from '../shared/ui/feedback'
 
 export default reatomFactoryComponent<{
   ledger: Ledger

@@ -5,14 +5,15 @@ import { categoryDefinition } from '../categories/catalog'
 import { isBudgetTransaction, isTechnicalCreditEntry, money, summarize, transactionAccountingAmount } from '../finance'
 import type { Category, Transaction } from '../finance'
 import type { RefundIndex } from '../refunds'
+import { pluralRu } from '../shared/format'
+import { Panel } from '../shared/ui/Panel'
+import { RowAction } from '../shared/ui/RowAction'
 import { CategoryIcon } from './CategoryIcon'
 import MovementChart from './MovementChart'
-import { PendingStatus } from './PendingStatus'
+import { PendingStatus } from '../shared/ui/PendingStatus'
 import './Overview.css'
 
 const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 0 })
-const payments = new Intl.PluralRules('ru-RU')
-const paymentForms = { one: 'платёж', few: 'платежа', many: 'платежей', other: 'платежей', zero: 'платежей', two: 'платежа' }
 
 function SpendingRow({ category, amount, expenses, currency, onViewCategory }: {
   category: Category; amount: number; expenses: number; currency: string; onViewCategory?: (category: Category) => void
@@ -36,7 +37,7 @@ function SpendingRow({ category, amount, expenses, currency, onViewCategory }: {
     </>
   )
   return onViewCategory
-    ? <Button className="overview-row grid-cols-[2rem_minmax(0,1fr)_minmax(0,max-content)_1rem] hover:bg-subtle" onClick={() => onViewCategory(category)}>{result}</Button>
+    ? <RowAction className="overview-row" onClick={() => onViewCategory(category)}>{result}</RowAction>
     : <div className="overview-row">{result}</div>
 }
 
@@ -57,14 +58,14 @@ export default function Overview({
 
   return (
     <div className="grid min-w-0 gap-3">
-      <section className="surface-panel grid overflow-hidden bg-subtle min-[701px]:grid-cols-[minmax(0,1.09fr)_minmax(0,1fr)]" aria-label="Итоги бюджета">
+      <Panel className="grid overflow-hidden bg-subtle min-[701px]:grid-cols-[minmax(0,1.09fr)_minmax(0,1fr)]" aria-label="Итоги бюджета">
         <div className="min-w-0 bg-summary px-4 py-3 text-on-summary sm:px-5 sm:py-4">
           <h2 className="overview-summary-label text-on-summary-muted"><ArrowUpRight size={19} aria-hidden="true" /> Расходы</h2>
           <p className="my-1 text-[clamp(1.75rem,8vw,3.15rem)] leading-[1.08] font-extrabold tracking-[-.06em] wrap-anywhere tabular-nums">
             {money(expenses, currency)}
           </p>
           <p className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-on-summary-muted">
-            <span>{purchases.length} {paymentForms[payments.select(purchases.length)]}</span>
+            <span>{purchases.length} {pluralRu(purchases.length, 'платёж', 'платежа', 'платежей')}</span>
             {pendingExpenses > 0 && (
               <span className="inline-flex items-center gap-1">
                 <span aria-hidden="true">·</span>
@@ -84,28 +85,28 @@ export default function Overview({
             <dd className="overview-summary-amount data-negative:text-danger" data-negative={net < 0 || undefined}>{net > 0 ? '+' : ''}{money(net, currency)}</dd>
           </div>
         </dl>
-      </section>
+      </Panel>
 
       {!activity.length ? (
-        <section className="surface-panel empty-card">
+        <Panel className="empty-card">
           <span className="empty-icon"><FileUp size={27} aria-hidden="true" /></span>
           <h2 className="section-heading">{hasTransfers ? 'Нет доходов и расходов' : 'Операций пока нет'}</h2>
           <Button className="btn-primary" onClick={hasTransfers ? onViewTransfers : onImport}>
             {hasTransfers ? 'Открыть переводы' : 'Импортировать PDF'}
           </Button>
-        </section>
+        </Panel>
       ) : (
         <div className="grid min-w-0 items-start gap-3 min-[701px]:grid-cols-[minmax(0,1.02fr)_minmax(0,1fr)]">
-          <section className="surface-panel card-padding" aria-labelledby="spending-title">
-            <h2 className="section-heading mb-1" id="spending-title">По категориям</h2>
+          <Panel className="overflow-clip" aria-labelledby="spending-title">
+            <h2 className="section-heading card-padding" id="spending-title">По категориям</h2>
             {spending.length ? (
-              <ul className="list-none divide-y divide-line p-0">
+              <ul className="list-none divide-y divide-line border-t border-line p-0">
                 {spending.map(([category, amount]) => (
                   <li key={category}><SpendingRow category={category} amount={amount} expenses={expenses} currency={currency} onViewCategory={onViewCategory} /></li>
                 ))}
               </ul>
-            ) : <p className="body-text pt-5 pb-2">За этот период расходов нет.</p>}
-          </section>
+            ) : <p className="body-text card-padding pt-0">За этот период расходов нет.</p>}
+          </Panel>
           <MovementChart key={`${currency}:${month}`} rows={activity} refunds={refunds} currency={currency} month={month} />
         </div>
       )}

@@ -45,7 +45,7 @@ export async function deviceUnlockAvailable(mode: DeviceKeyMode = 'platform'): P
 
 function requireCredentialSupport(): void {
   if (!canRequestCredential()) {
-    throw new DeviceCredentialError('Открой budgetmate на localhost или HTTPS-домене в браузере с поддержкой ключей доступа.')
+    throw new DeviceCredentialError('Открой budget mate на localhost или HTTPS-домене в браузере с поддержкой ключей доступа.')
   }
 }
 
@@ -89,7 +89,7 @@ async function requestCredential(
         throw new DeviceCredentialError(`${label} отменено, истекло по времени или недоступно у выбранного провайдера.`)
       }
       if (error.name === 'SecurityError') {
-        throw new DeviceCredentialError('Браузер запретил ключ для этого адреса. Открой budgetmate на localhost или HTTPS-домене отдельной вкладкой.')
+        throw new DeviceCredentialError('Браузер запретил ключ для этого адреса. Открой budget mate на localhost или HTTPS-домене отдельной вкладкой.')
       }
       if (error.name === 'NotSupportedError') {
         throw new DeviceCredentialError('Браузер или провайдер не поддерживает параметры ключа. Выбери совместимый ключ с WebAuthn PRF.')
@@ -121,8 +121,8 @@ export async function prepareDeviceUnlock(
     signal,
     publicKey: {
       challenge,
-      rp: { id: location.hostname, name: 'budgetmate' },
-      user: { id: userId, name: 'budgetmate', displayName: 'Хранилище budgetmate' },
+      rp: { id: location.hostname, name: 'budget mate' },
+      user: { id: userId, name: 'budget mate', displayName: 'Хранилище budget mate' },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: {
         authenticatorAttachment: mode === 'security-key' ? 'cross-platform' : 'platform',

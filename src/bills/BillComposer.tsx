@@ -4,7 +4,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '
 import { Input } from '@ui-sdk/react/input'
 import { Plus, UserPlus, X } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { SheetGrip } from '../components/SheetGrip'
+import { SheetGrip } from '../shared/ui/SheetGrip'
 import type { BillPerson } from './bill'
 import type { BillItemForm } from './model'
 

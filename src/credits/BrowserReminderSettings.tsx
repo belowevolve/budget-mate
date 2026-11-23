@@ -2,7 +2,7 @@ import { action, atom, onEvent, withAsync, withConnectHook, wrap } from '@reatom
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
 import { browserNotificationPermission, showNotificationTest } from '../notifications/browser'
-import type { Notify } from '../notifications/presentation'
+import type { Notify } from '../shared/ui/feedback'
 
 export default reatomFactoryComponent<{ onPermission: () => void; notify: Notify }>(() => {
   const permission = atom(browserNotificationPermission(), 'credit.notificationPermission').extend(withConnectHook((target) => {

@@ -2,7 +2,13 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "@ui-sdk/core/web.css" layer(components);
-@import "./components/ui.css";
+@import "./shared/ui/buttons.css";
+@import "./shared/ui/panels.css";
+@import "./shared/ui/fields.css";
+@import "./shared/ui/feedback.css";
+@import "./shared/ui/overlay.css";
+@import "./shared/ui/select.css";
+@import "./categories/category.css";
 
 @utility scroll-edges-y {
   @supports (animation-timeline: scroll()) {
