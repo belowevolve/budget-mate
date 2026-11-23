@@ -3,6 +3,8 @@ import { Button } from '@ui-sdk/react/button'
 import { formatMonth, money, transactionAccountingAmount, type Transaction } from '../finance'
 import type { RefundIndex } from '../refunds'
 import { Panel } from '../shared/ui/Panel'
+import { MovementPeriodSummary } from './overview/MovementPeriodSummary'
+import './MovementChart.css'
 
 interface ChartPeriod {
   key: string
@@ -15,6 +17,45 @@ interface ChartPeriod {
 const chartDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' })
 const chartMonth = new Intl.DateTimeFormat('ru-RU', { month: 'short', timeZone: 'UTC' })
 const shortMoney = new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 })
+
+function ChartLegendItem({ label, tone }: { label: string; tone: 'expense' | 'income' }) {
+  return (
+    <span className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+      <span className={`size-2 rounded-xs ${tone === 'expense' ? 'bg-chart-expense' : 'bg-chart-income'}`} aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
+function ChartBar({ value, ceiling, tone }: { value: number; ceiling: number; tone: 'expense' | 'income' }) {
+  return (
+    <span className={`w-[min(13px,32%)] rounded-t data-nonzero:min-h-0.5 ${tone === 'expense' ? 'bg-chart-expense' : 'bg-chart-income'}`}
+      data-nonzero={value > 0 || undefined} style={{ height: `${value / ceiling * 100}%` }} />
+  )
+}
+
+function MovementPeriodButton({ period, selected, ceiling, currency, onSelect }: {
+  period: ChartPeriod
+  selected: boolean
+  ceiling: number
+  currency: string
+  onSelect: (key: string) => void
+}) {
+  return (
+    <Button
+      className="flex h-auto min-h-[calc(var(--track-height)+22px)] w-full min-w-0 flex-col rounded-lg border-0 bg-transparent px-0 pb-0.5 text-muted shadow-none hover:bg-subtle aria-pressed:bg-selected aria-pressed:text-primary"
+      aria-label={`${period.name}, расходы ${money(period.expenses, currency)}, поступления ${money(period.income, currency)}`}
+      aria-pressed={selected}
+      onClick={() => onSelect(period.key)}
+    >
+      <span className="mb-1 flex h-(--track-height) w-full shrink-0 items-end justify-center gap-0.5" aria-hidden="true">
+        <ChartBar value={period.expenses} ceiling={ceiling} tone="expense" />
+        <ChartBar value={period.income} ceiling={ceiling} tone="income" />
+      </span>
+      <span className="w-full overflow-hidden text-center text-[clamp(.53rem,1.21vw,.68rem)] leading-tight font-bold whitespace-nowrap" aria-hidden="true">{period.label}</span>
+    </Button>
+  )
+}
 
 function periodMonth(date: Date) {
   return date.toISOString().slice(0, 7)
@@ -80,8 +121,8 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
         Движение денег {recentMonthsOnly && <span className="text-xs font-semibold text-muted">· 12 мес.</span>}
       </h2>
       <div className="mt-2 mb-2 flex flex-wrap gap-x-3 gap-y-1">
-        <span className="chart-key"><i className="size-2 rounded-xs bg-chart-expense" />Расходы</span>
-        <span className="chart-key"><i className="size-2 rounded-xs bg-chart-income" />Поступления</span>
+        <ChartLegendItem label="Расходы" tone="expense" />
+        <ChartLegendItem label="Поступления" tone="income" />
       </div>
       <div
         className="overflow-x-auto overscroll-x-contain scroll-edges-x"
@@ -96,39 +137,19 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
             <span>0</span>
           </div>
           <ul
-            className="chart-grid relative grid list-none auto-cols-fr grid-flow-col rounded-xl p-0"
+            className="movement-chart-grid relative grid list-none auto-cols-fr grid-flow-col rounded-xl p-0"
             aria-label={month ? 'Итоги по интервалам месяца' : 'Итоги по месяцам'}
           >
             {periods.map((period) => (
               <li className="min-w-0" key={period.key}>
-                <Button
-                  className="flex h-auto min-h-[calc(var(--track-height)+22px)] w-full min-w-0 flex-col rounded-lg border-0 bg-transparent px-0 pb-0.5 text-muted shadow-none hover:bg-subtle aria-pressed:bg-selected aria-pressed:text-primary"
-                  aria-label={`${period.name}, расходы ${money(period.expenses, currency)}, поступления ${money(period.income, currency)}`}
-                  aria-pressed={selected?.key === period.key}
-                  onClick={() => setActivePeriod(period.key)}
-                >
-                  <span className="mb-1 flex h-(--track-height) w-full shrink-0 items-end justify-center gap-0.5" aria-hidden="true">
-                    <span className="chart-bar bg-chart-expense" data-nonzero={period.expenses > 0 || undefined} style={{ height: `${period.expenses / ceiling * 100}%` }} />
-                    <span className="chart-bar bg-chart-income" data-nonzero={period.income > 0 || undefined} style={{ height: `${period.income / ceiling * 100}%` }} />
-                  </span>
-                  <span className="w-full overflow-hidden text-center text-[clamp(.53rem,1.21vw,.68rem)] leading-tight font-bold whitespace-nowrap" aria-hidden="true">{period.label}</span>
-                </Button>
+                <MovementPeriodButton period={period} selected={selected?.key === period.key} ceiling={ceiling} currency={currency} onSelect={setActivePeriod} />
               </li>
             ))}
           </ul>
         </div>
       </div>
 
-      {selected && (
-        <dl
-          className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 rounded-xl bg-subtle px-2.5 py-2 text-ink min-[1050px]:grid-cols-[minmax(0,1.25fr)_repeat(2,minmax(0,1fr))] [&_dd]:text-xs [&_dd]:font-extrabold [&_dd]:wrap-anywhere [&_dd]:tabular-nums [&_dt]:text-[.7rem] [&_dt]:font-semibold [&_dt]:text-muted"
-          aria-live="polite"
-        >
-          <div className="col-span-full min-[1050px]:col-auto"><dt className="sr-only">Период</dt><dd>{selected.name}</dd></div>
-          <div><dt>Расходы</dt><dd>{money(selected.expenses, currency)}</dd></div>
-          <div><dt>Поступления</dt><dd>{money(selected.income, currency)}</dd></div>
-        </dl>
-      )}
+      {selected && <MovementPeriodSummary name={selected.name} income={selected.income} expenses={selected.expenses} currency={currency} />}
     </Panel>
   )
 }

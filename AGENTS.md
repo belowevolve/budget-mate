@@ -9,7 +9,7 @@
 
 Define all application colors as semantic tokens in `src/index.css`, including chart accents. Keep Tailwind's default color palette disabled. Use named tokens in UI code and avoid raw color values, default palette classes, and ad hoc color overrides.
 
-Use ui-sdk for interactive behavior and shared semantic styles for recurring visual patterns. Keep reusable UI components and their styles in `src/shared/ui`. Keep feature-specific layout and styles with their feature. Avoid modules that export strings of Tailwind utilities.
+Use ui-sdk for interactive behavior. Build screens from small components that own their markup and styles. Keep reusable UI components in `src/shared/ui` and feature components with their feature. Avoid modules that export strings of Tailwind utilities.
 
 For changes to scrollable UI, follow the [budget mate UI skill](.agents/skills/budget-mate-ui/SKILL.md).
 
