@@ -1,9 +1,6 @@
 import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
-import { cn } from 'cn'
-import { defineConfig, type VariantProps } from 'cva/config'
 import type { ComponentProps } from 'react'
-
-const { cva } = defineConfig({ cx: cn })
+import { cva, type VariantProps } from '../cva'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const buttonVariants = cva({

@@ -5,7 +5,7 @@ import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Copy, Download, Upload } from 'lucide-react'
 import { DialogBody } from '../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../shared/ui/Button'
-import { Checkbox } from '../shared/ui/Checkbox'
+import { Checkbox, CheckboxLabel } from '../shared/ui/Checkbox'
 import { createBackupCode } from '../vault'
 import { messageFor, type VaultAccess } from './useVaultSession'
 import { FileField, FieldInput } from '../shared/ui/FieldInput'
@@ -56,11 +56,11 @@ function RestoreBackup({ vault, onBack, onRestored }: { vault: VaultAccess; onBa
               if (error) setError('')
             }} />
         </Field>
-        <label className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 px-2 text-sm font-semibold has-data-disabled:cursor-default">
+        <CheckboxLabel className="px-2">
           <Checkbox checked={confirmed} disabled={pending > 0}
             onCheckedChange={(value) => setConfirmed(value === true)} />
           Заменить все текущие данные
-        </label>
+        </CheckboxLabel>
         {error && <ErrorText role="alert">{error}</ErrorText>}
       </DialogBody>
       <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">

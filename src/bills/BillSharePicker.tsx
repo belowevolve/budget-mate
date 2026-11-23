@@ -4,7 +4,7 @@ import { UserRoundPlus } from 'lucide-react'
 import { useState } from 'react'
 import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../shared/ui/Button'
-import { Checkbox } from '../shared/ui/Checkbox'
+import { Checkbox, CheckboxLabel } from '../shared/ui/Checkbox'
 import { SheetGrip } from '../shared/ui/SheetGrip'
 import type { BillPerson } from './bill'
 import { SectionHeading, ErrorText } from '../shared/ui/Text'
@@ -56,10 +56,10 @@ export default function BillSharePicker({ name, price, personId, people, assigne
               setFailed(false)
             }}>
             {[...assignedPeople, ...availablePeople].map(({ id, name }) => (
-              <label key={id} className="flex min-h-11 min-w-0 cursor-pointer items-center justify-between gap-3 rounded-xl px-2.5 py-1.5 text-sm font-semibold hover:bg-subtle has-data-checked:bg-selected has-data-checked:text-primary">
+              <CheckboxLabel key={id} className="justify-between gap-3 rounded-xl px-2.5 py-1.5 hover:bg-subtle has-data-checked:bg-selected has-data-checked:text-primary">
                 <span className="min-w-0 wrap-anywhere">{name}</span>
                 <Checkbox value={id} />
-              </label>
+              </CheckboxLabel>
             ))}
           </CheckboxGroup>
         </DialogBody>
