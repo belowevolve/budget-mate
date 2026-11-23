@@ -4,54 +4,71 @@
 @import "@ui-sdk/core/web.css" layer(components);
 @import "./components/ui.css";
 
+@utility scroll-edges-y {
+  @supports (animation-timeline: scroll()) {
+    @apply scroll-fade-y;
+  }
+}
+
+@utility scroll-edges-x {
+  @supports (animation-timeline: scroll()) {
+    @apply scroll-fade-x;
+  }
+}
+
 @theme static {
   --color-*: initial;
   --font-sans: 'Manrope Variable', system-ui, sans-serif;
-  --color-surface: #f7f8f2;
-  --color-paper: #fffefa;
-  --color-ink: #1a261b;
-  --color-muted: #535e51;
-  --color-line: #e3e8dd;
-  --color-field: #fafcf8;
-  --color-field-line: #828f82;
-  --color-primary: #29583b;
-  --color-primary-hover: #1e472e;
-  --color-on-primary: #fffefa;
-  --color-subtle: #edf2e9;
-  --color-selected: #dce9da;
-  --color-income: #23623b;
-  --color-income-soft: #e1efdf;
-  --color-expense: #5a4372;
-  --color-expense-soft: #efe9f7;
-  --color-transfer: #3d5960;
-  --color-transfer-soft: #e7eff0;
-  --color-danger: #8c2435;
-  --color-danger-soft: #fae9ed;
-  --color-danger-strong: #742631;
-  --color-warning: #793817;
-  --color-warning-soft: #f8e4d2;
-  --color-inverse: #26372a;
-  --color-on-inverse: #fffefa;
-  --color-on-inverse-muted: #d0e6d5;
-  --color-scrim: #13271b74;
-  --color-chart-income: #5e8668;
-  --color-chart-expense: #866eb0;
-  --color-category-groceries: #477254;
-  --color-category-dining: #8d75c4;
-  --color-category-shopping: #cd8d56;
-  --color-category-transport: #5292a6;
-  --color-category-home: #db788a;
-  --color-category-health: #ac8e44;
-  --color-category-other: #8f9a88;
+  --color-surface: light-dark(#f7f8f2, #141b16);
+  --color-paper: light-dark(#fffefa, #1c261f);
+  --color-ink: light-dark(#1a261b, #edf5ec);
+  --color-muted: light-dark(#535e51, #afc0b0);
+  --color-line: light-dark(#e3e8dd, #34433a);
+  --color-field: light-dark(#fafcf8, #18221b);
+  --color-field-line: light-dark(#828f82, #728779);
+  --color-primary: light-dark(#29583b, #a6d7ae);
+  --color-primary-hover: light-dark(#1e472e, #c4e8c6);
+  --color-on-primary: light-dark(#fffefa, #142d1d);
+  --color-subtle: light-dark(#edf2e9, #263329);
+  --color-selected: light-dark(#dce9da, #304a36);
+  --color-income: light-dark(#23623b, #ade0b5);
+  --color-income-soft: light-dark(#e1efdf, #273c2b);
+  --color-expense: light-dark(#5a4372, #d7bfed);
+  --color-expense-soft: light-dark(#efe9f7, #332a41);
+  --color-transfer: light-dark(#3d5960, #b1d3da);
+  --color-transfer-soft: light-dark(#e7eff0, #283a3f);
+  --color-danger: light-dark(#8c2435, #f6acb6);
+  --color-danger-soft: light-dark(#fae9ed, #472c36);
+  --color-danger-strong: light-dark(#742631, #f7b7bf);
+  --color-warning: light-dark(#793817, #f4c394);
+  --color-warning-soft: light-dark(#f8e4d2, #422e20);
+  --color-inverse: light-dark(#26372a, #daeadd);
+  --color-on-inverse: light-dark(#fffefa, #192b20);
+  --color-on-inverse-muted: light-dark(#d0e6d5, #304d3a);
+  --color-summary: light-dark(#1e472e, #234b35);
+  --color-on-summary: #fffefa;
+  --color-on-summary-muted: #d0e6d5;
+  --color-scrim: light-dark(#13271b74, #0a100bc7);
+  --color-shadow: light-dark(#26372a, #0a100b);
+  --color-chart-income: light-dark(#5e8668, #81b68c);
+  --color-chart-expense: light-dark(#866eb0, #b39bd7);
+  --color-category-groceries: light-dark(#477254, #81b68c);
+  --color-category-dining: light-dark(#8d75c4, #baa5ec);
+  --color-category-shopping: light-dark(#cd8d56, #e0ab7b);
+  --color-category-transport: light-dark(#5292a6, #8fbdca);
+  --color-category-home: light-dark(#db788a, #e499a7);
+  --color-category-health: light-dark(#ac8e44, #c5b178);
+  --color-category-other: light-dark(#8f9a88, #a5b09e);
   --color-category-income: var(--color-category-groceries);
-  --color-category-transfer: #647c82;
-  --shadow-popup: 0 8px 28px color-mix(in srgb, var(--color-inverse) 15%, transparent);
-  --shadow-top-bar: 0 3px 12px color-mix(in srgb, var(--color-inverse) 8%, transparent);
+  --color-category-transfer: light-dark(#647c82, #9cb4ba);
+  --shadow-popup: 0 8px 28px color-mix(in srgb, var(--color-shadow) 15%, transparent);
+  --shadow-top-bar: 0 3px 12px color-mix(in srgb, var(--color-shadow) 8%, transparent);
 }
 
 @layer components {
   :root {
-    color-scheme: light;
+    color-scheme: light dark;
+    background-color: var(--color-surface);
     --ui-font-sans: var(--font-sans);
     --ui-primary: var(--color-primary);
     --ui-primary-foreground: var(--color-on-primary);
@@ -67,9 +84,14 @@
     --ui-overlay: var(--color-scrim);
     --ui-shadow: var(--shadow-popup);
   }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
 }
 
 @layer base {
+  * { scrollbar-width: none; }
+  *::-webkit-scrollbar { display: none; }
+
   body { @apply min-h-dvh min-w-0 bg-surface font-sans text-ink; }
   h1, h2, [data-slot="dialog-title"] { @apply font-extrabold tracking-tight; }
   button { @apply cursor-pointer disabled:cursor-default; }

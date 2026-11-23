@@ -4,10 +4,11 @@ import { Fingerprint, KeyRound } from 'lucide-react'
 import { deviceUnlockAvailable, prepareDeviceUnlock, type DeviceKeyMode, type DeviceUnlockConfirmation } from '../vault'
 import { messageFor } from './useVaultSession'
 
-export function DeviceSetup({ supported, confirm, onPendingChange }: {
+export function DeviceSetup({ supported, confirm, onPendingChange, showOtherOptions = false }: {
   supported?: boolean
   confirm: (confirmation: DeviceUnlockConfirmation) => Promise<void>
   onPendingChange?: (pending: boolean) => void
+  showOtherOptions?: boolean
 }) {
   const [stage, setStage] = useState<DeviceUnlockConfirmation>()
   const [mode, setMode] = useState<DeviceKeyMode>('platform')
@@ -32,7 +33,9 @@ export function DeviceSetup({ supported, confirm, onPendingChange }: {
     onPendingChange?.(true)
     try {
       const preparation = await prepareDeviceUnlock(method, controller.signal)
-      if (!controller.signal.aborted) setStage(preparation)
+      controller.signal.throwIfAborted()
+      setStage(preparation)
+      if (preparation.verifiedOnCreate) await confirm(preparation)
     } catch (error) {
       if (!controller.signal.aborted) setError(messageFor(error, error instanceof Error ? error.message : 'Не удалось создать ключ доступа.'))
     } finally {
@@ -60,18 +63,17 @@ export function DeviceSetup({ supported, confirm, onPendingChange }: {
     <div className="grid min-w-0 gap-2">
       {stage ? (
         <>
-          <p className="body-text">Подтверди, что ключ открывает хранилище.</p>
-          <Button className="btn-primary" disabled={pending} onClick={finish}>Подтвердить ключ</Button>
+          {!stage.verifiedOnCreate && <p className="body-text">Подтверди вход на устройстве.</p>}
+          <Button className="btn-primary" disabled={pending} onClick={finish}>{stage.verifiedOnCreate ? 'Продолжить' : 'Подтвердить вход'}</Button>
           <Button className="btn-text" disabled={pending} onClick={() => { setStage(undefined); setError('') }}>Выбрать другой ключ</Button>
         </>
       ) : (
         <>
-          {supported && <Button className="btn-primary" disabled={pending} onClick={() => start('platform')}><Fingerprint size={19} aria-hidden="true" /> Создать ключ доступа</Button>}
-          {supported && <p className="body-text">{android
-            ? 'Android попросит отпечаток или PIN устройства.'
-            : 'Провайдера ключа предложит браузер.'}</p>}
-          {external && <Button className="btn-secondary" disabled={pending} onClick={() => start('security-key')}><KeyRound size={18} aria-hidden="true" /> Использовать USB или NFC ключ</Button>}
-          {supported === false && !external && <p className="body-text">Для нового хранилища нужен совместимый ключ доступа. На компьютере открой приложение через localhost, на телефоне — через HTTPS-домен.</p>}
+          {supported && <Button className="btn-primary" disabled={pending} onClick={() => start('platform')}><Fingerprint size={19} aria-hidden="true" /> Настроить отпечаток или PIN</Button>}
+          {external && (!supported || showOtherOptions) && (
+            <Button className="btn-secondary" disabled={pending} onClick={() => start('security-key')}><KeyRound size={18} aria-hidden="true" /> Использовать USB- или NFC-ключ</Button>
+          )}
+          {supported === false && !external && <p className="body-text">Для настройки входа открой приложение через HTTPS или localhost в браузере с поддержкой ключей доступа.</p>}
         </>
       )}
       {error && (

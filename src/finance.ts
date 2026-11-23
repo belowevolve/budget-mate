@@ -4,23 +4,14 @@ import type { CreditAccountSettings } from './credits/creditAccounts'
 import type { Bill } from './bills/bill'
 import { createSbpKey, createSbpTokenizer, normalizeSbpPhone } from './statements/phone'
 import { mergePending, type PendingCoverage } from './statements/pending'
-import { getSbpCounterparty, getTransferBank, isOwnTransferDescription, isTransferDescription, redactSbpPhone } from './statements/transfer'
+import { getSbpCounterparty, getTransferBank, isCreditRepayment, isTransferDescription, redactSbpPhone } from './statements/transfer'
+import { categoryCatalog, defaultCategoryCatalog, fallbackCategory, kindForAmount, type Category, type CategoryCatalog, type CategoryOverride } from './categories/catalog'
+import { inferCategory, isExplicitOwnTransfer, isVtbBrokerageFunding, vtbBrokerageDestination, type CategoryInput } from './categories/classify'
+import { indexPlaces, placeForRow, type Place } from './places/model'
 
 export const banks = { alfa: 'Альфа-Банк', vtb: 'ВТБ', ozon: 'Ozon Банк' } satisfies Record<BankId, string>
 
-export const categories = {
-  groceries: { label: 'Продукты' },
-  dining: { label: 'Кафе и рестораны' },
-  shopping: { label: 'Покупки' },
-  transport: { label: 'Транспорт' },
-  home: { label: 'Дом и услуги' },
-  health: { label: 'Здоровье' },
-  other: { label: 'Прочее' },
-  income: { label: 'Поступления' },
-  transfer: { label: 'Свои переводы' },
-}
-
-export type Category = keyof typeof categories
+export type { Category } from './categories/catalog'
 
 export interface Transaction extends StatementTransaction {
   id: string
@@ -33,6 +24,7 @@ export interface Transaction extends StatementTransaction {
   creditSettlementFor?: string
   ownPhoneMatch?: true
   pendingObservedOn?: string
+  placeName?: string
 }
 
 export interface ImportEntry {
@@ -62,6 +54,8 @@ export interface Ledger {
   refunds?: RefundAllocation[]
   pendingCoverage?: PendingCoverage[]
   bills?: Bill[]
+  categoryOverrides?: CategoryOverride[]
+  places?: Place[]
 }
 
 export const emptyLedger: Ledger = { version: 1, transactions: [], imports: [], credits: [] }
@@ -122,10 +116,10 @@ export function money(amountMinor: number, currency = 'RUB', exact = false) {
   return formatter.format(amountMinor / 100)
 }
 
+// Compare old unflagged categories against the previous import rules before replacing them.
 function legacyCategory(transaction: StatementTransaction): Category {
   const text = transaction.description.toLowerCase()
-  if (transaction.kind === 'transfer') return 'transfer'
-  if (/между своими|перевод между (моими|собственными)|с (моего|своего) сч[её]та|на (свой|мой) сч[её]т|перевод собственных средств/.test(text)) return 'transfer'
+  if (isExplicitOwnTransfer(transaction)) return 'transfer'
   if (transaction.amountMinor > 0) return 'income'
   if (/супермаркет|продукт|пят[её]рочка|вкусвилл|перекр[её]сток|\b(?:lenta|vkusvill|pyaterochka|magnit|perekrestok)\b|лента|дискаунтер/.test(text)) return 'groceries'
   if (/ресторан|кафе|кофейн|столовая|пекарня|бург|додо|\b(?:coffee|restoran|restaurant|vkusno|dodo|burger|kfc)\b/.test(text)) return 'dining'
@@ -136,21 +130,26 @@ function legacyCategory(transaction: StatementTransaction): Category {
   return 'other'
 }
 
-export function classify(transaction: StatementTransaction): Category {
-  if (isOwnTransferDescription(transaction.description)) return 'transfer'
-  return legacyCategory(transaction)
+export function classify(transaction: CategoryInput): Category {
+  return inferCategory(transaction)
 }
 
 function userSelectedCategory(row: Transaction) {
   return row.categoryEdited ?? (
-    !row.transferMatchId && !row.ownPhoneMatch && row.category !== classify(row) && row.category !== legacyCategory(row)
+    !row.transferMatchId && !row.ownPhoneMatch && row.category !== classify(row)
+      && row.category !== legacyCategory(row)
+      && !(row.category === 'transfer' && isVtbBrokerageFunding(row))
   )
 }
 
+function automaticCategory(row: CategoryInput, catalog: CategoryCatalog, existing?: Category): Category {
+  const category = inferCategory(row)
+  return category !== existing && catalog.get(category)?.archived ? fallbackCategory(kindForAmount(row.amountMinor)) : category
+}
+
 export function needsTransferReview(row: Transaction) {
-  if (row.status === 'pending' || row.bank !== 'alfa' || row.category === 'transfer' || userSelectedCategory(row)) return false
+  if (row.status === 'pending' || row.bank !== 'alfa' || row.category === 'transfer' || row.sbpPhoneToken || userSelectedCategory(row)) return false
   const counterparty = row.sbpCounterparty ?? getSbpCounterparty(row.description)?.kind
-  if (counterparty === 'phone' && row.amountMinor > 0 && row.sbpPhoneToken) return false
   return counterparty === 'blank' || counterparty === 'phone'
 }
 
@@ -162,15 +161,11 @@ function isCreditDraw(row: Transaction) {
   return /^Выдача средств по кредиту$/i.test(row.description)
 }
 
-export function isCreditRepayment(row: Transaction) {
-  return /^Погашение кредита$/i.test(row.description)
-}
-
 export function isTechnicalCreditEntry(row: Transaction) {
   return row.category === 'transfer' && (isCreditDraw(row) || !!row.creditSettlementFor)
 }
 
-type TransferRole = 'self' | 'peer' | 'repayment'
+type TransferRole = 'self' | 'peer' | 'repayment' | 'auto-topup'
 
 function matchesOwnPhone(row: Transaction, ownPhoneToken: string | undefined) {
   return ownPhoneToken !== undefined && row.sbpPhoneToken === ownPhoneToken
@@ -179,9 +174,11 @@ function matchesOwnPhone(row: Transaction, ownPhoneToken: string | undefined) {
 function transferRole(row: Transaction, ownPhoneToken: string | undefined): TransferRole | undefined {
   const edited = userSelectedCategory(row)
   if (edited && row.category !== 'transfer') return
-  if (isCreditDraw(row)) return
+  if (isCreditDraw(row) || row.brokerageFunding || isVtbBrokerageFunding(row)) return
   if (isCreditRepayment(row)) return 'repayment'
-  if ((edited && row.category === 'transfer') || matchesOwnPhone(row, ownPhoneToken) || classify(row) === 'transfer') return 'self'
+  if ((edited && row.category === 'transfer') || matchesOwnPhone(row, ownPhoneToken) || isExplicitOwnTransfer(row)) return 'self'
+  if (row.bank === 'vtb' && row.amountMinor > 0 && /^автопополнение(?=$|[\s.,:;·–—-])/iu.test(row.description)
+      && classify(row) === 'income') return 'auto-topup'
   if (isTransferDescription(row.description)) return 'peer'
 }
 
@@ -199,6 +196,9 @@ function matchScore(outgoing: TransferCandidate, incoming: TransferCandidate) {
   const namedBank = outgoingHint || incomingHint
   const exactDate = outgoing.row.date === incoming.row.date
   const bothSelf = outgoing.role === 'self' && incoming.role === 'self'
+  if (incoming.role === 'auto-topup') {
+    return outgoing.role === 'self' && exactDate && outgoing.row.bank !== incoming.row.bank ? 1 : 0
+  }
   if (!exactDate && !namedBank && !bothSelf) return 0
   if (outgoing.role === 'peer' && incoming.role === 'peer' && !namedBank) return 0
   const evidence = bothSelf ? 6
@@ -247,13 +247,14 @@ function markCreditSettlements(rows: Transaction[]): Transaction[] {
   return updated ? marked : rows
 }
 
-export function reconcileTransactions(rows: Transaction[], ownPhoneToken?: string): Transaction[] {
+export function reconcileTransactions(rows: Transaction[], ownPhoneToken?: string, catalog = defaultCategoryCatalog, refunds?: readonly RefundAllocation[]): Transaction[] {
   const incoming = new Map<string, TransferCandidate[]>()
   const outgoing: TransferCandidate[] = []
+  const linkedIncome = new Set(Array.isArray(refunds) ? refunds.map((link) => link?.incomeId) : [])
   for (const row of rows) {
     if (!row.amountMinor || row.status === 'pending') continue
     const role = transferRole(row, ownPhoneToken)
-    if (!role) continue
+    if (!role || (role === 'auto-topup' && linkedIncome.has(row.id))) continue
     const candidate = { row, role, bankHint: row.transferBank ?? getTransferBank(row.description) }
     if (row.amountMinor < 0) outgoing.push(candidate)
     else {
@@ -291,9 +292,12 @@ export function reconcileTransactions(rows: Transaction[], ownPhoneToken?: strin
     const transferMatchId = pair && !pair.ambiguous && back?.peer === row.id && !back.ambiguous
       ? (row.amountMinor < 0 ? row.id : pair.peer)
       : undefined
-    const categoryEdited = userSelectedCategory(row) ? true : row.categoryEdited
-    const ownPhoneMatch = !categoryEdited && matchesOwnPhone(row, ownPhoneToken) ? true : undefined
-    const category = categoryEdited ? row.category : transferMatchId || ownPhoneMatch ? 'transfer' : classify(row)
+    const edited = userSelectedCategory(row)
+    const ownPhoneMatch = !edited && !row.brokerageFunding && matchesOwnPhone(row, ownPhoneToken) ? true : undefined
+    // A reimport can classify brokerage rows from the original payment purpose.
+    const keepCategory = edited || (!row.brokerageFunding && isVtbBrokerageFunding(row))
+    const category = keepCategory ? row.category : transferMatchId || ownPhoneMatch ? 'transfer' : automaticCategory(row, catalog, row.category)
+    const categoryEdited = edited || (category === row.category ? row.categoryEdited : false)
     if (category === row.category && categoryEdited === row.categoryEdited &&
         transferMatchId === row.transferMatchId && ownPhoneMatch === row.ownPhoneMatch) return row
     updated = true
@@ -303,32 +307,81 @@ export function reconcileTransactions(rows: Transaction[], ownPhoneToken?: strin
 }
 
 export function reconcileLedger(ledger: Ledger): Ledger {
-  const transactions = reconcileTransactions(ledger.transactions, ledger.sbp?.ownPhone?.token)
+  const transactions = reconcileTransactions(ledger.transactions, ledger.sbp?.ownPhone?.token, categoryCatalog(ledger.categoryOverrides), ledger.refunds)
   return transactions === ledger.transactions ? ledger : { ...ledger, transactions }
+}
+
+export function presentTransactions(
+  rows: Transaction[],
+  places: readonly Place[],
+  catalog: CategoryCatalog,
+): Transaction[] {
+  const index = indexPlaces(places)
+  if (!index.size) return rows
+  return rows.map((row) => {
+    const place = placeForRow(row, index)
+    if (!place) return row
+    const definition = catalog.get(place.category)
+    const category = !userSelectedCategory(row) && definition?.kind === 'expense' && !definition.archived
+      ? place.category
+      : row.category
+    return { ...row, category, placeName: place.name }
+  })
 }
 
 function privateDescription(row: StatementTransaction) {
   return redactSbpPhone(row.description, getSbpCounterparty(row.description, row.amountMinor > 0)?.phoneText)
 }
 
-function operationKey(accountKey: string, row: StatementTransaction) {
-  const identity = row.reference ?? privateDescription(row).normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase()
+function normalizedDescription(row: StatementTransaction) {
+  return privateDescription(row).normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function vtbCreditDescription(row: StatementTransaction) {
+  return normalizedDescription(row).replace(/[^\p{L}\d]/gu, '')
+}
+
+function operationKey(accountKey: string, bank: BankId, row: StatementTransaction, vtbCredit: boolean) {
+  let identity = row.reference ?? (vtbCredit ? vtbCreditDescription(row) : normalizedDescription(row))
+  if (!vtbCredit && row.reference === undefined && bank === 'vtb' && row.amountMinor < 0 && vtbBrokerageDestination(identity)) {
+    identity = identity.replace(/(втб\s+["«]инвесткопилка["»])\s*\.\s*переводы через сбп$/u, '$1')
+  }
   return JSON.stringify([accountKey, row.date, row.amountMinor, row.currency, identity])
+}
+
+function vtbCreditMovementKey(accountKey: string, row: StatementTransaction) {
+  return JSON.stringify([accountKey, row.date, row.amountMinor, row.currency])
+}
+
+function isVtbDescriptionPrefix(shorter: string, longer: string) {
+  return shorter.length >= 14 && shorter.length < longer.length && longer.startsWith(shorter)
 }
 
 export function mergeStatements(ledger: Ledger, statements: ParsedStatement[]) {
   const ownPhoneToken = ledger.sbp?.ownPhone?.token
-  const reconciled = reconcileTransactions(ledger.transactions, ownPhoneToken)
+  const catalog = categoryCatalog(ledger.categoryOverrides)
+  const reconciled = reconcileTransactions(ledger.transactions, ownPhoneToken, catalog, ledger.refunds)
   const transactions = reconciled.filter((row) => row.status !== 'pending')
   let pending = reconciled.filter((row) => row.status === 'pending')
   const previousCoverage = ledger.pendingCoverage ?? []
   let coverage = previousCoverage
+  const vtbCreditAccounts = new Set(statements.filter((statement) => statement.bank === 'vtb'
+    && statement.transactions.some((row) => row.vtbCreditFormat)).map((statement) => statement.accountKey))
   const positions = new Map<string, number[]>()
+  const vtbMovements = new Map<string, number[]>()
+  function indexVtbMovement(accountKey: string, row: StatementTransaction, index: number) {
+    if (!vtbCreditAccounts.has(accountKey)) return
+    const key = vtbCreditMovementKey(accountKey, row)
+    const matching = vtbMovements.get(key)
+    if (matching) matching.push(index)
+    else vtbMovements.set(key, [index])
+  }
   for (const [index, row] of transactions.entries()) {
-    const key = operationKey(row.accountKey, row)
+    const key = operationKey(row.accountKey, row.bank, row, vtbCreditAccounts.has(row.accountKey))
     const matching = positions.get(key)
     if (matching) matching.push(index)
     else positions.set(key, [index])
+    indexVtbMovement(row.accountKey, row, index)
   }
   const imports = [...ledger.imports]
   const credits = new Map(ledger.credits.map((credit) => [credit.accountKey, credit]))
@@ -337,33 +390,100 @@ export function mergeStatements(ledger: Ledger, statements: ParsedStatement[]) {
   let updatedCredits = 0
 
   for (const statement of statements) {
-    const keyOf = (row: StatementTransaction) => operationKey(statement.accountKey, row)
+    const vtbCredit = vtbCreditAccounts.has(statement.accountKey)
+    const keyOf = (row: StatementTransaction) => operationKey(statement.accountKey, statement.bank, row, vtbCredit)
+    const movementKeyOf = (row: StatementTransaction) => vtbCreditMovementKey(statement.accountKey, row)
+    const vtbOccurrences = new Map<string, number>()
+    const currentKeys = new Set<string>()
+    const previousVtbKeys = new Map<string, string | null>()
+    const hasPreviousVtbDescriptions = statement.transactions.some((row) => row.vtbAccountPreviousDescription)
+    if (hasPreviousVtbDescriptions) {
+      for (const row of statement.transactions) {
+        const key = keyOf(row)
+        currentKeys.add(key)
+        if (!row.vtbAccountPreviousDescription) continue
+        const previousKey = keyOf({ ...row, description: row.vtbAccountPreviousDescription })
+        previousVtbKeys.set(previousKey, previousVtbKeys.has(previousKey) ? null : key)
+      }
+    }
+    if (vtbCredit) {
+      for (const row of statement.transactions) {
+        if (row.status === 'pending') continue
+        const key = movementKeyOf(row)
+        vtbOccurrences.set(key, (vtbOccurrences.get(key) ?? 0) + 1)
+      }
+    }
     const makeTransaction = (row: StatementTransaction, hold?: Transaction): Transaction => ({
       ...row,
       id: hold?.id ?? crypto.randomUUID(),
       bank: statement.bank,
       accountKey: statement.accountKey,
       accountLabel: statement.accountLabel,
-      category: hold?.categoryEdited ? hold.category : classify(row),
-      categoryEdited: hold?.categoryEdited,
+      category: hold?.categoryEdited ? hold.category : automaticCategory(row, catalog, hold?.category),
+      categoryEdited: hold?.categoryEdited ?? false,
     })
     const heldKeys = new Set(statement.transactions.filter((row) => row.status === 'pending').map(keyOf))
     const seen = new Map<string, number>()
     let newRows = 0
     let newCredit = false
-    for (const row of statement.transactions) {
+    for (const { vtbAccountPreviousDescription, ...row } of statement.transactions) {
       if (row.status === 'pending') continue
       const key = keyOf(row)
       const occurrence = (seen.get(key) ?? 0) + 1
       seen.set(key, occurrence)
       const matching = positions.get(key) ?? []
-      const existingIndex = matching[occurrence - 1]
+      let existingIndex = matching[occurrence - 1]
+      let correctedVtbDescription = false
+      if (existingIndex === undefined && vtbAccountPreviousDescription) {
+        const previousKey = keyOf({ ...row, description: vtbAccountPreviousDescription })
+        const candidates = positions.get(previousKey)
+        // A repaired wrapped description can replace a uniquely identified older import.
+        if (candidates?.length === 1 && !currentKeys.has(previousKey) && previousVtbKeys.get(previousKey) === key) {
+          existingIndex = candidates[0]
+          positions.delete(previousKey)
+          matching.push(existingIndex)
+          positions.set(key, matching)
+          correctedVtbDescription = true
+        }
+      }
+      if (existingIndex === undefined && row.vtbCreditFormat) {
+        const movementKey = movementKeyOf(row)
+        const candidates = vtbMovements.get(movementKey)
+        if (candidates?.length === 1 && vtbOccurrences.get(movementKey) === 1) {
+          const known = transactions[candidates[0]]
+          // Older card imports missed descriptions continued on the next page.
+          if (!known.vtbCreditFormat || known.vtbCreditFormat !== row.vtbCreditFormat) {
+            const stored = vtbCreditDescription(known)
+            const received = vtbCreditDescription(row)
+            if (isVtbDescriptionPrefix(stored, received) || (known.vtbCreditFormat && isVtbDescriptionPrefix(received, stored))) {
+              existingIndex = candidates[0]
+              positions.set(key, [existingIndex])
+            }
+          }
+        }
+      }
       if (existingIndex !== undefined) {
         const existing = transactions[existingIndex]
-        const description = privateDescription(existing)
+        if (correctedVtbDescription) {
+          const categoryEdited = userSelectedCategory(existing)
+          transactions[existingIndex] = {
+            ...existing, ...row, description: privateDescription(row), categoryEdited,
+            category: categoryEdited ? existing.category : automaticCategory(row, catalog, existing.category),
+          }
+          skipped++
+          continue
+        }
+        const fullerDescription = row.vtbCreditFormat
+          && isVtbDescriptionPrefix(vtbCreditDescription(existing), vtbCreditDescription(row))
+        const description = privateDescription(fullerDescription ? row : existing)
+        const vtbCreditFormat = fullerDescription ? row.vtbCreditFormat : existing.vtbCreditFormat ?? row.vtbCreditFormat
         if ((row.kind && row.kind !== existing.kind) || (row.transferBank && row.transferBank !== existing.transferBank)
             || (row.sbpCounterparty && row.sbpCounterparty !== existing.sbpCounterparty)
-            || (row.sbpPhoneToken && row.sbpPhoneToken !== existing.sbpPhoneToken) || description !== existing.description) {
+            || (row.sbpPhoneToken && row.sbpPhoneToken !== existing.sbpPhoneToken)
+            || (row.merchantCategoryCode && row.merchantCategoryCode !== existing.merchantCategoryCode)
+            || (row.brokerageFunding && !existing.brokerageFunding)
+            || (row.brokerageDestination && !existing.brokerageDestination)
+            || description !== existing.description || vtbCreditFormat !== existing.vtbCreditFormat) {
           const refreshed = {
             ...existing,
             description,
@@ -371,8 +491,15 @@ export function mergeStatements(ledger: Ledger, statements: ParsedStatement[]) {
             transferBank: row.transferBank ?? existing.transferBank,
             sbpCounterparty: row.sbpCounterparty ?? existing.sbpCounterparty,
             sbpPhoneToken: row.sbpPhoneToken ?? existing.sbpPhoneToken,
+            merchantCategoryCode: row.merchantCategoryCode ?? existing.merchantCategoryCode,
+            brokerageFunding: row.brokerageFunding ?? existing.brokerageFunding,
+            brokerageDestination: existing.brokerageDestination ?? row.brokerageDestination,
+            vtbCreditFormat,
           }
-          if (!refreshed.categoryEdited) refreshed.category = classify(refreshed)
+          if (refreshed.brokerageFunding && !existing.brokerageFunding && !userSelectedCategory(existing)) {
+            refreshed.category = automaticCategory(refreshed, catalog, existing.category)
+            refreshed.categoryEdited = false
+          }
           transactions[existingIndex] = refreshed
         }
         skipped++
@@ -381,6 +508,7 @@ export function mergeStatements(ledger: Ledger, statements: ParsedStatement[]) {
 
       matching.push(transactions.length)
       positions.set(key, matching)
+      indexVtbMovement(statement.accountKey, row, transactions.length)
       const observedOn = statement.pendingSnapshot?.observedOn
       const holdIndex = observedOn && !heldKeys.has(key) ? pending.findIndex((hold) => hold.accountKey === statement.accountKey
         && (hold.pendingObservedOn ?? '') <= observedOn && keyOf(hold) === key) : -1
@@ -427,11 +555,19 @@ export function mergeStatements(ledger: Ledger, statements: ParsedStatement[]) {
     added += newRows
   }
 
-  const saved = reconcileTransactions([...transactions, ...pending], ownPhoneToken)
+  const saved = reconcileTransactions([...transactions, ...pending], ownPhoneToken, catalog, ledger.refunds)
   const existing = new Map(ledger.transactions.map((row) => [row.id, row]))
   const updatedTransactions = saved.filter((row) => existing.has(row.id) && existing.get(row.id) !== row).length
   const savedIds = new Set(saved.map((row) => row.id))
-  const removedTransactions = ledger.transactions.filter((row) => row.status === 'pending' && !savedIds.has(row.id)).length
+  const removedPending = new Set(ledger.transactions
+    .filter((row) => row.status === 'pending' && !savedIds.has(row.id))
+    .map((row) => row.id))
+  const refunds = removedPending.size && Array.isArray(ledger.refunds)
+    ? ledger.refunds.filter((link) => !removedPending.has(link?.expenseId))
+    : ledger.refunds
+  const bills = removedPending.size ? ledger.bills?.map((bill) =>
+    bill.expenseId && removedPending.has(bill.expenseId) ? { ...bill, expenseId: undefined } : bill,
+  ) : ledger.bills
   saved.sort((a, b) => b.date.localeCompare(a.date))
   return {
     ledger: {
@@ -439,13 +575,15 @@ export function mergeStatements(ledger: Ledger, statements: ParsedStatement[]) {
       transactions: saved,
       imports,
       credits: [...credits.values()],
+      refunds,
+      bills,
       pendingCoverage: coverage === previousCoverage ? ledger.pendingCoverage : coverage,
     },
     added,
     skipped,
     updatedCredits,
     updatedTransactions,
-    removedTransactions,
+    removedTransactions: removedPending.size,
     updatedPendingCoverage: coverage !== previousCoverage,
   }
 }

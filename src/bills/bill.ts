@@ -8,10 +8,13 @@ export interface BillPerson {
 export interface BillItem {
   id: string
   personId: string
+  groupId?: string
   name: string
   priceMinor: number
   quantity: number
 }
+
+export type BillItemChanges = Partial<Pick<BillItem, 'name' | 'priceMinor' | 'quantity'>>
 
 export interface Bill {
   id: string
@@ -21,6 +24,10 @@ export interface Bill {
   people: BillPerson[]
   items: BillItem[]
   expenseId?: string
+}
+
+export function billItemGroup(item: BillItem) {
+  return item.groupId ?? item.id
 }
 
 export const ownerId = 'me'
@@ -56,7 +63,7 @@ export function billTotals(bill: Bill) {
 }
 
 function matchesExpense(currency: string, amounts: Set<number | undefined>, row: Transaction) {
-  return row.amountMinor < 0 && row.currency === currency && row.status !== 'pending' &&
+  return row.amountMinor < 0 && row.currency === currency &&
     amounts.has(-row.amountMinor) && isBudgetTransaction(row)
 }
 

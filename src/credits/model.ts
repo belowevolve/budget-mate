@@ -13,6 +13,8 @@ export const creditToday = atom(localDate(), 'credit.today').extend(withConnectH
 
 export class CreditFormError extends Error {}
 
+const creditCalendarTitle = 'Напоминание budgetmate'
+
 function parseAmount(value: string): number | undefined {
   const match = /^(\d+)(?:[,.](\d{1,2}))?$/.exec(value.trim().replace(/\s+/g, ''))
   if (!match) return
@@ -26,35 +28,59 @@ function validDate(value: string) {
   return Number.isFinite(date.valueOf()) && date.toISOString().slice(0, 10) === value
 }
 
-export function reatomCreditReminderForm(initial: { accountKey: string; dueOn?: string; amountMinor?: number }, write: VaultWrite) {
-  const form = reatomForm({
-    accountKey: reatomField(initial.accountKey, { validate: ({ state }) => state ? undefined : 'Выбери счёт.' }),
-    dueOn: reatomField(initial.dueOn ?? '', {
+export function reatomCreditReminderForm(name: string) {
+  return reatomForm((name) => ({
+    accountKey: reatomField('', { name: `${name}.accountKey`, validate: ({ state }) => state ? undefined : 'Выбери счёт.' }),
+    dueOn: reatomField('', {
+      name: `${name}.dueOn`,
       validate: ({ state }) => state && !validDate(state) ? 'Укажи дату платежа.' : undefined,
     }),
-    amount: reatomField(initial.amountMinor === undefined ? '' : String(initial.amountMinor / 100).replace('.', ','), {
+    amount: reatomField('', {
+      name: `${name}.amount`,
       validate: ({ state }) => state.trim() && parseAmount(state) === undefined ? 'Укажи сумму больше нуля, с точностью до копеек.' : undefined,
     }),
-  }, {
-    name: 'credit.reminderForm',
+  }), {
+    name,
     validateBeforeSubmit: ({ dueOn, amount }) => {
       if (amount.trim() && !dueOn) throw new CreditFormError('Укажи дату для этой суммы.')
     },
-    onSubmit: async ({ accountKey, dueOn, amount }) => {
+    onSubmit: async ({ accountKey, dueOn, amount }, write: VaultWrite) => {
       await wrap(write((ledger) => ({ ledger: updateCreditAccount(ledger, accountKey, dueOn, parseAmount(amount)), result: undefined })))
+      return { hasDate: Boolean(dueOn) }
     },
-  })
-  return form
+  }).extend((form) => ({
+    clearDueOn: action(() => {
+      form.fields.dueOn.change('')
+      form.fields.amount.change('')
+    }, `${name}.clearDueOn`),
+  }))
+}
+
+function calendarTimestamp(date: Date) {
+  return date.toISOString().slice(0, 19).replace(/[-:]/g, '') + 'Z'
+}
+
+export function creditCalendarUrl(dueOn: string) {
+  if (!validDate(dueOn)) return
+  const start = calendarTimestamp(new Date(`${dueOn}T09:00:00`))
+  const end = calendarTimestamp(new Date(`${dueOn}T09:15:00`))
+  const url = new URL('https://calendar.google.com/calendar/r/eventedit')
+  url.search = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: creditCalendarTitle,
+    dates: `${start}/${end}`,
+  }).toString()
+  return url.href
 }
 
 export function downloadCreditReminder(reminder: CreditReminder) {
-  const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '') + 'Z'
+  const timestamp = calendarTimestamp(new Date())
   const date = reminder.dueOn.replaceAll('-', '')
   const content = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//budgetmate//Local reminders//RU',
     'BEGIN:VEVENT', `UID:${reminder.id}@budgetmate.local`, `DTSTAMP:${timestamp}`,
     `DTSTART:${date}T090000`, 'DURATION:PT15M',
-    'SUMMARY:Напоминание budgetmate', 'CLASS:PRIVATE',
+    `SUMMARY:${creditCalendarTitle}`, 'CLASS:PRIVATE',
     'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY',
     'DESCRIPTION:Проверь напоминание в budgetmate', 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR', '',

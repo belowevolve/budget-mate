@@ -17,7 +17,7 @@ export function isRefundIncome(row: Transaction) {
 }
 
 function isRefundExpense(row: Transaction, income: Transaction) {
-  return row.status !== 'pending' && row.amountMinor < 0 && isBudgetTransaction(row) && row.currency === income.currency
+  return row.amountMinor < 0 && isBudgetTransaction(row) && row.currency === income.currency
 }
 
 function refundAllocations(refunds: RefundAllocation[] | undefined) {

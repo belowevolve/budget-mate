@@ -1,9 +1,8 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { Button } from '@ui-sdk/react/button'
-import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@ui-sdk/react/menu'
-import { CreditCard, Ellipsis, FileUp, Fingerprint, LayoutDashboard, List, LockKeyhole, Phone, ReceiptText } from 'lucide-react'
+import { ArrowLeft, CreditCard, FileUp, LayoutDashboard, List, ReceiptText, Settings } from 'lucide-react'
 import Brand from './Brand'
-import type { Page, SettingsDialog } from './workspaceState'
+import type { Page, SettingsView } from './workspaceState'
 import './workspaceShell.css'
 
 const destinations = {
@@ -15,56 +14,78 @@ const destinations = {
 } as const
 const pages = Object.keys(destinations) as Page[]
 
-function WorkspaceMenu({ onOpenSettings, onLock }: {
-  onOpenSettings: (view: SettingsDialog) => void
-  onLock: () => void
-}) {
-  const nextDialog = useRef<SettingsDialog>(null)
+const settingsTitles = {
+  menu: 'Настройки',
+  access: 'Способы входа',
+  categories: 'Категории',
+  places: 'Места',
+} satisfies Record<NonNullable<SettingsView>, string>
 
-  return (
-    <Menu
-      onAction={(value) => {
-        if (value === 'lock') onLock()
-        if (value === 'phone' || value === 'access') nextDialog.current = value
-      }}
-      onOpenChangeComplete={(open) => {
-        if (open || !nextDialog.current) return
-        const dialog = nextDialog.current
-        nextDialog.current = null
-        onOpenSettings(dialog)
-      }}
-    >
-      <MenuTrigger id="workspace-actions" aria-label="Ещё действия и настройки" className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border-0 bg-transparent px-2 text-sm font-bold text-primary shadow-none hover:bg-subtle data-open:bg-selected sm:px-3">
-        <Ellipsis size={20} aria-hidden="true" />
-        <span>Ещё</span>
-      </MenuTrigger>
-      <MenuContent align="end" sideOffset={6} collisionPadding={10} className="z-20 max-h-(--available-height) w-[min(15rem,calc(100vw-20px))] overflow-y-auto rounded-2xl border border-line bg-paper p-1 text-ink shadow-popup motion-safe:transition-[opacity,scale] motion-safe:duration-150 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0">
-        <MenuItem className="workspace-menu-item" value="phone"><Phone size={18} className="shrink-0 text-primary" aria-hidden="true" /> Номер для СБП</MenuItem>
-        <MenuItem className="workspace-menu-item" value="access"><Fingerprint size={18} className="shrink-0 text-primary" aria-hidden="true" /> Способы входа</MenuItem>
-        <MenuSeparator className="my-1 border-0 border-t border-line" />
-        <MenuItem className="workspace-menu-item" value="lock"><LockKeyhole size={18} className="shrink-0 text-primary" aria-hidden="true" /> Заблокировать</MenuItem>
-      </MenuContent>
-    </Menu>
-  )
-}
+const scrollableMain = 'min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain scroll-edges-y'
 
-export default function WorkspaceShell({ page, children, onNavigate, onOpenSettings, onLock }: {
+export default function WorkspaceShell({ page, children, onNavigate, onOpenSettings, settings }: {
   page: Page
   children: ReactNode
   onNavigate: (page: Page) => void
-  onOpenSettings: (view: SettingsDialog) => void
-  onLock: () => void
+  onOpenSettings: () => void
+  settings?: { view: NonNullable<SettingsView>; onBack: () => void; content: ReactNode }
 }) {
+  const shell = useRef<HTMLDivElement>(null)
   const scrollArea = useRef<HTMLElement>(null)
+  const settingsArea = useRef<HTMLElement>(null)
+  const settingsHeading = useRef<HTMLHeadingElement>(null)
+  const settingsTrigger = useRef<HTMLButtonElement>(null)
+  const pageHeading = useRef<HTMLHeadingElement>(null)
+  const previousSettings = useRef<SettingsView>(null)
+  const pageScroll = useRef(0)
+  const settingsMenuScroll = useRef(0)
   const header = useRef<HTMLElement>(null)
+  const section = settings?.view ?? null
+
   useLayoutEffect(() => {
+    pageScroll.current = 0
     scrollArea.current?.scrollTo({ top: 0 })
     header.current?.removeAttribute('data-scrolled')
+    pageHeading.current?.classList.add('motion-safe:animate-[workspace-title-in_160ms_ease-out_both]')
   }, [page])
+  useLayoutEffect(() => {
+    const previous = previousSettings.current
+    previousSettings.current = section
+    if (previous === section) return
+    if (section) {
+      const area = settingsArea.current
+      area?.scrollTo({ top: section === 'menu' ? settingsMenuScroll.current : 0 })
+      header.current?.toggleAttribute('data-scrolled', (area?.scrollTop ?? 0) > 4)
+      const restoreTrigger = section === 'menu' && previous && previous !== 'menu'
+        ? document.getElementById(`settings-${previous}`) : null
+      const focusTarget = restoreTrigger ?? settingsHeading.current
+      focusTarget?.focus({ preventScroll: true })
+    } else {
+      scrollArea.current?.scrollTo({ top: pageScroll.current })
+      header.current?.toggleAttribute('data-scrolled', pageScroll.current > 4)
+      settingsTrigger.current?.focus({ preventScroll: true })
+    }
+  }, [section])
+  useLayoutEffect(() => {
+    const viewport = window.visualViewport
+    const layout = shell.current
+    if (!viewport || !layout) return
+    const fit = () => {
+      // Android Chrome may shrink only the visual viewport for the keyboard.
+      if (viewport.scale === 1) layout.style.setProperty('--workspace-viewport-height', `${viewport.height}px`)
+      else layout.style.removeProperty('--workspace-viewport-height')
+    }
+    fit()
+    viewport.addEventListener('resize', fit)
+    return () => {
+      viewport.removeEventListener('resize', fit)
+      layout.style.removeProperty('--workspace-viewport-height')
+    }
+  }, [])
 
   return (
-    <div className="mx-auto flex h-dvh min-w-0 max-w-[1760px] flex-col overflow-hidden md:grid md:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]">
-      <aside className="order-last shrink-0 border-t border-line bg-paper px-1 pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] md:order-none md:min-h-0 md:overflow-y-auto md:border-t-0 md:border-r md:bg-surface md:p-3">
+    <div ref={shell} className={`workspace-shell mx-auto flex h-[var(--workspace-viewport-height,100dvh)] min-w-0 max-w-[1760px] flex-col overflow-hidden ${settings ? '' : 'md:grid md:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]'}`}>
+      <aside hidden={Boolean(settings)} className="order-last shrink-0 touch-pinch-zoom border-t border-line bg-paper px-1 pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] md:order-none md:min-h-0 md:touch-auto md:overflow-y-auto md:scroll-edges-y md:border-t-0 md:border-r md:bg-surface md:p-3">
         <div className="hidden md:mb-6 md:block md:px-2 md:pt-2"><Brand /></div>
         <nav aria-label="Разделы" className="grid grid-cols-5 gap-0.5 md:grid-cols-1 md:gap-1">
           {pages.map((id) => {
@@ -84,15 +105,48 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header ref={header} className="relative z-10 shrink-0 border-b border-line bg-paper pt-[env(safe-area-inset-top)] motion-safe:transition-shadow motion-safe:duration-150 data-scrolled:shadow-top-bar md:pt-0">
-          <div className="mx-auto flex min-h-13 min-w-0 max-w-[1260px] items-center justify-between gap-2 px-3 sm:px-5 md:min-h-15 md:px-6">
-            <h1 key={page} className="min-w-0 truncate text-xl leading-tight md:text-2xl motion-safe:animate-[workspace-title-in_160ms_ease-out_both]">{page === 'bills' ? destinations.bills.title : destinations[page].label}</h1>
-            <WorkspaceMenu onOpenSettings={onOpenSettings} onLock={onLock} />
+          <div className={`mx-auto flex min-h-13 min-w-0 items-center gap-2 px-3 sm:px-5 md:min-h-15 md:px-6 ${settings ? 'max-w-2xl' : 'max-w-[1260px] justify-between'}`}>
+            {settings ? (
+              <>
+                <Button className="btn-icon size-9 min-h-9 bg-transparent" aria-label={settings.view === 'menu' ? 'Назад' : 'Назад к настройкам'} onClick={settings.onBack}>
+                  <ArrowLeft size={20} aria-hidden="true" />
+                </Button>
+                <h1 key={settings.view} ref={settingsHeading} tabIndex={-1} className="min-w-0 text-xl leading-tight wrap-anywhere outline-none md:text-2xl">
+                  {settingsTitles[settings.view]}
+                </h1>
+              </>
+            ) : (
+              <>
+                <h1 key={page} ref={pageHeading} className="min-w-0 truncate text-xl leading-tight md:text-2xl">{page === 'bills' ? destinations.bills.title : destinations[page].label}</h1>
+                <Button ref={settingsTrigger} id="workspace-actions" className="btn-icon size-9 min-h-9 bg-transparent" aria-label="Настройки" onClick={() => {
+                  settingsMenuScroll.current = 0
+                  onOpenSettings()
+                }}>
+                  <Settings size={19} aria-hidden="true" />
+                </Button>
+              </>
+            )}
           </div>
         </header>
 
-        <main ref={scrollArea} onScroll={(event) => header.current?.toggleAttribute('data-scrolled', event.currentTarget.scrollTop > 4)}
-          className="scroll-fade scroll-fade-3 min-h-0 min-w-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain">
-          <div className="mx-auto w-full min-w-0 max-w-[1260px] px-3 py-3 sm:px-5 md:px-6 md:py-4">
+        {settings && (
+          <main ref={settingsArea} className="settings-main" onScroll={(event) => {
+            const top = event.currentTarget.scrollTop
+            if (section === 'menu') settingsMenuScroll.current = top
+            header.current?.toggleAttribute('data-scrolled', top > 4)
+          }}>
+            <div className="settings-page mx-auto w-full min-w-0 max-w-2xl px-3 pt-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:px-5 md:px-6 md:pt-4">
+              {settings.content}
+            </div>
+          </main>
+        )}
+        <main ref={scrollArea} hidden={Boolean(settings)} onScroll={(event) => {
+          if (settings) return
+          pageScroll.current = event.currentTarget.scrollTop
+          header.current?.toggleAttribute('data-scrolled', pageScroll.current > 4)
+        }} className={page === 'bills' ? 'min-h-0 min-w-0 flex-1 overflow-hidden' : scrollableMain}>
+          <div className={page === 'bills' ? 'h-full min-w-0'
+            : `mx-auto w-full min-w-0 max-w-[1260px] py-3 sm:px-5 md:px-6 md:py-4 ${page === 'transactions' ? '' : 'px-3'}`}>
             {children}
           </div>
         </main>

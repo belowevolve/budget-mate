@@ -43,7 +43,7 @@ export default reatomFactoryComponent<{
         {linked && <>
           <h3 className="text-sm font-bold">Операция из выписки <span className="text-xs font-semibold text-muted">· {formatDate(linked.date)}</span></h3>
           <ul className="overflow-hidden rounded-xl border border-line bg-paper">
-            <li><Entry row={linked} onSelect={onOpenOperation} /></li>
+            <li><Entry row={linked} onSelect={onOpenOperation} exactAmount /></li>
           </ul>
         </>}
         <div className="flex flex-wrap gap-2">
@@ -68,12 +68,12 @@ export default reatomFactoryComponent<{
                     <DialogTitle className="text-lg font-extrabold">Операция из выписки</DialogTitle>
                     <DialogDescription className="text-sm text-muted">На сумму счёта или твоей доли</DialogDescription>
                   </div>
-                  <DialogClose className="btn-icon" aria-label="Закрыть" disabled={!ready}><X size={17} aria-hidden="true" /></DialogClose>
+                  <DialogClose className="dialog-close" aria-label="Закрыть" disabled={!ready}><X size={17} aria-hidden="true" /></DialogClose>
                 </div>
-                <div className="dialog-body scroll-fade scroll-fade-3" data-slot="scroll">
+                <div className="dialog-body" data-slot="scroll">
                   <VirtualOperationList groups={groups} ariaLabel="Подходящие операции" resetKey={bill.id}
                     renderEntry={(entry) => (
-                      <Entry {...entry} selection={{ selected: entry.row.id === chosenId, disabled: !ready }}
+                      <Entry {...entry} exactAmount selection={{ selected: entry.row.id === chosenId, disabled: !ready }}
                         onSelect={wrap((row) => selected.set(row.id))} />
                     )}
                   />

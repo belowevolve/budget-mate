@@ -18,6 +18,7 @@ interface RegisteredDeviceCredential {
 }
 
 export interface DeviceUnlockConfirmation {
+  verifiedOnCreate?: boolean
   confirm(signal?: AbortSignal): Promise<RegisteredDeviceCredential>
 }
 
@@ -115,6 +116,7 @@ export async function prepareDeviceUnlock(
   requireCredentialSupport()
   const challenge = crypto.getRandomValues(new Uint8Array(32)).buffer
   const userId = crypto.getRandomValues(new Uint8Array(32)).buffer
+  const prfSalt = crypto.getRandomValues(new Uint8Array(32)).buffer
   const result = await requestCredential(() => navigator.credentials.create({
     signal,
     publicKey: {
@@ -130,11 +132,12 @@ export async function prepareDeviceUnlock(
       ...credentialHint(mode),
       attestation: 'none',
       timeout: requestTimeout,
-      extensions: { prf: {} },
+      extensions: { prf: { eval: { first: prfSalt } } },
     },
   }), 'create', mode)
   verifyClientData(result.response, 'webauthn.create', challenge)
-  if (result.getClientExtensionResults().prf?.enabled === false) {
+  const prf = result.getClientExtensionResults().prf
+  if (prf?.enabled === false) {
     throw new DeviceCredentialError('Выбранный ключ не поддерживает шифрование WebAuthn PRF. Выбери другой ключ или провайдер.')
   }
   if (mode === 'security-key') {
@@ -146,13 +149,21 @@ export async function prepareDeviceUnlock(
 
   const credential: DeviceCredential = {
     credentialId: result.rawId,
-    prfSalt: crypto.getRandomValues(new Uint8Array(32)).buffer,
+    prfSalt,
     origin: location.origin,
     mode,
   }
+  const authenticatorData = (result.response as AuthenticatorAttestationResponse).getAuthenticatorData?.()
+  const secret = prf?.results?.first
+  const key = authenticatorData && secret?.byteLength === 32
+    ? await importDeviceKey(authenticatorData, mode, secret)
+    : undefined
+
   return {
+    verifiedOnCreate: Boolean(key),
     async confirm(confirmationSignal) {
-      return { credential, key: await readDeviceKey(credential, confirmationSignal) }
+      confirmationSignal?.throwIfAborted()
+      return { credential, key: key ?? await readDeviceKey(credential, confirmationSignal) }
     },
   }
 }
@@ -185,7 +196,15 @@ export async function readDeviceKey(credential: DeviceCredential, signal?: Abort
     throw new DeviceCredentialError('Устройство вернуло другой ключ доступа.')
   }
 
-  const authenticatorData = new Uint8Array(result.response.authenticatorData)
+  const secret = result.getClientExtensionResults().prf?.results?.first
+  if (!secret || secret.byteLength !== 32) {
+    throw new DeviceCredentialError('Провайдер ключа не вернул ключ шифрования WebAuthn PRF. Выбери другой способ хранения ключа.')
+  }
+  return importDeviceKey(result.response.authenticatorData, mode, secret)
+}
+
+async function verifyAuthenticatorData(data: ArrayBuffer, mode: DeviceKeyMode): Promise<void> {
+  const authenticatorData = new Uint8Array(data)
   const rpHash = new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(location.hostname)))
   const userPresentAndVerified = 0x01 | 0x04
   if (authenticatorData.length < 37 || (authenticatorData[32] & userPresentAndVerified) !== userPresentAndVerified ||
@@ -196,16 +215,14 @@ export async function readDeviceKey(credential: DeviceCredential, signal?: Abort
   if (mode === 'security-key' && (authenticatorData[32] & backupEligible) !== 0) {
     throw new DeviceCredentialError('Выбранный ключ допускает синхронизацию. Для этого способа нужен аппаратный ключ FIDO2.')
   }
+}
 
-  const secret = result.getClientExtensionResults().prf?.results?.first
-  if (!secret || secret.byteLength !== 32) {
-    throw new DeviceCredentialError('Провайдер ключа не вернул ключ шифрования WebAuthn PRF. Выбери другой способ хранения ключа.')
-  }
-
+async function importDeviceKey(authenticatorData: ArrayBuffer, mode: DeviceKeyMode, secret: BufferSource): Promise<CryptoKey> {
   const secretBytes = secret instanceof ArrayBuffer
     ? new Uint8Array(secret)
     : new Uint8Array(secret.buffer, secret.byteOffset, secret.byteLength)
   try {
+    await verifyAuthenticatorData(authenticatorData, mode)
     return await crypto.subtle.importKey('raw', secretBytes, 'AES-GCM', false, ['encrypt', 'decrypt'])
   } finally {
     secretBytes.fill(0)

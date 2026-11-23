@@ -5,6 +5,10 @@ export function isOwnTransferDescription(text: string) {
   return /между (?:своими|моими|собственными)|с (?:моего|своего) сч[её]та|на (?:свой|мой) сч[её]т|перевод (?:собственных средств|себе)|самому себе|\bme2me\b/i.test(text)
 }
 
+export function isCreditRepayment({ description }: Pick<StatementTransaction, 'description'>) {
+  return /^Погашение кредита$/i.test(description)
+}
+
 export function isSbp(text: string) {
   return /систем[аыуе] быстрых платежей|(?<!\p{L})сбп(?!\p{L})|\bsbp\b/iu.test(text)
 }

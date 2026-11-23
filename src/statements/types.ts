@@ -11,6 +11,11 @@ export interface StatementTransaction {
   transferBank?: BankId | 'other'
   sbpCounterparty?: 'blank' | 'phone' | 'other'
   sbpPhoneToken?: string
+  merchantCategoryCode?: string
+  brokerageFunding?: true
+  brokerageDestination?: string
+  vtbCreditFormat?: 'card' | 'account'
+  vtbAccountPreviousDescription?: string
 }
 
 export interface CreditSnapshot {

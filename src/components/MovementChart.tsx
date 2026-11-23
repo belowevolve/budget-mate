@@ -83,7 +83,7 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
         <span className="chart-key"><i className="size-2 rounded-xs bg-chart-income" />Поступления</span>
       </div>
       <div
-        className="overflow-x-auto overscroll-x-contain"
+        className="overflow-x-auto overscroll-x-contain scroll-edges-x"
         tabIndex={periods.length > 8 ? 0 : undefined}
         role={periods.length > 8 ? 'region' : undefined}
         aria-label={periods.length > 8 ? 'График по месяцам' : undefined}
@@ -102,7 +102,7 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
               <li className="min-w-0" key={period.key}>
                 <Button
                   className="flex h-auto min-h-[calc(var(--track-height)+22px)] w-full min-w-0 flex-col rounded-lg border-0 bg-transparent px-0 pb-0.5 text-muted shadow-none hover:bg-subtle aria-pressed:bg-selected aria-pressed:text-primary"
-                  aria-label={`${period.name}, расходы ${money(period.expenses, currency, true)}, поступления ${money(period.income, currency, true)}`}
+                  aria-label={`${period.name}, расходы ${money(period.expenses, currency)}, поступления ${money(period.income, currency)}`}
                   aria-pressed={selected?.key === period.key}
                   onClick={() => setActivePeriod(period.key)}
                 >
@@ -124,8 +124,8 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
           aria-live="polite"
         >
           <div className="col-span-full min-[1050px]:col-auto"><dt className="sr-only">Период</dt><dd>{selected.name}</dd></div>
-          <div><dt>Расходы</dt><dd>{money(selected.expenses, currency, true)}</dd></div>
-          <div><dt>Поступления</dt><dd>{money(selected.income, currency, true)}</dd></div>
+          <div><dt>Расходы</dt><dd>{money(selected.expenses, currency)}</dd></div>
+          <div><dt>Поступления</dt><dd>{money(selected.income, currency)}</dd></div>
         </dl>
       )}
     </section>

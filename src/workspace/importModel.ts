@@ -3,7 +3,7 @@ import { confirmCreditRemindersFromStatement } from '../credits/creditAccounts'
 import { ensureSbpKey, mergeStatements } from '../finance'
 import type { ParsedStatement } from '../statements'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
-import type { NotificationKind } from './workspaceState'
+import type { Notify } from '../notifications/presentation'
 
 export type ImportPreview = {
   id: string
@@ -11,8 +11,6 @@ export type ImportPreview = {
   statement?: ParsedStatement
   error?: string
 }
-
-type Notify = (message: string, type?: NotificationKind) => void
 
 export function reatomImport() {
   const previews = atom<ImportPreview[]>([], 'statementImport.previews')

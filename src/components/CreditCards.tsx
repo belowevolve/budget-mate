@@ -1,31 +1,32 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useAction, useAtom } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
 import { Bell, CalendarPlus, Check, CreditCard } from 'lucide-react'
 import {
-  calendarDayOffset, dueCreditAccounts, getCreditAccounts, plannedAmount,
+  calendarDayOffset, creditAccountShortLabel, dueCreditAccounts, getCreditAccounts, plannedAmount,
   type CreditAccount, type CreditReminder,
 } from '../credits/creditAccounts'
 import CreditEditor from '../credits/CreditEditor'
-import { creditToday, downloadCreditReminder, reatomCreditPayment } from '../credits/model'
+import { creditCalendarUrl, creditToday, reatomCreditPayment } from '../credits/model'
 import { banks, formatDate, money, type Ledger } from '../finance'
+import type { Notify } from '../notifications/presentation'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
+import Notice from './Notice'
 
-type Notify = (message: string, kind?: 'success' | 'info' | 'error') => void
-
-function CreditPayment({ account, reminder, today, write, notify }: {
-  account: CreditAccount; reminder: CreditReminder; today: string; write: VaultWrite; notify: Notify
+function CreditPayment({ account, reminder, today, write, notify, editor }: {
+  account: CreditAccount; reminder?: CreditReminder; today: string; write: VaultWrite; notify: Notify; editor: ReactNode
 }) {
   const [mutation] = useState(reatomCreditPayment)
   const [ready] = useAtom(mutation.ready)
   const setPaid = useAction(mutation)
-  const amount = plannedAmount(account, reminder)
-  const due = !reminder.paid && reminder.dueOn <= calendarDayOffset(today, 1)
-  const title = reminder.paid ? 'Платёж закрыт' : reminder.dueOn < today ? 'Срок оплаты прошёл' : 'Платёж до'
+  const amount = reminder && plannedAmount(account, reminder)
+  const due = reminder && !reminder.paid && reminder.dueOn <= calendarDayOffset(today, 1)
+  const title = reminder?.paid ? 'Платёж закрыт' : reminder && reminder.dueOn < today ? 'Срок оплаты прошёл' : 'Платёж до'
+  const calendarUrl = reminder && !reminder.paid && reminder.dueOn > today ? creditCalendarUrl(reminder.dueOn) : undefined
 
   return (
-    <div className={`grid min-w-0 gap-1.5 rounded-xl p-2.5 ${due ? 'bg-warning-soft text-warning' : 'bg-subtle text-ink'}`}>
-      <div className="flex min-w-0 items-start gap-2">
+    <div className={reminder ? `grid min-w-0 gap-1.5 rounded-xl p-2.5 ${due ? 'bg-warning-soft text-warning' : 'bg-subtle text-ink'}` : 'min-w-0'}>
+      {reminder && <div className="flex min-w-0 items-start gap-2">
         {reminder.paid ? <Check size={17} className="mt-0.5 shrink-0 text-income" aria-hidden="true" /> : <Bell size={16} className="mt-0.5 shrink-0" aria-hidden="true" />}
         <div className="min-w-0 flex-1">
           <p className="text-xs">{title}</p>
@@ -37,14 +38,15 @@ function CreditPayment({ account, reminder, today, write, notify }: {
             {amount.estimate && <span className="text-xs">Оценка</span>}
           </div>
         )}
-      </div>
-      {reminder.paid?.source === 'bank' && <p className="text-xs">Подтверждено выпиской</p>}
-      {!reminder.paid && !amount && <p className="text-xs">Сумма пока неизвестна</p>}
-      <div className="flex min-w-0 flex-wrap gap-1">
-        {reminder.paid?.source !== 'bank' && (
-          <Button className="btn-secondary min-w-0 px-2 whitespace-normal" disabled={!ready} onClick={async () => {
+      </div>}
+      {reminder?.paid?.source === 'bank' && <p className="text-xs">Подтверждено выпиской</p>}
+      {reminder && !reminder.paid && !amount && <p className="text-xs">Сумма пока неизвестна</p>}
+      <div className="flex min-w-0 gap-1.5">
+        {reminder && reminder.paid?.source !== 'bank' && (
+          <Button className="btn-secondary min-w-0 flex-1 px-2 text-xs whitespace-normal" disabled={!ready} onClick={async () => {
             try {
               await setPaid(write, account.accountKey, reminder.id, !reminder.paid)
+              notify(reminder.paid ? 'Напоминание снова активно' : 'Платёж отмечен как оплаченный')
             } catch (error) {
               notify(messageFor(error, 'Не удалось изменить статус платежа.'), 'error')
             }
@@ -52,12 +54,11 @@ function CreditPayment({ account, reminder, today, write, notify }: {
             {reminder.paid ? 'Снова напоминать' : 'Отметить оплату'}
           </Button>
         )}
-        {!reminder.paid && reminder.dueOn > today && (
-          <Button className="btn-secondary min-w-0 px-2 whitespace-normal" onClick={() => {
-            downloadCreditReminder(reminder)
-            notify('Импортируй файл в календарь для напоминания за день.', 'info')
-          }}>
-            <CalendarPlus size={16} className="shrink-0" aria-hidden="true" /> В календарь
+        {editor}
+        {calendarUrl && (
+          <Button className="btn-icon min-h-11 self-stretch" aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
+            render={<a href={calendarUrl} target="_blank" rel="noreferrer" />}>
+            <CalendarPlus size={16} className="shrink-0" aria-hidden="true" />
           </Button>
         )}
       </div>
@@ -71,6 +72,8 @@ function CreditCardDetails({ account, today, write, notify }: {
   const { snapshot, reminder, debtMinor, currency } = account
   const bank = banks[account.bank]
   const label = account.accountLabel.startsWith(`${bank} · `) ? account.accountLabel.slice(bank.length + 3) : account.accountLabel
+  const editor = <CreditEditor account={account} today={today} write={write}
+    compactTrigger={Boolean(reminder)} onSaved={(hasDate) => notify(hasDate ? 'Дата напоминания сохранена' : 'Ручное напоминание удалено')} />
 
   return (
     <section className="surface-panel card-padding grid max-w-full gap-2.5">
@@ -99,16 +102,19 @@ function CreditCardDetails({ account, today, write, notify }: {
         </dl>
       )}
       {!snapshot?.gracePeriodEnd && !snapshot?.minimumPaymentDate && !reminder && (
-        <p className="text-xs text-muted">Срок платежа в выписке не указан.</p>
+        <p className="text-xs text-muted">{account.bank === 'ozon' && debtMinor === undefined
+          ? 'В выписке нет данных о долге и сроке платежа.'
+          : 'Срок платежа в выписке не указан.'}</p>
       )}
       {snapshot?.observedOn && <p className="text-xs text-muted">Выписка от {formatDate(snapshot.observedOn)}</p>}
-      {reminder && <CreditPayment account={account} reminder={reminder} today={today} write={write} notify={notify} />}
-      <CreditEditor account={account} today={today} write={write} onSaved={() => notify('Настройки кредитки сохранены')} />
+      <CreditPayment account={account} reminder={reminder} today={today} write={write} notify={notify} editor={editor} />
     </section>
   )
 }
 
-export default function CreditCards({ ledger, write, notify, onImport }: { ledger: Ledger; write: VaultWrite; notify: Notify; onImport: () => void }) {
+export default function CreditCards({ ledger, write, notify, onImport }: {
+  ledger: Ledger; write: VaultWrite; notify: Notify; onImport: () => void
+}) {
   const [today] = useAtom(creditToday)
   const { tracked, available } = useMemo(() => getCreditAccounts(ledger), [ledger])
   return (
@@ -139,12 +145,15 @@ export function CreditOverviewReminders({ ledger, onOpen }: { ledger: Ledger; on
   const { tracked } = useMemo(() => getCreditAccounts(ledger), [ledger])
   const due = dueCreditAccounts(tracked, today)
   if (!due.length) return null
-  const names = [...new Set(due.map((account) => banks[account.bank]))].join(', ')
 
   return (
-    <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-xl bg-warning-soft px-2.5 py-1.5 text-sm text-warning">
-      <span className="min-w-0 flex-1 basis-40 wrap-anywhere">Срок оплаты кредитки · {names}</span>
-      <Button className="btn-text shrink-0 px-2 text-warning" onClick={onOpen}>К платежам</Button>
+    <div className="mb-3">
+      <Notice tone="warning" icon={Bell} title={due.length === 1 ? 'Срок платежа' : 'Сроки платежей'}
+        open={{ label: 'Кредитки', onClick: onOpen }}>
+        {due.map((account) => (
+          <span key={account.accountKey} className="block">{creditAccountShortLabel(account)}</span>
+        ))}
+      </Notice>
     </div>
   )
 }

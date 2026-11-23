@@ -1,7 +1,9 @@
 import { action, atom, computed } from '@reatom/core'
-import { banks, categories, isBudgetTransaction, isTechnicalCreditEntry, needsTransferReview, summarize, transactionAccountingAmount, type Category, type Transaction } from '../../finance'
+import { categoryDefinition, defaultCategoryCatalog, kindForAmount } from '../../categories/catalog'
+import { banks, isTechnicalCreditEntry, needsTransferReview, summarize, transactionAccountingAmount, type Category, type Transaction } from '../../finance'
 import { operationTitle } from '../../operationPresentation'
 import type { RefundIndex } from '../../refunds'
+import type { BankId } from '../../statements/types'
 
 export const journalTabs = [
   { value: 'activity', label: 'Все' },
@@ -10,7 +12,9 @@ export const journalTabs = [
   { value: 'transfer', label: 'Переводы' },
 ] as const
 
-export type JournalKind = typeof journalTabs[number]['value'] | 'review'
+export type OperationKind = 'expense' | 'income' | 'transfer'
+export type JournalKind = 'activity' | OperationKind | 'review'
+export type TransferScope = 'all' | 'own' | 'review'
 export interface JournalFilter {
   kind?: JournalKind
   category?: Category
@@ -25,45 +29,55 @@ export interface JournalEntry {
 
 export type JournalGroups = [date: string, entries: JournalEntry[]][]
 
-interface JournalSelection {
-  kind: JournalKind
-  bank: string
-  category: string
+export interface JournalSelection {
+  kinds: OperationKind[]
+  banks: BankId[]
+  categories: Category[]
+  transferScope: TransferScope
   query: string
 }
 
 export function reatomJournal(initial: JournalFilter) {
-  const kind = atom<JournalKind>(initial.kind ?? 'activity', 'journal.kind')
-  const bank = atom('all', 'journal.bank')
-  const category = atom<string>(initial.category ?? 'all', 'journal.category')
+  const firstKind = initial.kind === 'review' ? 'transfer' : initial.kind
+  const kinds = atom<OperationKind[]>(firstKind && firstKind !== 'activity' ? [firstKind] : [], 'journal.kinds')
+  const selectedBanks = atom<BankId[]>([], 'journal.banks')
+  const categories = atom<Category[]>(initial.category ? [initial.category] : [], 'journal.categories')
+  const transferScope = atom<TransferScope>(initial.kind === 'review' ? 'review' : 'all', 'journal.transferScope')
   const query = atom('', 'journal.query')
-  const selection = computed(() => ({ kind: kind(), bank: bank(), category: category(), query: query() }), 'journal.selection')
+  const selection = computed((): JournalSelection => ({
+    kinds: kinds(), banks: selectedBanks(), categories: categories(), transferScope: transferScope(), query: query(),
+  }), 'journal.selection')
 
-  const setKind = action((value: JournalKind) => {
-    kind.set(value)
-    category.set('all')
+  const setKinds = action((value: OperationKind[]) => {
+    kinds.set(value)
+    transferScope.set('all')
+  }, 'journal.setKinds')
+
+  const setKind = action((value: 'activity' | OperationKind) => {
+    setKinds(value === 'activity' ? [] : [value])
+    categories.set([])
   }, 'journal.setKind')
 
-  const setBank = action((value: string) => {
-    bank.set(value)
-    category.set('all')
-  }, 'journal.setBank')
+  const setBanks = action((value: BankId[]) => selectedBanks.set(value), 'journal.setBanks')
 
-  const setCategory = action((value: string) => {
-    category.set(value)
-  }, 'journal.setCategory')
+  const setCategories = action((value: Category[]) => categories.set(value), 'journal.setCategories')
 
-  const setQuery = action((value: string) => {
-    query.set(value)
-  }, 'journal.setQuery')
+  const setTransferScope = action((value: TransferScope) => transferScope.set(value), 'journal.setTransferScope')
+
+  const setQuery = action((value: string) => query.set(value), 'journal.setQuery')
+
+  const clearSelections = action(() => {
+    setKinds([])
+    setBanks([])
+    setCategories([])
+  }, 'journal.clearSelections')
 
   const clearFilters = action(() => {
-    bank.set('all')
-    category.set('all')
-    query.set('')
+    clearSelections()
+    setQuery('')
   }, 'journal.clearFilters')
 
-  return { selection, setKind, setBank, setCategory, setQuery, clearFilters }
+  return { selection, setKind, setKinds, setBanks, setCategories, setTransferScope, setQuery, clearSelections, clearFilters }
 }
 
 export type JournalModel = ReturnType<typeof reatomJournal>
@@ -78,20 +92,18 @@ export function groupJournalEntries(entries: readonly JournalEntry[]): JournalGr
   return [...groups]
 }
 
-function groupEntries(rows: Transaction[], collapse: boolean, refunds: RefundIndex) {
+function groupEntries(rows: Transaction[], refunds: RefundIndex) {
   const pairs = new Map<string, Transaction[]>()
-  if (collapse) {
-    for (const row of rows) {
-      if (!row.transferMatchId) continue
-      const pair = pairs.get(row.transferMatchId) ?? []
-      pair.push(row)
-      pairs.set(row.transferMatchId, pair)
-    }
+  for (const row of rows) {
+    if (row.category !== 'transfer' || !row.transferMatchId) continue
+    const pair = pairs.get(row.transferMatchId) ?? []
+    pair.push(row)
+    pairs.set(row.transferMatchId, pair)
   }
 
   const entries: JournalEntry[] = []
   for (const row of rows) {
-    const pair = row.transferMatchId ? pairs.get(row.transferMatchId) : undefined
+    const pair = row.category === 'transfer' && row.transferMatchId ? pairs.get(row.transferMatchId) : undefined
     if (pair?.length === 2 && row.amountMinor > 0) continue
     const counterpart = pair?.length === 2 ? pair.find((other) => other.id !== row.id) : undefined
     entries.push({ row, counterpart, refundTarget: refunds.byIncome.get(row.id), refundMinor: refunds.byExpense.get(row.id)?.totalMinor })
@@ -99,31 +111,56 @@ function groupEntries(rows: Transaction[], collapse: boolean, refunds: RefundInd
   return groupJournalEntries(entries)
 }
 
-export function selectJournalRows(rows: Transaction[], { kind, bank, category, query }: JournalSelection, refunds: RefundIndex) {
-  const search = query.trim().toLowerCase()
+function normalizeSearch(text: string) {
+  return text.normalize('NFC').toLowerCase().replaceAll('ё', 'е')
+}
+
+export function selectJournalRows(rows: Transaction[], selection: JournalSelection, refunds: RefundIndex, catalog = defaultCategoryCatalog) {
+  const { kinds, banks: selectedBanks, categories, transferScope, query } = selection
+  const search = normalizeSearch(query.trim())
   const numericSearch = search.replace(/[\s₽]/g, '').replace(',', '.').replace(/^[-+−]/, '')
   const searchByAmount = /^\d+(?:\.\d{0,2})?$/.test(numericSearch)
-  const bankRows = bank === 'all' ? rows : rows.filter((row) => row.bank === bank)
-  const possibleCategories = [...new Set(bankRows.filter((row) => row.amountMinor < 0 && isBudgetTransaction(row)).map((row) => row.category))]
-    .sort((left, right) => categories[left].label.localeCompare(categories[right].label, 'ru'))
-  const activeCategory = possibleCategories.includes(category as Category) ? category : 'all'
-  const filtered = bankRows.filter((row) => {
+  const bankIds = new Set(selectedBanks)
+  const categoryIds = new Set(categories)
+  const possibleBankIds = new Set(selectedBanks)
+  const possibleCategoryIds = new Set(categories)
+  const scope = kinds.length === 1 && kinds[0] === 'transfer' ? transferScope : 'all'
+  const filtered: Transaction[] = []
+  let reviewCount = 0
+
+  for (const row of rows) {
+    if (isTechnicalCreditEntry(row)) continue
     const linked = refunds.byIncome.get(row.id)
-    if (kind === 'review') {
-      if (linked || !needsTransferReview(row)) return false
-    } else if (kind === 'transfer') {
-      if (row.category !== 'transfer' || isTechnicalCreditEntry(row)) return false
-    } else if (!linked && !isBudgetTransaction(row)) return false
-    if (kind === 'expense' && (row.amountMinor >= 0 || (activeCategory !== 'all' && row.category !== activeCategory))) return false
-    if (kind === 'income' && (linked || row.amountMinor <= 0)) return false
-    if (!search) return true
-    if (searchByAmount && [row.amountMinor, transactionAccountingAmount(row, refunds)]
-      .some((amount) => (Math.abs(amount) / 100).toFixed(2).startsWith(numericSearch))) return true
+    const review = !linked && needsTransferReview(row)
+    const kind = linked || review || row.category === 'transfer' ? 'transfer' : kindForAmount(row.amountMinor)
+    const category = kind === 'transfer' ? 'transfer' : row.category
+    possibleBankIds.add(row.bank)
+    if (catalog.get(category)?.kind === kind) possibleCategoryIds.add(category)
+    if (bankIds.size && !bankIds.has(row.bank)) continue
+    if (review) reviewCount++
+    if (kinds.length && !kinds.includes(kind)) continue
+    if ((scope === 'review' && !review) || (scope === 'own' && review)) continue
+    if (categoryIds.size && !categoryIds.has(category)) continue
+
+    if (!search || (searchByAmount && [row.amountMinor, transactionAccountingAmount(row, refunds)].some((amount) => {
+      const units = Math.abs(amount) / 100
+      return units.toFixed(2).startsWith(numericSearch)
+        || (!numericSearch.includes('.') && String(Math.round(units)).startsWith(numericSearch))
+    }))) {
+      filtered.push(row)
+      continue
+    }
+
     const compensation = linked ? `компенсация расхода ${operationTitle(linked)}` : ''
-    return `${compensation} ${operationTitle(row)} ${row.description} ${categories[row.category].label} ${banks[row.bank]}`.toLowerCase().includes(search)
-  })
-  const groups = groupEntries(filtered, kind === 'transfer', refunds)
+    const definition = categoryDefinition(catalog, row.category, kindForAmount(row.amountMinor))
+    const text = `${compensation} ${operationTitle(row)} ${row.description} ${definition.label} ${banks[row.bank]}`
+    if (normalizeSearch(text).includes(search)) filtered.push(row)
+  }
+
+  const possibleBanks = [...possibleBankIds].sort((left, right) => banks[left].localeCompare(banks[right], 'ru'))
+  const possibleCategories = [...possibleCategoryIds].sort((left, right) =>
+    categoryDefinition(catalog, left).label.localeCompare(categoryDefinition(catalog, right).label, 'ru'))
+  const groups = groupEntries(filtered, refunds)
   const count = groups.reduce((sum, [, entries]) => sum + entries.length, 0)
-  return { groups, count, possibleCategories, activeCategory, total: summarize(filtered, refunds),
-    hasUnmatched: rows.some((row) => needsTransferReview(row) && !refunds.byIncome.has(row.id)) }
+  return { groups, count, possibleBanks, possibleCategories, total: summarize(filtered, refunds), reviewCount }
 }

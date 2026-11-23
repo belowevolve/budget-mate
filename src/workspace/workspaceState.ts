@@ -1,14 +1,16 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { createToaster } from '@ui-sdk/react/toast'
+import { categoryCatalog, CategoryError, kindForAmount } from '../categories/catalog'
 import type { JournalFilter } from '../components/journal/model'
 import { reconcileLedger, setOwnSbpPhone, type Category, type Ledger, type Transaction } from '../finance'
+import type { Notify } from '../notifications/presentation'
+import { movePlaceAliases, PlaceError } from '../places/model'
 import { buildRefundIndex, RefundError, setRefundAllocation } from '../refunds'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 
 export type Page = 'overview' | 'transactions' | 'credits' | 'import' | 'bills'
-export type SettingsDialog = 'phone' | 'access' | null
-export type NotificationKind = 'success' | 'info' | 'error'
-export type OperationPane = 'details' | 'refund'
+export type SettingsView = 'menu' | 'access' | 'categories' | 'places' | null
+export type OperationPane = 'details' | 'refund' | 'category'
 type ChangeCategory = Pick<Transaction, 'category' | 'categoryEdited'>
 
 function updateRow(ledger: Ledger, rowId: string, category: ChangeCategory) {
@@ -24,16 +26,18 @@ export function reatomWorkspace(firstPage: Page) {
   const month = atom<string | undefined>(undefined, 'workspace.month')
   const currency = atom<string | undefined>(undefined, 'workspace.currency')
   const operation = atom<{ id: string; pane: OperationPane } | null>(null, 'workspace.operation')
-  const settingsDialog = atom<SettingsDialog>(null, 'workspace.settingsDialog')
   const toaster = createToaster({ duration: 5000 })
-  let undoToastId: string | undefined
   let mounted = false
+  let visit = 0
 
   const navigate = action((nextPage: Page, filter: JournalFilter = {}) => {
+    if (page() !== nextPage) {
+      visit++
+      toaster.dismiss()
+    }
     page.set(nextPage)
     journalFilter.set(filter)
     operation.set(null)
-    settingsDialog.set(null)
   }, 'workspace.navigate')
 
   const selectOperation = action((row?: Transaction, pane: OperationPane = 'details') => {
@@ -42,21 +46,29 @@ export function reatomWorkspace(firstPage: Page) {
 
   const setMonth = action((value: string) => month.set(value), 'workspace.setMonth')
   const setCurrency = action((value: string) => currency.set(value), 'workspace.setCurrency')
-  const setSettingsDialog = action((value: SettingsDialog) => settingsDialog.set(value), 'workspace.setSettingsDialog')
 
-  function notify(message: string, kind: NotificationKind = 'success') {
-    if (mounted) toaster[kind](message)
+  const resetAfterRestore = action(() => {
+    visit++
+    toaster.dismiss()
+    journalFilter.set({})
+    month.set(undefined)
+    currency.set(undefined)
+    operation.set(null)
+  }, 'workspace.resetAfterRestore')
+
+  function notifyFor(destination: Page): Notify {
+    const origin = visit
+    return (message, kind = 'success') => {
+      if (mounted && visit === origin && page() === destination) toaster[kind](message)
+    }
   }
 
   function notifyWithUndo(id: string, message: string, undo: () => Promise<boolean>) {
     if (!mounted) return
-    if (undoToastId) toaster.dismiss(undoToastId)
     const toastId = `${id}:${crypto.randomUUID()}`
-    undoToastId = toastId
     toaster.success(message, {
       id: toastId,
       duration: 6500,
-      onDismiss: () => { if (undoToastId === toastId) undoToastId = undefined },
       action: {
         label: 'Отменить',
         dismiss: false,
@@ -79,9 +91,16 @@ export function reatomWorkspace(firstPage: Page) {
   }
 
   const setCategory = action(async (write: VaultWrite, rowId: string, category: Category) => {
+    const origin = visit
     const before = await wrap(write((current) => {
       const row = current.transactions.find((entry) => entry.id === rowId)
       if (!row) throw new Error('Операция не найдена.')
+      if (category !== 'transfer' && category !== row.category) {
+        const definition = categoryCatalog(current.categoryOverrides).get(category)
+        if (!definition || definition.archived || definition.kind !== kindForAmount(row.amountMinor)) {
+          throw new CategoryError('Категория недоступна.')
+        }
+      }
       if (category === 'transfer' && current.refunds?.length) {
         const index = buildRefundIndex(current.transactions, current.refunds)
         if (index.byIncome.has(rowId) || index.byExpense.has(rowId)) throw new RefundError('Сначала отвяжи компенсацию от расхода.')
@@ -92,7 +111,7 @@ export function reatomWorkspace(firstPage: Page) {
         result: { category: row.category, categoryEdited: row.categoryEdited ?? false },
       }
     }))
-    if (!before) return
+    if (!before || visit !== origin) return
     notifyWithUndo(`category-${rowId}`, category === 'transfer' ? 'Операция перенесена в свои переводы' : 'Категория обновлена', () => write((current) => {
       const row = current.transactions.find((entry) => entry.id === rowId)
       if (row?.category !== category || row.categoryEdited !== true) return { ledger: current, result: false }
@@ -105,12 +124,13 @@ export function reatomWorkspace(firstPage: Page) {
   }, 'workspace.setCategory').extend(withAsync())
 
   const setRefund = action(async (write: VaultWrite, incomeId: string, expenseId: string | null) => {
+    const origin = visit
     const before = await wrap(write((current) => {
       const ledger = setRefundAllocation(current, incomeId, expenseId)
       if (ledger === current) return { ledger, result: undefined }
       return { ledger, result: current.refunds?.find((link) => link.incomeId === incomeId)?.expenseId ?? null }
     }))
-    if (before === undefined) return
+    if (before === undefined || visit !== origin) return
     notifyWithUndo(`refund-${incomeId}`, expenseId ? 'Компенсация привязана' : 'Компенсация отвязана', () => write((current) => {
       const now = current.refunds?.find((link) => link.incomeId === incomeId)?.expenseId ?? null
       if (now !== expenseId) return { ledger: current, result: false }
@@ -118,7 +138,23 @@ export function reatomWorkspace(firstPage: Page) {
     }))
   }, 'workspace.setRefund').extend(withAsync())
 
+  const editPlaceBindings = action(async (write: VaultWrite, sourceId: string, aliases: string[], targetId: string | null) => {
+    const origin = visit
+    await wrap(write((current) => {
+      const places = movePlaceAliases(current.places, sourceId, aliases, targetId)
+      if (!places) throw new PlaceError('Привязки изменились. Выбери их заново.')
+      return { ledger: { ...current, places }, result: undefined }
+    }))
+    if (visit !== origin) return
+    const message = targetId === null ? 'Привязки сняты' : 'Привязки перенесены'
+    notifyWithUndo(`place-bindings-${sourceId}`, message, () => write((current) => {
+      const places = movePlaceAliases(current.places, targetId, aliases, sourceId)
+      return places ? { ledger: { ...current, places }, result: true } : { ledger: current, result: false }
+    }))
+  }, 'workspace.editPlaceBindings').extend(withAsync())
+
   const setPhone = action(async (write: VaultWrite, phone: string | null) => {
+    const origin = visit
     const change = await wrap(write(async (current) => {
       const ledger = await wrap(setOwnSbpPhone(current, phone))
       if (ledger === current) return { ledger, result: null }
@@ -127,7 +163,7 @@ export function reatomWorkspace(firstPage: Page) {
         result: { before: current.sbp?.ownPhone, afterToken: ledger.sbp?.ownPhone?.token },
       }
     }))
-    if (!change) return
+    if (!change || visit !== origin) return
     notifyWithUndo('own-sbp-phone', phone === null ? 'Свой номер удалён' : 'Свой номер для СБП сохранён', () => write((current) => {
       if (!current.sbp || current.sbp.ownPhone?.token !== change.afterToken) return { ledger: current, result: false }
       return {
@@ -138,8 +174,8 @@ export function reatomWorkspace(firstPage: Page) {
   }, 'workspace.setPhone').extend(withAsync())
 
   return {
-    page, journalFilter, month, currency, operation, settingsDialog,
-    navigate, selectOperation, setMonth, setCurrency, setSettingsDialog, toaster, notify, setCategory, setRefund, setPhone,
+    page, journalFilter, month, currency, operation,
+    navigate, selectOperation, setMonth, setCurrency, resetAfterRestore, toaster, notifyFor, notifyWithUndo, setCategory, setRefund, setPhone, editPlaceBindings,
     mount() {
       mounted = true
       return () => {

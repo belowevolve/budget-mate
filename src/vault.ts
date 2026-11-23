@@ -73,12 +73,16 @@ type VaultRecord = LegacyVault | DeviceVault
 
 export interface VaultSession<T> {
   readonly data: T
-  readonly canExportPasswordVault: boolean
   readonly canReplaceDeviceUnlock: boolean
   save(data: T): Promise<void>
   enableDeviceUnlock(confirmation: DeviceUnlockConfirmation, signal?: AbortSignal): Promise<void>
   replaceDeviceUnlock(confirmation: DeviceUnlockConfirmation, signal?: AbortSignal): Promise<void>
-  exportPasswordVault(): Blob
+  exportPasswordVault(code: string): Promise<Blob>
+}
+
+export function createBackupCode(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, '0'))
+    .join('').replace(/(.{8})(?=.)/g, '$1-')
 }
 
 export interface VaultUnlockMethods {
@@ -396,9 +400,6 @@ function vaultSession<T>(
     get data() {
       return data
     },
-    get canExportPasswordVault() {
-      return current.version === 1
-    },
     get canReplaceDeviceUnlock() {
       return current.version === 2 && (!current.password || !!password)
     },
@@ -423,26 +424,29 @@ function vaultSession<T>(
       }
       await configureDeviceUnlock(previous, confirmation, signal)
     },
-    exportPasswordVault() {
-      if (current.version !== 1) {
-        throw new VaultError('storage', 'Файл переноса доступен для хранилища, которое открывается только паролем.')
+    async exportPasswordVault(code: string) {
+      if (!/^[a-f0-9]{8}(?:-[a-f0-9]{8}){3}$/.test(code)) {
+        throw new VaultError('storage', 'Открой резервную копию заново, чтобы получить код.')
       }
-      if (backupHeaderSize + current.ciphertext.byteLength > maxBackupBytes) {
+      const snapshot = data
+      const header = { version: 1, revision: 0 } as const
+      const salt = crypto.getRandomValues(new Uint8Array(backupSaltSize)).buffer
+      const backupKey = await deriveKey(code, salt)
+      const { iv, ciphertext } = await encryptData(snapshot, backupKey, header)
+      if (backupHeaderSize + ciphertext.byteLength > maxBackupBytes) {
         throw new VaultError('storage', 'Хранилище слишком большое для переноса одним файлом.')
       }
       const revision = new ArrayBuffer(backupRevisionSize)
-      new DataView(revision).setBigUint64(0, BigInt(current.revision))
-      return new Blob([backupMagic, revision, current.salt, current.iv, current.ciphertext], { type: 'application/octet-stream' })
+      return new Blob([backupMagic, revision, salt, iv, ciphertext], { type: 'application/octet-stream' })
     },
   }
 }
 
-export async function restorePasswordVault<T>(
+async function openPasswordBackup<T>(
   file: File,
   password: string,
   validate: (data: T) => boolean,
-): Promise<VaultSession<T>> {
-  requireVaultSupport()
+): Promise<{ record: LegacyVault; session: VaultSession<T> }> {
   if (file.size > maxBackupBytes || file.size < backupHeaderSize + 16) {
     throw new VaultError('corrupt', 'Этот файл переноса пуст, повреждён или больше 64 МБ.')
   }
@@ -476,6 +480,25 @@ export async function restorePasswordVault<T>(
     // A payload may decrypt successfully and still contain an unsupported data format.
   }
   if (!valid) throw new VaultError('corrupt', 'Файл переноса содержит данные в неизвестном формате.')
+  return { record, session }
+}
+
+export async function readPasswordBackup<T>(
+  file: File,
+  password: string,
+  validate: (data: T) => boolean,
+): Promise<T> {
+  const { session } = await openPasswordBackup(file, password, validate)
+  return session.data
+}
+
+export async function restorePasswordVault<T>(
+  file: File,
+  password: string,
+  validate: (data: T) => boolean,
+): Promise<VaultSession<T>> {
+  requireVaultSupport()
+  const { record, session } = await openPasswordBackup(file, password, validate)
   await writeRecord(record)
   return session
 }

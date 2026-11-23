@@ -16,7 +16,7 @@ const contentSecurityPolicy = [
   "form-action 'none'",
 ].join('; ')
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
@@ -31,6 +31,7 @@ export default defineConfig({
     },
     VitePWA({
       injectRegister: 'script',
+      devOptions: { enabled: true, suppressWarnings: true },
       manifest: {
         name: 'budgetmate',
         short_name: 'budgetmate',
@@ -48,6 +49,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['notification-events.js'],
+        navigateFallback: command === 'serve' ? undefined : 'index.html',
         globPatterns: ['**/*.{js,mjs,css,html,png,svg,woff2,wasm,bcmap,ttf,pfb}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         cleanupOutdatedCaches: true,
@@ -55,4 +58,4 @@ export default defineConfig({
       },
     }),
   ],
-})
+}))

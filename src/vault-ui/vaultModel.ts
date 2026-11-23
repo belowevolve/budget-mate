@@ -1,16 +1,16 @@
 import { abortVar, action, atom, computed, isAbort, withAbort, withAsync, withConnectHook, wrap } from '@reatom/core'
 import { emptyLedger, ensureSbpKey, reconcileLedger, type Ledger } from '../finance'
 import {
-  createDeviceVault, deviceUnlockAvailable, restorePasswordVault, unlockDeviceVault, unlockVault,
+  createDeviceVault, deviceUnlockAvailable, readPasswordBackup, restorePasswordVault, unlockDeviceVault, unlockVault,
   vaultUnlockMethods, VaultError, type DeviceUnlockConfirmation, type VaultSession, type VaultUnlockMethods,
 } from '../vault'
 
 type ClosedScreen =
   | { kind: 'loading' | 'setup' }
-  | { kind: 'locked'; methods: VaultUnlockMethods }
+  | { kind: 'locked'; methods: VaultUnlockMethods; atLaunch?: true }
   | { kind: 'unavailable'; message: string }
 
-type OpenScreen = { kind: 'open'; ledger: Ledger; methods: VaultUnlockMethods; canReplaceKey: boolean }
+type OpenScreen = { kind: 'open'; ledger: Ledger; methods: VaultUnlockMethods; canReplaceKey: boolean; restoreVersion: number }
 type LedgerUpdate<T> = (ledger: Ledger) => { ledger: Ledger; result: T } | Promise<{ ledger: Ledger; result: T }>
 export type VaultWrite = <T>(update: LedgerUpdate<T>) => Promise<T>
 
@@ -65,7 +65,7 @@ export function reatomVault() {
     const ledger = reconcileLedger(session.data)
     closed.set({ kind: 'locked', methods })
     unlocked.set({
-      kind: 'open', methods, canReplaceKey: session.canReplaceDeviceUnlock, ledger,
+      kind: 'open', methods, canReplaceKey: session.canReplaceDeviceUnlock, ledger, restoreVersion: 0,
     })
   }, 'vault.showUnlocked')
 
@@ -80,8 +80,12 @@ export function reatomVault() {
     const { signal } = abortVar.require()
     void deviceUnlockAvailable().then(wrap((value) => { supported.set(value) })).catch(() => {})
     void vaultUnlockMethods().then(
-      wrap((methods) => { closed.set(methods ? { kind: 'locked', methods } : { kind: 'setup' }) }),
-      wrap((error: unknown) => { closed.set({ kind: 'unavailable', message: messageFor(error, 'Хранилище недоступно.') }) }),
+      wrap((methods) => {
+        if (!signal.aborted) closed.set(methods ? { kind: 'locked', methods, atLaunch: true } : { kind: 'setup' })
+      }),
+      wrap((error: unknown) => {
+        if (!signal.aborted) closed.set({ kind: 'unavailable', message: messageFor(error, 'Хранилище недоступно.') })
+      }),
     ).catch(() => {})
     window.addEventListener('pointerdown', wrap(activity), { signal })
     window.addEventListener('keydown', wrap(activity), { signal })
@@ -140,6 +144,25 @@ export function reatomVault() {
     }
   }, 'vault.write')
 
+  const exportPasswordBackup = action(async (code: string) => {
+    const current = session
+    if (!current || writing || open.pending() || enableDevice.pending()) {
+      throw new Error('Хранилище занято. Попробуй ещё раз.')
+    }
+    const backup = await wrap(current.exportPasswordVault(code))
+    if (session !== current) throw new Error('Хранилище заблокировано.')
+    return backup
+  }, 'vault.exportPasswordBackup').extend(withAsync())
+
+  const replaceFromBackup = action(async (file: File, password: string) => {
+    const current = session
+    await wrap(write(async () => {
+      const data = await wrap(readPasswordBackup<Ledger>(file, password, isLedger))
+      return { ledger: reconcileLedger(data), result: undefined }
+    }))
+    if (session === current) unlocked.set((state) => state && { ...state, restoreVersion: state.restoreVersion + 1 })
+  }, 'vault.replaceFromBackup').extend(withAsync())
+
   return {
     screen: screen.extend(withConnectHook(mount)), supported,
     access: {
@@ -148,7 +171,7 @@ export function reatomVault() {
       unlockDevice: () => open((signal) => unlockDeviceVault<Ledger>(signal)),
       unlockPassword: (password: string) => open(() => unlockVault<Ledger>(password)),
       restore: (file: File, password: string) => open(() => restorePasswordVault<Ledger>(file, password, isLedger)),
-      exportPasswordBackup: () => session?.exportPasswordVault(),
+      exportPasswordBackup, replaceFromBackup,
     },
   }
 }

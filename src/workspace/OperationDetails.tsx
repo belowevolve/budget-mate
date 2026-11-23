@@ -1,16 +1,22 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
-import { reatomFactoryComponent } from '@reatom/react'
+import { reatomFactoryComponent, useAction } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
-import { ArrowLeftRight, ChevronRight, Clock, Link2, X } from 'lucide-react'
-import { useLayoutEffect, useRef } from 'react'
+import { ArrowLeftRight, ChevronRight, Link2, X } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCategoryCatalog } from '../categories/categoryContext'
+import { categoryDefinition } from '../categories/catalog'
 import { CategoryIcon } from '../components/CategoryIcon'
-import { Choice } from '../components/Choice'
 import { SheetGrip } from '../components/SheetGrip'
-import { banks, categories, formatDate, money, needsTransferReview, transactionAccountingAmount, type Category, type Transaction } from '../finance'
+import Entry from '../components/journal/Entry'
+import { useDialogBack } from '../components/useDialogBack'
+import { banks, formatDate, money, needsTransferReview, type Category, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
+import type { Place } from '../places/model'
+import OperationPlaceEditor from '../places/OperationPlaceEditor'
 import { isRefundIncome, RefundError, type RefundIndex } from '../refunds'
-import { messageFor } from '../vault-ui/vaultModel'
+import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
+import OperationCategoryDialog from './OperationCategoryDialog'
 import RefundPicker from './RefundPicker'
 import type { OperationPane } from './workspaceState'
 
@@ -18,6 +24,8 @@ type OperationDetailsProps = {
   row: Transaction
   pane: OperationPane
   transactions: Transaction[]
+  places: Place[]
+  write: VaultWrite
   refunds: RefundIndex
   onClose: () => void
   onOpen: (row: Transaction, pane?: OperationPane) => void
@@ -25,69 +33,92 @@ type OperationDetailsProps = {
   onSaveRefund: (expenseId: string | null) => Promise<void>
 }
 
-function reatomOperationDetails(initialCategory: Category) {
-  const open = atom(true, 'operationDetails.open')
-  const category = atom(initialCategory, 'operationDetails.category')
+function reatomOperationDetails() {
+  const open = atom(false, 'operationDetails.open')
+  const show = action(() => open.set(true), 'operationDetails.show')
   const close = action(() => open.set(false), 'operationDetails.close')
   const save = action(async (submit: () => Promise<void>) => {
     await wrap(submit())
     close()
   }, 'operationDetails.save').extend(withAsync())
-  return { open, close, category, save }
+  return { open, show, close, save }
 }
 
-function LinkedOperation({ row, onOpen }: { row: Transaction; onOpen: () => void }) {
-  const title = operationTitle(row)
-  return (
-    <Button className="grid h-auto min-h-12 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 rounded-lg border-0 bg-paper px-2 py-1.5 text-left text-ink shadow-none hover:bg-subtle"
-      onClick={onOpen}>
-      <CategoryIcon category={row.category} />
-      <span className="grid min-w-0 gap-px text-sm leading-tight">
-        <span className="truncate font-bold" title={title}>{title}</span>
-        <time className="truncate text-xs text-muted" dateTime={row.date}>{formatDate(row.date)}</time>
-      </span>
-      <span className="max-w-24 text-right text-xs font-bold wrap-anywhere tabular-nums">{money(row.amountMinor, row.currency, true)}</span>
-      <ChevronRight size={16} className="text-muted" aria-hidden="true" />
-    </Button>
-  )
-}
+export default reatomFactoryComponent<OperationDetailsProps>(() => {
+  const model = reatomOperationDetails()
 
-export default reatomFactoryComponent<OperationDetailsProps>(({ row }) => {
-  const model = reatomOperationDetails(row.category)
-
-  return function OperationDetails({ row, pane, transactions, refunds, onClose, onOpen, onSave, onSaveRefund }) {
+  return function OperationDetails({ row, pane, transactions, places, write, refunds, onClose, onOpen, onSave, onSaveRefund }) {
     const content = useRef<HTMLDivElement>(null)
+    const [categoryOpen, setCategoryOpen] = useState(false)
+    const categoryTrigger = useRef<HTMLElement | null>(null)
+    const entryCategoryTrigger = useRef<HTMLElement | null>(null)
+    const catalog = useCategoryCatalog()
+    const back = useDialogBack()
+    const show = useAction(model.show)
+    // An initially open ui-sdk sheet mounts at its final snap point.
+    useEffect(() => { show() }, [show])
+    useLayoutEffect(() => {
+      const focused = document.activeElement
+      entryCategoryTrigger.current = focused instanceof HTMLElement && focused.dataset.operationCategoryTrigger === row.id
+        ? focused
+        : null
+    }, [row.id])
     useLayoutEffect(() => {
       content.current?.focus({ preventScroll: true })
     }, [pane])
 
-    const category = model.category()
+    const category = row.category
     const pending = model.save.pending() > 0
     const failure = model.save.error()
     const error = failure ? failure instanceof RefundError ? failure.message : messageFor(failure, 'Не удалось сохранить изменение.') : undefined
     const refundTarget = refunds.byIncome.get(row.id)
     const compensation = refunds.byExpense.get(row.id)
+    const requiresReview = !refundTarget && needsTransferReview(row)
     const title = refundTarget ? 'Компенсация расхода' : operationTitle(row)
     const account = row.accountLabel || banks[row.bank]
     const canEditCategory = !refundTarget
     const canMarkTransfer = row.category !== 'transfer' && !compensation && !refundTarget
-    const categoryOptions = (Object.keys(categories) as Category[])
-      .filter((key) => row.amountMinor > 0 ? key === 'income' || key === 'transfer' : key !== 'income' && (!compensation || key !== 'transfer'))
-      .map((value) => ({ value, label: categories[value].label, icon: <CategoryIcon category={value} className="size-7 rounded-lg" /> }))
+    const canRefund = isRefundIncome(row)
+    const hasFooter = pane === 'refund' || (pane === 'details' && (canMarkTransfer || canRefund))
+    const kind = row.amountMinor > 0 ? 'income' : 'expense'
 
     function save(submit: () => Promise<void>) {
       return model.save(submit).catch(() => undefined)
     }
 
+    function openCategory(trigger: HTMLElement | null) {
+      categoryTrigger.current = trigger
+      setCategoryOpen(true)
+    }
+
+    function restoreJournalFocus() {
+      return (entryCategoryTrigger.current?.isConnected ? entryCategoryTrigger.current : null)
+        ?? document.querySelector<HTMLElement>(`[data-operation-trigger="${CSS.escape(row.id)}"]`)
+        ?? document.querySelector<HTMLElement>('nav [aria-current="page"]')
+    }
+
+    if (pane === 'category') {
+      return <OperationCategoryDialog row={row} open={model.open()} allowTransfer={!compensation} onSave={onSave}
+        finalFocus={restoreJournalFocus} onClose={wrap(model.close)} onCloseComplete={onClose} />
+    }
+
     return (
-      <Dialog presentation="auto" open={model.open()} onOpenChange={wrap((open, details) => {
-        if (model.save.pending() > 0) details.cancel()
-        else if (!open) model.close()
-      })} onOpenChangeComplete={wrap((open) => { if (!open) onClose() })}>
-        <DialogContent ref={content} initialFocus="content" finalFocus={() => (
-          document.querySelector<HTMLElement>(`[data-operation-trigger="${CSS.escape(row.id)}"]`)
-            ?? document.querySelector<HTMLElement>('nav [aria-current="page"]')
-        )} className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
+      <Dialog presentation="auto" open={model.open()}
+        onOpenChange={wrap((open, details) => {
+          if (open) return
+          const saving = model.save.pending() > 0
+          const nativeBack = details.reason === 'back'
+          const backToDetails = pane === 'refund' && (nativeBack || details.reason === 'escape-key')
+          if (saving || backToDetails) {
+            details.cancel()
+            if (nativeBack) back.rearm()
+            if (!saving) onOpen(row)
+            return
+          }
+          model.close()
+        })} onOpenChangeComplete={wrap((open) => { if (!open) onClose() })}>
+        <DialogContent key={back.contentKey} ref={content} initialFocus="content" finalFocus={restoreJournalFocus}
+          className={`compact-dialog ${hasFooter ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]'}`}>
           {pane === 'refund' ? (
             <RefundPicker row={row} transactions={transactions} refunds={refunds} pending={pending} error={error}
               onBack={wrap(() => onOpen(row))} onSave={wrap((expenseId) => save(() => onSaveRefund(expenseId)))} />
@@ -96,72 +127,66 @@ export default reatomFactoryComponent<OperationDetailsProps>(({ row }) => {
               <div className="dialog-header">
                 <SheetGrip />
                 <div className="min-w-0">
-                  <DialogTitle className="line-clamp-2 text-lg leading-tight wrap-anywhere">{title}</DialogTitle>
-                  <DialogDescription className="mt-0.5 flex min-w-0 flex-wrap gap-x-1.5 text-xs text-muted">
-                    <span className="min-w-0 max-w-full truncate" title={account}>{account}</span>
-                    <time className="shrink-0" dateTime={row.date}>{formatDate(row.date)}</time>
-                  </DialogDescription>
+                  <DialogTitle className="sr-only">{title}</DialogTitle>
+                  <DialogDescription className="sr-only">{account} · {formatDate(row.date)}</DialogDescription>
+                  <Entry row={row} caption={account} showDate exactAmount refundTarget={refundTarget} refundMinor={compensation?.totalMinor}
+                    onChangeCategory={canEditCategory ? () => openCategory(content.current?.querySelector('[data-operation-category-trigger]') ?? null) : undefined} />
                 </div>
-                <DialogClose className="btn-icon" aria-label="Закрыть" disabled={pending}><X size={17} aria-hidden="true" /></DialogClose>
+                <DialogClose className="dialog-close" aria-label="Закрыть" disabled={pending}><X size={16} aria-hidden="true" /></DialogClose>
               </div>
               <div data-slot="scroll" className="dialog-body grid content-start gap-2 pt-0.5">
-                <div>
-                  {compensation && <p className="text-xs text-muted">Фактический расход</p>}
-                  <p className="text-2xl leading-tight font-extrabold tracking-tight wrap-anywhere tabular-nums" dir="auto">
-                    {money(refundTarget ? row.amountMinor : transactionAccountingAmount(row, refunds), row.currency, true)}
-                  </p>
-                  {row.status === 'pending' && <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-warning"><Clock size={13} aria-hidden="true" /> В обработке</p>}
-                </div>
-                {!refundTarget && needsTransferReview(row) && <p className="text-xs text-muted">Перевод без подтверждённого получателя</p>}
+                {requiresReview && <p className="text-xs text-muted">Неопознанный перевод. Сумма пока вне итогов.</p>}
                 {refundTarget && (
-                  <section aria-label="Связанный расход" className="grid min-w-0 gap-1.5 rounded-xl bg-transfer-soft p-2 text-transfer">
-                    <span className="px-1 text-xs font-bold">Связанный расход</span>
-                    <LinkedOperation row={refundTarget} onOpen={wrap(() => onOpen(refundTarget))} />
+                  <section aria-label="Связанный расход" className="grid min-w-0 gap-0.5 border-t border-line pt-2">
+                    <span className="px-1 text-xs font-bold text-muted">Связанный расход</span>
+                    <Entry row={refundTarget} showDate exactAmount onSelect={wrap(onOpen)} />
                   </section>
                 )}
                 {compensation && (
-                  <section aria-label="Компенсации" className="grid min-w-0 gap-1.5 rounded-xl bg-transfer-soft p-2 text-transfer">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 px-1 text-xs">
+                  <section aria-label="Компенсации" className="grid min-w-0 gap-0.5 border-t border-line pt-2">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 px-1 text-xs text-muted">
                       <span className="font-bold">Компенсации</span>
                       <span>По выписке {money(row.amountMinor, row.currency, true)}</span>
                     </div>
-                    <ul className="grid min-w-0 list-none gap-1">
+                    <ul className="min-w-0 list-none divide-y divide-line">
                       {compensation.incomes.map((income) => (
                         <li key={income.id}>
-                          <LinkedOperation row={income} onOpen={wrap(() => onOpen(income))} />
+                          <Entry row={income} showDate exactAmount onSelect={wrap(onOpen)} />
                         </li>
                       ))}
                     </ul>
                   </section>
                 )}
-                {canEditCategory && <Choice label="Категория операции" value={category} className="w-full min-w-0" presentation="auto"
-                  onChange={wrap((value) => model.category.set(value as Category))} options={categoryOptions} />}
+                {canEditCategory && (
+                  <Button aria-label="Категория операции" className="choice-trigger w-full min-w-0 text-left"
+                    onClick={(event) => openCategory(event.currentTarget)} disabled={pending}>
+                    <CategoryIcon category={category} className="size-7 rounded-lg" />
+                    <span className="min-w-0 truncate">{categoryDefinition(catalog, category, kind).label}</span>
+                    <ChevronRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
+                  </Button>
+                )}
+                <OperationPlaceEditor row={row} places={places} write={write} disabled={pending} />
                 {(row.description !== title || title.length > 50) && (
                   <details className="min-w-0 text-xs text-muted">
                     <summary className="cursor-pointer py-1 font-bold text-primary">Из выписки</summary>
                     <p className="mt-1 wrap-anywhere">{row.description}</p>
                   </details>
                 )}
-                {isRefundIncome(row) && <Button className="btn-secondary w-full min-w-0 whitespace-normal" disabled={pending}
-                  onClick={wrap(() => onOpen(row, 'refund'))}>
-                  <Link2 size={16} className="shrink-0" aria-hidden="true" />{refundTarget ? 'Изменить связь' : 'Привязать к расходу'}
-                </Button>}
                 {error && <p role="alert" className="error-text">{error}</p>}
               </div>
-              <div className="flex min-w-0 flex-wrap gap-1.5">
+              {hasFooter && <div className="flex min-w-0 flex-wrap gap-1.5">
+                {canRefund && <Button className="btn-text min-w-0 px-2 whitespace-normal" disabled={pending}
+                  onClick={wrap(() => onOpen(row, 'refund'))}>
+                  <Link2 size={16} className="shrink-0" aria-hidden="true" />К расходу
+                </Button>}
                 {canMarkTransfer && <Button className="btn-secondary min-w-0 flex-1 px-2 whitespace-normal" disabled={pending}
                   onClick={wrap(() => save(() => onSave('transfer')))}>
                   <ArrowLeftRight size={16} className="shrink-0" aria-hidden="true" /><span>Свой перевод</span>
                 </Button>}
-                {canEditCategory && <Button className="btn-primary min-w-0 flex-1 px-2 whitespace-normal" disabled={pending}
-                  onClick={wrap(() => save(() => onSave(category)))}>
-                  Сохранить
-                </Button>}
-                {refundTarget && <Button className="btn-secondary min-w-0 flex-1 px-2 whitespace-normal" disabled={pending}
-                  onClick={wrap(() => save(() => onSaveRefund(null)))}>
-                  Отвязать компенсацию
-                </Button>}
-              </div>
+              </div>}
+              <OperationCategoryDialog row={row} open={categoryOpen} allowTransfer={!compensation} onSave={onSave}
+                finalFocus={() => categoryTrigger.current?.isConnected ? categoryTrigger.current : content.current}
+                onClose={() => setCategoryOpen(false)} />
             </>
           )}
         </DialogContent>

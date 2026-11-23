@@ -1,23 +1,20 @@
-import type { ReactNode } from 'react'
 import { wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Statements } from '../components/Statements'
 import type { Ledger } from '../finance'
 import type { VaultWrite } from '../vault-ui/vaultModel'
 import { reatomImport } from './importModel'
-import type { NotificationKind } from './workspaceState'
+import type { Notify } from '../notifications/presentation'
 
 export default reatomFactoryComponent<{
   ledger: Ledger
   write: VaultWrite
-  notify: (message: string, type?: NotificationKind) => void
-  beforeFiles?: ReactNode
+  notify: Notify
 }>(() => {
   const model = reatomImport()
 
-  return ({ ledger, write, notify, beforeFiles }) => (
+  return ({ ledger, write, notify }) => (
     <div className="grid min-w-0 gap-3">
-      {beforeFiles}
       <Statements
         busy={model.busy()}
         previews={model.previews()}

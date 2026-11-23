@@ -33,25 +33,45 @@
   }
 
   .operation-offset-icon { @apply bg-transfer-soft text-transfer; }
+  .operation-entry-split {
+    @apply gap-0 p-0;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .operation-category-trigger {
+    @apply grid h-full min-h-12 w-full place-items-center rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-subtle focus-visible:outline-offset-[-3px];
+  }
+
+  .operation-entry-details {
+    @apply grid h-auto min-h-12 min-w-0 items-center gap-1.5 rounded-none border-0 bg-transparent pr-1.5 pl-0.5 text-left text-ink shadow-none sm:gap-2;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+
+    &:is(button) {
+      @apply hover:bg-subtle focus-visible:outline-offset-[-3px];
+      grid-template-columns: minmax(0, 1fr) minmax(0, auto) 1rem;
+    }
+  }
+
   .operation-caption { @apply block truncate text-xs leading-tight font-medium text-muted; }
   .operation-caption-route { @apply line-clamp-2 whitespace-normal wrap-anywhere; }
   .operation-indicator { @apply grid size-4 place-items-center text-muted; }
 
   .operation-amount {
-    @apply max-w-[min(11rem,39vw)] min-w-0 text-right text-xs font-extrabold wrap-anywhere tabular-nums sm:text-sm;
+    @apply flex max-w-[min(11rem,39vw)] min-w-0 items-center justify-end gap-1 text-right text-xs font-extrabold wrap-anywhere tabular-nums sm:text-sm;
     &[data-income] { @apply text-income; }
+    &[data-transfer] { @apply text-muted; }
   }
 
   .operation-swipe-row {
     @apply relative isolate min-w-0 overflow-hidden rounded-lg;
     touch-action: pan-y pinch-zoom;
 
-    &[data-refund-only]:has(.operation-swipe-content[data-swipe="end"]) { @apply bg-primary; }
+    &[data-refund-full] { @apply bg-primary; }
+    &[data-category-full] { @apply bg-selected; }
   }
 
   .operation-swipe-actions {
-    @apply absolute inset-y-0 right-0 grid w-24 grid-cols-1;
-    &[data-two-actions] { @apply w-48 grid-cols-2; }
+    @apply absolute inset-y-0 end-0 grid w-max auto-cols-[5.25rem] grid-flow-col sm:auto-cols-[6rem];
   }
 
   .operation-swipe-button {
@@ -60,9 +80,15 @@
 
   .operation-swipe-refund { @apply bg-primary text-on-primary hover:bg-primary-hover; }
   .operation-swipe-transfer { @apply bg-transfer-soft text-transfer hover:bg-selected; }
+  .operation-swipe-category { @apply bg-selected text-primary hover:bg-subtle; }
 
   .operation-swipe-content {
-    @apply relative rounded-[inherit] bg-paper transition-transform duration-150 data-swiping:transition-none motion-reduce:transition-none;
+    @apply relative bg-paper transition-transform duration-150 data-swiping:transition-none motion-reduce:transition-none;
     transform: translateX(var(--swipe-x, 0px));
   }
+
+  .journal-operations .operation-list { @apply mx-3 sm:mx-0; }
+  .journal-operations .operation-list-row { @apply overflow-clip p-0; }
+  .journal-operations :is(.operation-swipe-row, .operation-entry) { @apply rounded-none; }
+  .journal-operations .operation-entry { @apply py-0; }
 }

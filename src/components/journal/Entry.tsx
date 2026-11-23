@@ -1,10 +1,13 @@
 import { Button } from '@ui-sdk/react/button'
-import { ArrowLeftRight, Check, ChevronRight, Link2 } from 'lucide-react'
-import { banks, categories, money, needsTransferReview, type Transaction } from '../../finance'
+import { ArrowLeftRight, Check, ChevronRight, Link2, Tag } from 'lucide-react'
+import { useCategoryCatalog } from '../../categories/categoryContext'
+import { categoryDefinition } from '../../categories/catalog'
+import { banks, formatDate, money, needsTransferReview, type Transaction } from '../../finance'
 import { operationTitle } from '../../operationPresentation'
 import { isRefundIncome } from '../../refunds'
 import { CategoryIcon } from '../CategoryIcon'
 import { JournalSwipeActions, JournalSwipeContent, JournalSwipeRow } from '../JournalSwipe'
+import { PendingStatus } from '../PendingStatus'
 import type { JournalEntry } from './model'
 import './operationList.css'
 
@@ -25,18 +28,25 @@ function transferRoute(row: Transaction, counterpart: Transaction) {
 }
 
 type EntryProps = JournalEntry & {
+  showDate?: boolean
+  caption?: string
+  exactAmount?: boolean
   onSelect?: (row: Transaction) => void
   onRefund?: (row: Transaction) => void
+  onChangeCategory?: (row: Transaction) => void
   onQuickTransfer?: (row: Transaction) => Promise<void>
-  selection?: { selected: boolean; disabled?: boolean; amountMinor?: number }
+  selection?: { selected: boolean; disabled?: boolean; amountMinor?: number; linked?: boolean }
 }
 
-export default function Entry({ row, counterpart, refundTarget, refundMinor, onSelect, onRefund, onQuickTransfer, selection }: EntryProps) {
+export default function Entry({ row, counterpart, refundTarget, refundMinor, showDate, caption, exactAmount,
+  onSelect, onRefund, onChangeCategory, onQuickTransfer, selection }: EntryProps) {
+  const catalog = useCategoryCatalog()
   const transfer = row.category === 'transfer'
   const review = !refundTarget && needsTransferReview(row)
-  const gain = row.amountMinor > 0 && !transfer && !review && !refundTarget
+  const transferAmount = transfer || review || Boolean(refundTarget)
+  const gain = row.amountMinor > 0 && !transferAmount
   let title = operationTitle(row)
-  let details = `${categories[row.category].label} · ${banks[row.bank]}`
+  let details = `${categoryDefinition(catalog, row.category, row.amountMinor > 0 ? 'income' : 'expense').label} · ${banks[row.bank]}`
   if (counterpart) {
     title = /погашение кредита/i.test(counterpart.description) ? 'Погашение кредита' : 'Между счетами'
     details = transferRoute(row, counterpart)
@@ -47,53 +57,68 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, onS
     title = 'Компенсация расхода'
     details = operationTitle(refundTarget)
   } else if (refundMinor) {
-    details = `Компенсация ${money(refundMinor, row.currency, true)}`
+    details = `Компенсация ${money(refundMinor, row.currency, exactAmount)}`
   }
 
   const displayedAmount = selection?.amountMinor ?? (counterpart ? Math.abs(row.amountMinor) : row.amountMinor + (refundMinor ?? 0))
-  const amount = `${gain || refundTarget ? '+' : ''}${money(displayedAmount, row.currency, true)}`
-  const pending = row.status === 'pending'
-  const secondaryText = pending ? `В обработке · ${details}` : details
+  const amount = `${gain || refundTarget ? '+' : ''}${money(displayedAmount, row.currency, exactAmount)}`
+  const description = caption ?? details
+  const secondaryText = showDate ? `${description} · ${formatDate(row.date)}` : description
   const OffsetIcon = refundTarget ? Link2 : ArrowLeftRight
+  const categoryIcon = refundTarget || review
+    ? <span className="operation-offset-icon"><OffsetIcon size={16} aria-hidden="true" /></span>
+    : <CategoryIcon category={row.category} className="operation-category-icon" />
+  const changeCategory = !counterpart && !refundTarget && !selection ? onChangeCategory : undefined
   const body = (
     <>
-      {refundTarget || review ? (
-        <span className="operation-offset-icon"><OffsetIcon size={16} aria-hidden="true" /></span>
-      ) : <CategoryIcon category={row.category} className="operation-category-icon" />}
       <span className="grid min-w-0">
         <strong className="block truncate text-sm leading-tight font-bold" title={title}>{title}</strong>
         <small className={counterpart ? 'operation-caption operation-caption-route' : 'operation-caption'} title={secondaryText}>
           {secondaryText}
         </small>
       </span>
-      <strong className="operation-amount" data-income={gain ? '' : undefined}>{amount}</strong>
+      <strong className="operation-amount" data-income={gain ? '' : undefined} data-transfer={transferAmount ? '' : undefined}>
+        {row.status === 'pending' && <PendingStatus />}<span>{amount}</span>
+      </strong>
       {selection ? (
         <span className="operation-indicator">
           {selection.selected && <Check className="text-primary" size={16} aria-hidden="true" />}
+          {selection.linked && <span className="sr-only">Отвязать компенсацию</span>}
         </span>
       ) : onSelect && <ChevronRight className="operation-indicator" size={14} aria-hidden="true" />}
     </>
   )
 
-  if (!onSelect) return <div className="operation-entry">{body}</div>
-  const openDetails = (
+  const entry = changeCategory ? (
+    <div className="operation-entry operation-entry-split">
+      <Button className="operation-category-trigger" aria-label={`Изменить категорию: ${title}`}
+        data-operation-category-trigger={row.id} onClick={() => changeCategory(row)}>{categoryIcon}</Button>
+      {onSelect
+        ? <Button className="operation-entry-details" data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</Button>
+        : <div className="operation-entry-details">{body}</div>}
+    </div>
+  ) : onSelect ? (
     <Button className="operation-entry" data-operation-trigger={row.id} aria-pressed={selection?.selected}
       disabled={selection?.disabled} onClick={() => onSelect(row)}>
+      {categoryIcon}
       {body}
     </Button>
-  )
+  ) : <div className="operation-entry">{categoryIcon}{body}</div>
+  if (!onSelect) return entry
   const openRefund = isRefundIncome(row) ? onRefund : undefined
   const markTransfer = review ? onQuickTransfer : undefined
-  if (!openRefund && !markTransfer) return openDetails
+  const openCategories = !transfer ? changeCategory : undefined
+  if (!openRefund && !markTransfer && !openCategories) return entry
 
   return (
     <JournalSwipeRow value={row.id} tabIndex={-1} className="operation-swipe-row"
-      data-refund-only={openRefund && !markTransfer ? '' : undefined}>
-      <JournalSwipeActions value={row.id} className="operation-swipe-actions" data-two-actions={openRefund && markTransfer ? '' : undefined}>
+      data-refund-full={openRefund && !review ? '' : undefined}
+      data-category-full={openCategories && !openRefund && !review ? '' : undefined}>
+      <JournalSwipeActions value={row.id} className="operation-swipe-actions">
         {openRefund && (
           <Button className="operation-swipe-button operation-swipe-refund" onClick={() => openRefund(row)}>
             <Link2 size={16} aria-hidden="true" />
-            {refundTarget ? 'Изменить связь' : 'К расходу'}
+            К расходу
           </Button>
         )}
         {markTransfer && (
@@ -102,9 +127,15 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, onS
             Свой перевод
           </Button>
         )}
+        {openCategories && (
+          <Button className="operation-swipe-button operation-swipe-category" onClick={() => openCategories(row)}>
+            <Tag size={16} aria-hidden="true" />
+            Категория
+          </Button>
+        )}
       </JournalSwipeActions>
       <JournalSwipeContent value={row.id} className="operation-swipe-content">
-        {openDetails}
+        {entry}
       </JournalSwipeContent>
     </JournalSwipeRow>
   )

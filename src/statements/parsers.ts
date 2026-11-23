@@ -1,7 +1,8 @@
-import { rowText, textIn, type StatementPage, type TextRow } from './layout'
+import { rowText, textIn, type StatementPage, type TextCell, type TextRow } from './layout'
+import { explicitMcc, isVtbBrokerageFunding, vtbBrokerageDestination } from '../categories/classify'
 import { StatementError } from './errors'
 import { createSbpTokenizer } from './phone'
-import { getSbpCounterparty, getTransferBank, isOwnTransferDescription, isTransferDescription, redactSbpPhone } from './transfer'
+import { getSbpCounterparty, getTransferBank, isCreditRepayment, isOwnTransferDescription, isTransferDescription, redactSbpPhone } from './transfer'
 import type { BankId, CreditSnapshot, ParsedStatement, StatementTransaction } from './types'
 
 const datePattern = /\b\d{2}\.\d{2}\.\d{4}\b/g
@@ -29,6 +30,7 @@ interface PendingTransaction {
   currency: string
   description: string[]
   reference?: string
+  status?: 'pending'
 }
 
 const bankLabels: Record<BankId, string> = {
@@ -52,7 +54,7 @@ function datesIn(text: string): string[] {
 }
 
 function dateAtStart(text: string): string | undefined {
-  const value = /^\d{2}\.\d{2}\.\d{4}(?:\s+\d{2}:\d{2}:\d{2})?$/.exec(text)
+  const value = /^\d{2}\.\d{2}\.\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.exec(text)
   if (value) return datesIn(value[0])[0]
 }
 
@@ -93,8 +95,9 @@ function period(page: StatementPage, label: RegExp): [string?, string?] {
   return [start, end]
 }
 
-function operationDescription(parts: string[], bank: BankId, incoming: boolean, owner?: RegExp): Pick<RawTransaction, 'description' | 'kind' | 'transferBank' | 'sbpCounterparty' | 'sbpPhone'> {
+function operationDescription(parts: string[], bank: BankId, incoming: boolean, owner?: RegExp): Pick<RawTransaction, 'description' | 'kind' | 'transferBank' | 'sbpCounterparty' | 'sbpPhone' | 'merchantCategoryCode'> {
   const original = parts.join(' ').replace(/\s+/g, ' ').trim()
+  const merchantCategoryCode = explicitMcc(original)
   if (/предоставление транша/i.test(original)) {
     return { description: 'Выдача средств по кредиту', kind: 'transfer' }
   }
@@ -109,7 +112,7 @@ function operationDescription(parts: string[], bank: BankId, incoming: boolean, 
 
   if (bank === 'ozon' && /^Оплата товаров\s*\/\s*услуг/i.test(original)) {
     // The ledger often identifies only the order and the marketplace, without a merchant.
-    return { description: original.includes('Ozon') ? 'Оплата товаров и услуг · Ozon' : 'Оплата товаров и услуг' }
+    return { description: original.includes('Ozon') ? 'Оплата товаров и услуг · Ozon' : 'Оплата товаров и услуг', merchantCategoryCode }
   }
 
   const transfer = isTransferDescription(original)
@@ -142,6 +145,7 @@ function operationDescription(parts: string[], bank: BankId, incoming: boolean, 
     transferBank,
     sbpCounterparty: sbp?.kind,
     sbpPhone: sbp?.phone,
+    merchantCategoryCode,
   }
 }
 
@@ -150,10 +154,18 @@ function finish(
   transactions: RawTransaction[],
   bank: BankId,
   owner?: RegExp,
-): void {
+) {
   if (!pending) return
-  const { date, amountMinor, currency, description, reference } = pending
-  transactions.push({ date, amountMinor, currency, reference, ...operationDescription(description, bank, amountMinor > 0, owner) })
+  const { date, amountMinor, currency, description, reference, status } = pending
+  const paymentPurpose = description.join(' ').trim()
+  const brokerageFunding = isVtbBrokerageFunding({ bank, amountMinor, description: paymentPurpose }) || undefined
+  const brokerageDestination = brokerageFunding ? vtbBrokerageDestination(paymentPurpose) : undefined
+  const row: RawTransaction = {
+    date, amountMinor, currency, reference, status, brokerageFunding, brokerageDestination,
+    ...operationDescription(description, bank, amountMinor > 0, owner),
+  }
+  transactions.push(row)
+  return row
 }
 
 function ownerPattern(name: string): RegExp | undefined {
@@ -318,17 +330,142 @@ function parseAlfa(pages: StatementPage[]): RawStatement {
   }
 }
 
-function vtbRowValues(row: TextRow) {
-  const raw = amount(textIn(row, 175, 242))
-  const inflow = row.find((cell) => {
-    const end = cell.x + cell.width
-    return end >= 320 && end < 340
-  })
-  const outflow = row.find((cell) => {
-    const end = cell.x + cell.width
-    return end >= 367 && end < 390
-  })
-  return { raw, inflow: amount(inflow?.text ?? ''), outflow: amount(outflow?.text ?? '') }
+function vtbAmountAt(row: TextRow, header: TextCell) {
+  const right = header.x + header.width
+  for (const cell of row) {
+    if (Math.abs(cell.x + cell.width - right) > 6) continue
+    const value = amount(cell.text)
+    if (value) return value.amountMinor
+  }
+}
+
+function vtbAccountMovement(row: TextRow, inflow: TextCell, outflow: TextCell) {
+  const incoming = vtbAmountAt(row, inflow)
+  const outgoing = vtbAmountAt(row, outflow)
+  if (incoming === undefined && outgoing === undefined) return
+  return (incoming ?? 0) - Math.abs(outgoing ?? 0)
+}
+
+function vtbAmountWarnings(first: StatementPage, transactions: StatementTransaction[], unreadRows: number) {
+  const { incoming, outgoing } = amountsRead(transactions.filter((row) => row.status !== 'pending'))
+  const printedIncoming = amount(fieldValue(first, /^Поступления$/i))
+  const printedOutgoing = amount(fieldValue(first, /^Расходные операции$/i))
+  const warnings: string[] = []
+  if (printedIncoming && printedIncoming.amountMinor !== incoming) {
+    warnings.push('Сумма поступлений в таблице отличается от итога выписки ВТБ.')
+  }
+  if (printedOutgoing && Math.abs(printedOutgoing.amountMinor) !== outgoing) {
+    warnings.push('Сумма списаний в таблице отличается от итога выписки ВТБ.')
+  }
+  if (unreadRows) warnings.push(`Выписка ВТБ: не удалось прочитать строк операций — ${unreadRows}.`)
+  return warnings
+}
+
+function vtbAccountText(rows: TextRow[], dateRows: TextRow[], minX: number, maxX: number) {
+  const result = new Map<TextRow, string[]>()
+  let dateIndex = 0
+  let lines: string[] = []
+  let top = 0
+  let bottom = 0
+
+  function finishCell() {
+    // The date is centered vertically in the operation, alongside the whole cell.
+    while (dateIndex < dateRows.length && dateRows[dateIndex][0].y > top + 2) dateIndex++
+    const dateRow = dateRows[dateIndex]
+    if (dateRow && dateRow[0].y >= bottom - 2) {
+      result.set(dateRow, lines)
+      dateIndex++
+    }
+    lines = []
+  }
+
+  for (const row of rows) {
+    const y = row[0].y
+    if (y <= 55) break
+    const text = textIn(row, minX, maxX)
+    if (!text) continue
+    // Wrapped lines are about 8 pt apart, with a larger gap between operations.
+    if (lines.length && bottom - y > 10) finishCell()
+    if (!lines.length) top = y
+    lines.push(text)
+    bottom = y
+  }
+  if (lines.length) finishCell()
+  return result
+}
+
+function parseVtbAccount(pages: StatementPage[]): RawStatement {
+  const first = pages[0]
+  const numberField = fieldValue(first, /^Номер сч[её]та$/i)
+  const match = /^(\d{20})\s*\((.+)\)$/u.exec(numberField)
+  const currency = match && normalizeCurrency(match[2])
+  const [periodStart, periodEnd] = period(first, /^Период выписки/i)
+  if (!match || !currency || !periodStart || !periodEnd) {
+    throw new StatementError('В выписке ВТБ не удалось прочитать номер счёта, валюту или период.')
+  }
+  const accountIdentifier = match[1]
+  const owner = ownerPattern(rowText(first[0]))
+  const transactions: RawTransaction[] = []
+  let unreadRows = 0
+  let pending: (PendingTransaction & { previousDescription: string[]; previousName: string[] }) | undefined
+  const finishRow = () => {
+    if (!pending) return
+    const previousParts = pending.previousDescription.length ? pending.previousDescription : pending.previousName
+    const parts = pending.description.length ? pending.description : previousParts
+    const autoTopup = pending.amountMinor > 0 && /^Переводы через СБП\.\s+Автопополнение\.?$/iu.test(parts.join(' '))
+    const description = autoTopup ? ['Автопополнение'] : parts
+    const row = finish({ ...pending, description }, transactions, 'vtb', owner)
+    const previous = operationDescription(previousParts, 'vtb', pending.amountMinor > 0, owner).description
+    if (row && previous !== row.description) row.vtbAccountPreviousDescription = previous
+  }
+
+  for (const page of pages) {
+    const headerIndex = page.findIndex((row) => row.some((cell) => /^Приход$/i.test(cell.text))
+      && row.some((cell) => /^Расход$/i.test(cell.text)))
+    const inflow = page[headerIndex]?.find((cell) => /^Приход$/i.test(cell.text))
+    const outflow = page[headerIndex]?.find((cell) => /^Расход$/i.test(cell.text))
+    if (!inflow || !outflow) continue
+
+    const rows = page.slice(headerIndex + 1)
+    const dates = new Map(rows.flatMap((row) => {
+      const date = dateAtStart(textIn(row, 20, 79))
+      return date ? [[row, date] as const] : []
+    }))
+    const dateRows = [...dates.keys()]
+    const descriptions = vtbAccountText(rows, dateRows, 390, 503)
+    const names = vtbAccountText(rows, dateRows, 503, 595)
+    for (const row of rows) {
+      const date = dates.get(row)
+      if (date) {
+        finishRow()
+        pending = undefined
+        const amountMinor = vtbAccountMovement(row, inflow, outflow)
+        if (amountMinor === undefined || !dateAtStart(textIn(row, 79, 153))) {
+          unreadRows++
+          continue
+        }
+        const description = descriptions.get(row) ?? names.get(row) ?? []
+        pending = { date, amountMinor, currency, description, previousDescription: [], previousName: [] }
+      }
+      if (!pending || row[0].y <= 55) continue
+      // Keep the old date-to-date text as a lookup alias for existing imports.
+      const previousDescription = textIn(row, 390, 503)
+      const previousName = textIn(row, 503, 595)
+      if (previousDescription) pending.previousDescription.push(previousDescription)
+      if (previousName) pending.previousName.push(previousName)
+    }
+  }
+  finishRow()
+
+  return {
+    bank: 'vtb',
+    accountIdentifier,
+    accountLabel: makeLabel('vtb', 'Счёт', accountIdentifier),
+    periodStart,
+    periodEnd,
+    transactions,
+    warnings: vtbAmountWarnings(first, transactions, unreadRows),
+  }
 }
 
 function vtbDocumentDate(text: string): string | undefined {
@@ -347,6 +484,7 @@ function parseVtb(pages: StatementPage[]): RawStatement {
   const first = pages[0]
   const identifier = fieldValue(first, /^Номер договора$/i)
   const card = fieldValue(first, /^Номер карты$/i)
+  const account = fieldValue(first, /^Номер сч[её]та$/i)
   const [periodStart, periodEnd] = period(first, /^Период выписки/i)
   const [gracePeriodStart, gracePeriodEnd] = datesIn(fieldValue(first, /^Беспроцентный период$/i))
   const asOf = vtbDocumentDate(rowText(first[0]))
@@ -359,60 +497,62 @@ function parseVtb(pages: StatementPage[]): RawStatement {
     throw new StatementError('В выписке ВТБ не удалось прочитать договор, валюту или период.')
   }
   const transactions: RawTransaction[] = []
-  const warnings: string[] = []
+  const vtbCreditFormat = card ? 'card' : 'account'
   let unreadRows = 0
+  let unreadPending = 0
+  let pendingSection = false
+  let hasPendingTable = false
+  let pending: PendingTransaction | undefined
 
   for (const page of pages) {
-    let inTable = false
-    let pending: PendingTransaction | undefined
+    let columns: { inflow: TextCell; outflow: TextCell; raw: TextCell; descriptionX: number; headerY: number; booked: boolean } | undefined
     for (const row of page) {
+      if (/^Операции в обработке$/i.test(rowText(row))) pendingSection = true
       if (row.some((item) => /^Проведена$/i.test(item.text) && item.x < 65)) {
-        inTable = row.some((item) => /^Обработана$/i.test(item.text))
-          && row.some((item) => item.x >= 450 && /^Задолжен-?$/i.test(item.text))
+        const inflow = row.find((item) => /^Поступление$/i.test(item.text))
+        const outflow = row.find((item) => /^Расход$/i.test(item.text))
+        const raw = row.find((item) => /^В валюте$/i.test(item.text))
+        const description = row.find((item) => /^Описание(?: операции)?$/i.test(item.text))
+        const processed = row.some((item) => /^Обработана$/i.test(item.text))
+        const booked = row.some((item) => /^Задолжен-?$/i.test(item.text))
+        columns = processed && inflow && outflow && raw && description && (booked || (asOf && pendingSection)) ? {
+          inflow, outflow, raw, descriptionX: booked ? 505 : description.x - 5, headerY: row[0].y, booked,
+        } : undefined
+        if (columns && !booked) hasPendingTable = true
+        if (booked) pendingSection = false
         continue
       }
-      if (!inTable) continue
+      if (!columns || row[0].y >= columns.headerY - 16) continue
       const firstColumn = textIn(row, 20, 100)
       const date = dateAtStart(firstColumn)
-      const description = textIn(row, 505, 590)
+      const description = textIn(row, columns.descriptionX, 590)
       if (date) {
         finish(pending, transactions, 'vtb')
         pending = undefined
-        if (!dateAtStart(textIn(row, 100, 175))) {
-          unreadRows++
+        const accountAmount = vtbAccountMovement(row, columns.inflow, columns.outflow) ?? vtbAmountAt(row, columns.raw)
+        if (accountAmount === undefined || (columns.booked && !dateAtStart(textIn(row, 100, 175)))) {
+          if (columns.booked) unreadRows++
+          else unreadPending++
           continue
         }
-        const { raw, inflow, outflow } = vtbRowValues(row)
-        const accountAmount = raw && raw.amountMinor < 0
-          ? (outflow ? -Math.abs(outflow.amountMinor) : raw.amountMinor)
-          : (inflow?.amountMinor ?? raw?.amountMinor)
-        if (accountAmount === undefined) {
-          unreadRows++
-          continue
-        }
-        pending = { date, amountMinor: accountAmount, currency, description: [description] }
+        pending = { date, amountMinor: accountAmount, currency, description: [description], status: columns.booked ? undefined : 'pending' }
       } else if (pending && description && row[0].y > 55) {
         pending.description.push(description)
       }
     }
-    finish(pending, transactions, 'vtb')
   }
+  finish(pending, transactions, 'vtb')
+  const warnings = vtbAmountWarnings(first, transactions, unreadRows)
+  if (unreadPending) warnings.push(`Выписка ВТБ: пропущено операций в обработке — ${unreadPending}.`)
 
-  const { incoming, outgoing } = amountsRead(transactions)
-  const printedIncoming = amount(fieldValue(first, /^Поступления$/i))
-  const printedOutgoing = amount(fieldValue(first, /^Расходные операции$/i))
-  if ((printedIncoming && printedIncoming.amountMinor !== incoming)
-      || (printedOutgoing && printedOutgoing.amountMinor !== outgoing)) {
-    warnings.push('Суммы проведённых операций отличаются от итогов выписки ВТБ.')
-  }
-  if (unreadRows) warnings.push(`Выписка ВТБ: не удалось прочитать строк операций — ${unreadRows}.`)
   return {
     bank: 'vtb',
     accountIdentifier: identifier,
-    accountLabel: makeLabel('vtb', gracePeriodEnd || minimumPayment ? 'Кредитная карта' : 'Карта', card || identifier),
+    accountLabel: makeLabel('vtb', gracePeriodEnd || minimumPayment ? 'Кредитная карта' : card ? 'Карта' : 'Счёт', card || account || identifier),
     periodStart,
     periodEnd,
-    transactions,
+    transactions: transactions.map((row) => ({ ...row, vtbCreditFormat })),
+    pendingSnapshot: asOf && hasPendingTable ? { observedOn: asOf, complete: unreadPending === 0 } : undefined,
     credit: gracePeriodEnd || minimumPayment ? {
       currency,
       asOf,
@@ -429,7 +569,7 @@ function parseVtb(pages: StatementPage[]): RawStatement {
 
 function parseOzon(pages: StatementPage[]): RawStatement {
   const first = pages[0]
-  const isCredit = first.some((row) => /^(?:(?:тип (?:сч[её]та|карты|договора|продукта)|продукт):?\s*)?кредитн(?:ая карта|ый сч[её]т)(?:\s|$)/i.test(rowText(row)))
+  const hasCreditProduct = first.some((row) => /^(?:(?:тип (?:сч[её]та|карты|договора|продукта)|продукт):?\s*)?кредитн(?:ая карта|ый сч[её]т)(?:\s|$)/i.test(rowText(row)))
   const contractRow = first.find((row) => /^Номер договора:/i.test(rowText(row)))
   const identifier = /Номер договора:\s*№?\s*([\p{L}\d-]+)/iu.exec(contractRow ? rowText(contractRow) : '')?.[1]
   const [periodStart, periodEnd] = period(first, /^Период выписки:/i)
@@ -483,10 +623,11 @@ function parseOzon(pages: StatementPage[]): RawStatement {
     warnings.push('Суммы проведённых операций отличаются от итогов выписки Ozon Банка.')
   }
   if (unreadRows) warnings.push(`Выписка Ozon Банка: не удалось прочитать строк операций — ${unreadRows}.`)
+  const isCredit = hasCreditProduct || transactions.some((row) => row.amountMinor > 0 && isCreditRepayment(row))
   return {
     bank: 'ozon',
     accountIdentifier: identifier,
-    accountLabel: makeLabel('ozon', isCredit ? 'Кредитка' : 'Счёт', identifier),
+    accountLabel: makeLabel('ozon', isCredit ? 'Кредитная карта' : 'Счёт', identifier),
     periodStart,
     periodEnd,
     transactions,
@@ -508,9 +649,13 @@ export async function parseStatementText(pages: StatementPage[], sbpKey?: string
   if (first.some((line) => /^Справка о движении средств$/i.test(line))
       && first.some((line) => /[«"]Озон Банк[»"]/i.test(line))) {
     parsed = parseOzon(pages)
-  } else if (first.some((line) => /^Выписка по карте$/i.test(line))
+  } else if (first.some((line) => /^Выписка по (?:карте|сч[её]ту)$/i.test(line))
       && first.some((line) => /^Номер договора /i.test(line))) {
     parsed = parseVtb(pages)
+  } else if (first.some((line) => /^Номер сч[её]та \d{20}\s*\(/i.test(line))
+      && first.some((line) => /^Операции по сч[её]ту$/i.test(line))
+      && first.some((line) => /^Дата и время Дата обработки /i.test(line))) {
+    parsed = parseVtbAccount(pages)
   } else if (first.some((line) => /^Выписка по сч[её]ту$/i.test(line))
       && first.some((line) => /^Валюта сч[её]та /i.test(line))) {
     parsed = parseAlfa(pages)

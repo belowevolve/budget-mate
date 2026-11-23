@@ -1,5 +1,6 @@
-import { isCreditRepayment, isTechnicalCreditEntry, localDate, type CreditSnapshot, type Ledger } from '../finance'
+import { banks, isTechnicalCreditEntry, localDate, type CreditSnapshot, type Ledger } from '../finance'
 import type { BankId, ParsedStatement } from '../statements'
+import { isCreditRepayment } from '../statements/transfer'
 
 type BankPaymentKind = 'grace' | 'minimum'
 
@@ -32,19 +33,33 @@ export interface CreditAccount extends Account {
   debtMinor?: number
 }
 
+export function creditAccountShortLabel(account: CreditAccount) {
+  const bank = banks[account.bank]
+  const lastDigits = /[•*]{2,}\s*(\d{4})$/.exec(account.accountLabel)?.[1]
+  return lastDigits ? `${bank} · •••• ${lastDigits}` : bank
+}
+
 export function getCreditAccounts(ledger: Ledger) {
   const snapshots = new Map(ledger.credits.map((credit) => [credit.accountKey, credit]))
   const settings = new Map(ledger.creditAccounts?.map((entry) => [entry.accountKey, entry]))
   const accounts = new Map<string, Account>(snapshots)
+  const creditCandidates = new Set<string>()
+  const ozonCreditAccounts = new Set<string>()
   const net = new Map<string, number>()
   for (const row of ledger.transactions) {
+    if (row.vtbCreditFormat || /(?:^| · )Кредит(?:ная карта|ка)(?: · |$)/u.test(row.accountLabel)) {
+      creditCandidates.add(row.accountKey)
+    }
+    const ozon = row.bank === 'ozon'
+    const creditRepayment = isCreditRepayment(row)
+    if (ozon && row.amountMinor > 0 && creditRepayment) ozonCreditAccounts.add(row.accountKey)
     const account = accounts.get(row.accountKey)
     const preferredCurrency = settings.get(row.accountKey)?.currency ?? 'RUB'
     if (!account || (!snapshots.has(row.accountKey) && account.currency !== preferredCurrency && row.currency === preferredCurrency)) {
       const { accountKey, accountLabel, bank, currency } = row
       accounts.set(accountKey, { accountKey, accountLabel, bank, currency })
     }
-    if (row.status === 'pending' || isCreditRepayment(row) || isTechnicalCreditEntry(row)) continue
+    if (ozon || row.status === 'pending' || creditRepayment || isTechnicalCreditEntry(row)) continue
     const key = `${row.accountKey}:${row.currency}`
     net.set(key, (net.get(key) ?? 0) - row.amountMinor)
   }
@@ -54,13 +69,18 @@ export function getCreditAccounts(ledger: Ledger) {
   for (const account of accounts.values()) {
     const snapshot = snapshots.get(account.accountKey)
     const setting = settings.get(account.accountKey)
-    if (snapshot || setting) {
+    const ozonCredit = ozonCreditAccounts.has(account.accountKey) || (account.bank === 'ozon' && snapshot !== undefined)
+    if (snapshot || setting || ozonCredit) {
       const estimated = net.get(`${account.accountKey}:${account.currency}`)
       tracked.push({
-        ...account, snapshot, reminder: setting?.reminder,
+        ...account,
+        accountLabel: ozonCredit
+          ? account.accountLabel.replace(/(^| · )(?:сч[её]т|кредитка)(?= · |$)/iu, '$1Кредитная карта')
+          : account.accountLabel,
+        snapshot, reminder: setting?.reminder,
         debtMinor: snapshot?.totalOutstandingAmountMinor ?? (estimated && Number.isSafeInteger(estimated) && estimated > 0 ? estimated : undefined),
       })
-    } else {
+    } else if (creditCandidates.has(account.accountKey)) {
       available.push(account)
     }
   }
@@ -96,13 +116,38 @@ export function calendarDayOffset(date: string, days: number) {
   return day.toISOString().slice(0, 10)
 }
 
+export interface CreditReminderPlan {
+  dueOn: string
+  untilPaid: boolean
+}
+
+function accountReminderPlan(account: CreditAccount): CreditReminderPlan[] {
+  const manual = account.reminder
+  const plan: CreditReminderPlan[] = manual && !manual.paid ? [{ dueOn: manual.dueOn, untilPaid: true }] : []
+  for (const { dueOn, amountMinor } of bankPayments(account.snapshot)) {
+    if (dueOn && amountMinor !== 0 && dueOn !== manual?.dueOn && !plan.some((item) => item.dueOn === dueOn)) {
+      plan.push({ dueOn, untilPaid: false })
+    }
+  }
+  return plan
+}
+
+export function creditReminderPlan(ledger: Ledger) {
+  return getCreditAccounts(ledger).tracked.flatMap((account) => {
+    const accountLabel = creditAccountShortLabel(account)
+    return accountReminderPlan(account).map((item) => ({ ...item, accountLabel }))
+  }).sort(
+    (a, b) => a.dueOn.localeCompare(b.dueOn) || Number(a.untilPaid) - Number(b.untilPaid),
+  )
+}
+
+export function isCreditReminderDue({ dueOn, untilPaid }: CreditReminderPlan, today: string, tomorrow: string) {
+  return dueOn <= tomorrow && (untilPaid || dueOn >= today)
+}
+
 export function dueCreditAccounts(accounts: CreditAccount[], today: string) {
   const tomorrow = calendarDayOffset(today, 1)
-  return accounts.filter((account) => {
-    if (account.reminder && !account.reminder.paid && account.reminder.dueOn <= tomorrow) return true
-    const dueOn = upcomingBankPayment(account, today, account.reminder?.dueOn)
-    return dueOn && dueOn <= tomorrow
-  })
+  return accounts.filter((account) => accountReminderPlan(account).some((item) => isCreditReminderDue(item, today, tomorrow)))
 }
 
 function snapshotDate(snapshot?: Pick<CreditSnapshot, 'observedOn' | 'asOf'>) {

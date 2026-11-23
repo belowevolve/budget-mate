@@ -11,6 +11,8 @@ Define all application colors as semantic tokens in `src/index.css`, including c
 
 Use ui-sdk for interactive behavior and shared semantic styles for recurring visual patterns. Compose UI in components and keep reusable styles in CSS. Avoid modules that export strings of Tailwind utilities.
 
+For changes to scrollable UI, follow the [Budgetmates UI skill](.agents/skills/budgetmates-ui/SKILL.md).
+
 ## Reatom
 
 Follow the [Reatom v1001 skills](https://github.com/reatom/reatom/tree/v1001/skills) when editing models. Derive state with `computed`, use named actions for updates, use `withAsync` and `wrap` for asynchronous actions, and scope cancellation to the owning session or screen.
