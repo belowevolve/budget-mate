@@ -1,16 +1,14 @@
 import { wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { DialogClose, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
-import { Input } from '@ui-sdk/react/input'
-import { X } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { categoryDefinition } from '../categories/catalog'
 import Entry from '../components/journal/Entry'
 import { groupJournalEntries } from '../components/journal/model'
 import { VirtualOperationList } from '../components/journal/VirtualOperationList'
-import { SheetGrip } from '../shared/ui/SheetGrip'
+import { DialogHeader } from '../shared/ui/DialogHeader'
+import SearchField from '../shared/ui/SearchField'
 import { banks, formatDate, money, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
 import { refundCandidates, type RefundIndex } from '../refunds'
@@ -54,18 +52,9 @@ export default reatomFactoryComponent<RefundPickerProps>(({ row, refunds }) => {
     return (
       <>
         <div className="grid min-w-0 gap-2">
-          <div className="dialog-header">
-            <SheetGrip />
-            <div className="min-w-0">
-              <DialogTitle className="text-lg leading-tight">К расходу</DialogTitle>
-              <DialogDescription className="mt-0.5 text-xs text-muted wrap-anywhere">
-                Поступление {money(row.amountMinor, row.currency, true)} · {formatDate(row.date)}
-              </DialogDescription>
-            </div>
-            <DialogClose className="dialog-close" aria-label="Закрыть" disabled={pending}><X size={16} aria-hidden="true" /></DialogClose>
-          </div>
-          <Input className="field-input min-w-0 text-base" aria-label="Поиск расхода" inputMode="search"
-            placeholder="Поиск расхода" value={query} onValueChange={wrap(model.setQuery)} disabled={pending} />
+          <DialogHeader title="К расходу" closeDisabled={pending}
+            description={`Поступление ${money(row.amountMinor, row.currency, true)} · ${formatDate(row.date)}`} />
+          <SearchField label="Поиск расхода" value={query} onChange={wrap(model.setQuery)} disabled={pending} />
           {currentTarget && <p className="text-xs text-muted">Нажми на связанный расход, чтобы отвязать его.</p>}
         </div>
         <div ref={scrollRef} className="dialog-body" data-slot="scroll">

@@ -1,20 +1,22 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
-import { ChevronRight, MapPin, Plus, Unlink, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
+import { MapPin, Plus, Unlink } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { categoryDefinition } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
-import { SheetGrip } from '../shared/ui/SheetGrip'
 import type { Transaction } from '../finance'
+import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SearchSelect } from '../shared/ui/SearchSelect'
 import { useDialogBackRecovery } from '../shared/ui/popupBack'
 import { useDesktopPicker } from '../shared/ui/useDesktopPicker'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { assignPlace, filterPlaces, indexPlaces, isIndividualPlaceAlias, merchantAlias, placeAliasLabel, PlaceError, savePlace, unassignPlace, type Place } from './model'
-import { PlaceFields, PlaceOptions, PlaceSearchToolbar } from './PlaceSettings'
+import { PlaceFields, type PlaceDraft } from './PlaceFields'
+import { PlaceOptions, PlaceSearchToolbar } from './PlaceSettings'
 
 type Props = {
   row: Transaction
@@ -43,7 +45,7 @@ export default reatomFactoryComponent<Props>(() => {
     const [mode, setMode] = useState<PlacePickerMode>('choose')
     const [chosenId, setChosenId] = useState<string | null>(null)
     const [query, setQuery] = useState('')
-    const [draft, setDraft] = useState<Pick<Place, 'name' | 'category'>>({ name: '', category: 'other' })
+    const [draft, setDraft] = useState<PlaceDraft>({ name: '', category: 'other' })
     const placesByAlias = indexPlaces(places)
     const alias = merchantAlias(row, placesByAlias)
     if (!alias) return null
@@ -160,26 +162,19 @@ export default reatomFactoryComponent<Props>(() => {
               </div>
             } />
         ) : (
-          <DialogTrigger ref={trigger} className="choice-trigger w-full min-w-0 text-left" disabled={disabled}>
-            {placeIcon}
-            <span className="min-w-0 truncate">{placeLabel}</span>
-            <ChevronRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
+          <DialogTrigger ref={trigger} className="choice-trigger w-full min-w-0 text-start" disabled={disabled}>
+            <ChoiceTriggerContent icon={placeIcon} direction="next">{placeLabel}</ChoiceTriggerContent>
           </DialogTrigger>
         )}
         <DialogContent key={back.contentKey} initialFocus="content"
           finalFocus={desktop ? () => trigger.current : undefined}
           className={`compact-dialog grid-rows-[auto_minmax(0,1fr)] ${isNew ? '' : 'h-dvh'}`}>
-          <div className="dialog-header">
-            <SheetGrip />
-            <div className="min-w-0">
-              <DialogTitle className="min-w-0 text-lg leading-tight">{isNew ? 'Новое место' : 'Место расхода'}</DialogTitle>
-              <DialogDescription className="mt-1 grid gap-0.5 text-xs leading-snug wrap-anywhere text-muted">
-                <span>{placeAliasLabel(alias)}</span>
-                {isIndividualPlaceAlias(alias) && <span>Для этой операции</span>}
-              </DialogDescription>
-            </div>
-            <DialogClose className="dialog-close" aria-label="Закрыть" disabled={pending}><X size={16} aria-hidden="true" /></DialogClose>
-          </div>
+          <DialogHeader title={isNew ? 'Новое место' : 'Место расхода'} closeDisabled={pending} description={(
+            <span className="grid gap-0.5">
+              <span>{placeAliasLabel(alias)}</span>
+              {isIndividualPlaceAlias(alias) && <span>Для этой операции</span>}
+            </span>
+          )} />
           <form autoComplete="off"
             className={`grid min-h-0 min-w-0 gap-2 ${hasToolbar ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[minmax(0,1fr)_auto]'}`}
             onSubmit={wrap((event) => {

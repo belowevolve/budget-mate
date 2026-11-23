@@ -55,7 +55,7 @@ function RestoreBackup({ vault, onBack, onRestored }: { vault: VaultAccess; onBa
               if (error) setError('')
             }} />
         </Field>
-        <label className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 px-2 text-sm font-semibold has-[[data-disabled]]:cursor-default">
+        <label className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 px-2 text-sm font-semibold has-data-disabled:cursor-default">
           <Checkbox checked={confirmed} disabled={pending > 0} className="checkbox-control"
             onCheckedChange={(value) => setConfirmed(value === true)}>
             <CheckboxIndicator><Check size={13} aria-hidden="true" /></CheckboxIndicator>

@@ -2,19 +2,21 @@ import { useRef, useState } from 'react'
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import {
   createSelectController, Select, SelectClear, SelectContent, SelectItem, SelectItemIndicator, SelectLabel, SelectList, SelectTrigger, SelectValue,
 } from '@ui-sdk/react/select'
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle'
-import { Check, ChevronDown, SlidersHorizontal, X } from 'lucide-react'
+import { Check, SlidersHorizontal, X } from 'lucide-react'
 import { useCategoryCatalog } from '../../categories/categoryContext'
 import { categoryDefinition } from '../../categories/catalog'
 import { banks, type Category } from '../../finance'
 import type { BankId } from '../../statements/types'
 import { CategoryIcon } from '../CategoryIcon'
 import type { ChoiceOption } from '../../shared/ui/Choice'
+import { ChoiceTriggerContent } from '../../shared/ui/ChoiceTriggerContent'
+import { DialogHeader } from '../../shared/ui/DialogHeader'
 import SearchField from '../../shared/ui/SearchField'
 import { SearchSelectList, SelectSearchField } from '../../shared/ui/SearchSelect'
 import { SheetGrip } from '../../shared/ui/SheetGrip'
@@ -87,10 +89,11 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
         <SelectLabel className="text-xs font-bold text-muted">{label}</SelectLabel>
         <div className="flex min-w-0 items-center gap-2">
           <SelectTrigger className="choice-trigger w-full min-w-0">
-            <SelectValue className="min-w-0 flex-1 text-left leading-snug whitespace-normal wrap-anywhere">
-              {({ labels }) => summarizeChoices(labels) || placeholder}
-            </SelectValue>
-            <ChevronDown size={16} className="shrink-0 opacity-80" aria-hidden="true" />
+            <ChoiceTriggerContent>
+              <SelectValue className="min-w-0 flex-1 text-start leading-snug whitespace-normal wrap-anywhere">
+                {({ labels }) => summarizeChoices(labels) || placeholder}
+              </SelectValue>
+            </ChoiceTriggerContent>
           </SelectTrigger>
           <SelectClear className="btn-icon size-11 rounded-xl" aria-label={clearLabel}>
             <X size={17} aria-hidden="true" />
@@ -109,7 +112,7 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
             <SheetGrip />
             <SelectList>
               {options.map(({ value, label, icon }) => (
-                <SelectItem key={value} value={value} label={label} className="choice-item focus-visible:outline-offset-[-2px]">
+                <SelectItem key={value} value={value} label={label} className="choice-item focus-visible:-outline-offset-2">
                   <span className="flex min-w-0 items-center gap-2">{icon}<span>{label}</span></span>
                   <SelectItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></SelectItemIndicator>
                 </SelectItem>
@@ -171,11 +174,7 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
             <SlidersHorizontal size={18} aria-hidden="true" />
           </DialogTrigger>
           <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
-            <div className="dialog-header">
-              <SheetGrip />
-              <DialogTitle className="min-w-0 text-lg leading-tight">Фильтры</DialogTitle>
-              <DialogClose className="dialog-close" aria-label="Закрыть"><X size={17} aria-hidden="true" /></DialogClose>
-            </div>
+            <DialogHeader title="Фильтры" />
             <div className="dialog-body grid content-start gap-3" data-slot="scroll">
               <div className="grid min-w-0 gap-1">
                 <div className="flex justify-between gap-2 text-xs font-bold text-muted">

@@ -84,8 +84,8 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
   }, [])
 
   return (
-    <div ref={shell} className={`workspace-shell mx-auto flex h-[var(--workspace-viewport-height,100dvh)] min-w-0 max-w-[1760px] flex-col overflow-hidden ${settings ? '' : 'md:grid md:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]'}`}>
-      <aside hidden={Boolean(settings)} className="order-last shrink-0 touch-pinch-zoom border-t border-line bg-paper px-1 pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] md:order-none md:min-h-0 md:touch-auto md:overflow-y-auto md:scroll-edges-y md:border-t-0 md:border-r md:bg-surface md:p-3">
+    <div ref={shell} className={`workspace-shell mx-auto flex h-(--workspace-viewport-height,100dvh) min-w-0 max-w-[1760px] flex-col overflow-hidden ${settings ? '' : 'md:grid md:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]'}`}>
+      <aside hidden={Boolean(settings)} className="order-last shrink-0 touch-pinch-zoom border-t border-line bg-paper px-1 pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] md:order-0 md:min-h-0 md:touch-auto md:overflow-y-auto md:scroll-edges-y md:border-t-0 md:border-r md:bg-surface md:p-3">
         <div className="hidden md:mb-6 md:block md:px-2 md:pt-2"><Brand /></div>
         <nav aria-label="Разделы" className="grid grid-cols-5 gap-0.5 md:grid-cols-1 md:gap-1">
           {pages.map((id) => {
@@ -105,7 +105,7 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header ref={header} className="relative z-10 shrink-0 border-b border-line bg-paper pt-[env(safe-area-inset-top)] motion-safe:transition-shadow motion-safe:duration-150 data-scrolled:shadow-top-bar md:pt-0">
-          <div className={`mx-auto flex min-h-13 min-w-0 items-center gap-2 px-3 sm:px-5 md:min-h-15 md:px-6 ${settings ? 'max-w-2xl' : 'max-w-[1260px] justify-between'}`}>
+          <div className={`mx-auto flex min-h-13 min-w-0 items-center gap-2 px-3 sm:px-5 md:min-h-15 md:px-6 ${settings ? 'max-w-2xl' : 'max-w-315 justify-between'}`}>
             {settings ? (
               <>
                 <Button className="btn-icon size-9 min-h-9 bg-transparent" aria-label={settings.view === 'menu' ? 'Назад' : 'Назад к настройкам'} onClick={settings.onBack}>
@@ -146,7 +146,7 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
           header.current?.toggleAttribute('data-scrolled', pageScroll.current > 4)
         }} className={page === 'bills' ? 'min-h-0 min-w-0 flex-1 overflow-hidden' : scrollableMain}>
           <div className={page === 'bills' ? 'h-full min-w-0'
-            : `mx-auto w-full min-w-0 max-w-[1260px] py-3 sm:px-5 md:px-6 md:py-4 ${page === 'transactions' ? '' : 'px-3'}`}>
+            : `mx-auto w-full min-w-0 max-w-315 py-3 sm:px-5 md:px-6 md:py-4 ${page === 'transactions' ? '' : 'px-3'}`}>
             {children}
           </div>
         </main>

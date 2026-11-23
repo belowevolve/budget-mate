@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { useAtom } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
-import { Archive, Bell, ChevronRight, Fingerprint, LockKeyhole, MapPin, Phone, SunMoon, Tags, X, type LucideIcon } from 'lucide-react'
+import { Archive, Bell, ChevronRight, Fingerprint, LockKeyhole, MapPin, Phone, SunMoon, Tags, type LucideIcon } from 'lucide-react'
 import CategoryEditor from '../categories/CategoryEditor'
-import { SheetGrip } from '../shared/ui/SheetGrip'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import BrowserReminderSettings from '../credits/BrowserReminderSettings'
 import type { Ledger } from '../finance'
 import type { Notify } from '../shared/ui/feedback'
@@ -98,13 +98,7 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
                     <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
                   </DialogTrigger>
                   <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
-                    <div className="dialog-header">
-                      <SheetGrip />
-                      <DialogTitle className="min-w-0 text-lg leading-tight">Резервная копия</DialogTitle>
-                      <DialogClose className="dialog-close" aria-label="Закрыть резервную копию" disabled={restorePending > 0}>
-                        <X size={17} aria-hidden="true" />
-                      </DialogClose>
-                    </div>
+                    <DialogHeader title="Резервная копия" closeLabel="Закрыть резервную копию" closeDisabled={restorePending > 0} />
                     <BackupSettings vault={vault} />
                   </DialogContent>
                 </Dialog>

@@ -1,10 +1,10 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
-import { Link2, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Link2 } from 'lucide-react'
 import { useMemo } from 'react'
-import { SheetGrip } from '../shared/ui/SheetGrip'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import Entry from '../components/journal/Entry'
 import { groupJournalEntries } from '../components/journal/model'
 import { VirtualOperationList } from '../components/journal/VirtualOperationList'
@@ -62,14 +62,7 @@ export default reatomFactoryComponent<{
                 <Link2 size={16} aria-hidden="true" /> {linked ? 'Изменить связь' : 'Связать с операцией'}
               </DialogTrigger>
               <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
-                <div className="dialog-header">
-                  <SheetGrip />
-                  <div className="min-w-0">
-                    <DialogTitle className="text-lg font-extrabold">Операция из выписки</DialogTitle>
-                    <DialogDescription className="text-sm text-muted">На сумму счёта или твоей доли</DialogDescription>
-                  </div>
-                  <DialogClose className="dialog-close" aria-label="Закрыть" disabled={!ready}><X size={17} aria-hidden="true" /></DialogClose>
-                </div>
+                <DialogHeader title="Операция из выписки" description="На сумму счёта или твоей доли" closeDisabled={!ready} />
                 <div className="dialog-body" data-slot="scroll">
                   <VirtualOperationList groups={groups} ariaLabel="Подходящие операции" resetKey={bill.id}
                     renderEntry={(entry) => (

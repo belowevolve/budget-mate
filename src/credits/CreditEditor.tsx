@@ -6,11 +6,12 @@ import {
   CalendarDay, CalendarGrid, CalendarHeading, CalendarNext, CalendarPrevious, CalendarWeekday, CalendarWeekdays, CalendarWeeks,
   createDatePickerController, DatePicker, DatePickerContent, DatePickerInput, DatePickerTrigger,
 } from '@ui-sdk/react/date-picker'
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, Download, Plus, X } from 'lucide-react'
+import { Bell, CalendarDays, ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react'
 import { Choice, type ChoiceOption } from '../shared/ui/Choice'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SheetGrip } from '../shared/ui/SheetGrip'
 import { banks } from '../finance'
 import { useAndroidPopupBack } from '../shared/ui/popupBack'
@@ -42,8 +43,8 @@ function ReminderDateField({ value, disabled, onChange }: {
         className="w-full min-w-0" onValueChange={(date) => onChange(typeof date === 'string' ? date : '')} onOpenChange={watchBack}>
         <div className="relative min-w-0">
           <DatePickerInput className="field-input pe-12 text-base" placeholder="ДД.ММ.ГГГГ" inputMode="numeric" autoComplete="off" />
-          <span className="absolute inset-y-0 end-1 flex items-center">
-            <DatePickerTrigger aria-label="Выбрать дату платежа" className="btn-icon rounded-lg bg-transparent focus-visible:outline-offset-[-2px] data-open:bg-subtle">
+          <span className="absolute inset-y-0 inset-e-1 flex items-center">
+            <DatePickerTrigger aria-label="Выбрать дату платежа" className="btn-icon rounded-lg bg-transparent focus-visible:-outline-offset-2 data-open:bg-subtle">
               <CalendarDays size={18} aria-hidden="true" />
             </DatePickerTrigger>
           </span>
@@ -63,7 +64,7 @@ function ReminderDateField({ value, disabled, onChange }: {
             <div className="min-h-0 overflow-y-auto overscroll-y-auto scroll-edges-y">
               <CalendarGrid className="w-full table-fixed">
                 <CalendarWeekdays>{(index) => <CalendarWeekday index={index} />}</CalendarWeekdays>
-                <CalendarWeeks>{(cell) => <CalendarDay value={cell.date} className="h-11 rounded-lg focus-visible:outline-offset-[-2px]" />}</CalendarWeeks>
+                <CalendarWeeks>{(cell) => <CalendarDay value={cell.date} className="h-11 rounded-lg focus-visible:-outline-offset-2" />}</CalendarWeeks>
               </CalendarGrid>
             </div>
           </div>
@@ -154,11 +155,7 @@ export default reatomFactoryComponent<EditorProps>((_, { name }) => {
           {account ? compactTrigger ? 'Изменить' : account.reminder ? 'Изменить напоминание' : 'Напоминание' : 'Добавить счёт'}
         </DialogTrigger>
         <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
-          <div className="dialog-header">
-            <SheetGrip />
-            <DialogTitle className="min-w-0 text-lg leading-tight wrap-anywhere">{title}</DialogTitle>
-            <DialogClose className="dialog-close" aria-label="Закрыть"><X size={17} aria-hidden="true" /></DialogClose>
-          </div>
+          <DialogHeader title={title} />
           <CreditForm account={account} options={options} write={write} form={form}
             onSaved={(hasDate) => { props.onSaved(hasDate); open.set(false) }} />
         </DialogContent>

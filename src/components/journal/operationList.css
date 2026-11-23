@@ -49,7 +49,7 @@
   .operation-entry-split { @apply relative min-w-0; }
 
   .operation-category-trigger {
-    @apply absolute top-1/2 z-1 grid min-h-0 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 shadow-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary;
+    @apply absolute top-1/2 z-1 grid min-h-0 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary;
     inset-inline-start: var(--operation-gutter);
     inline-size: var(--operation-icon-size);
     block-size: var(--operation-icon-size);
@@ -91,7 +91,7 @@
   }
 
   .operation-swipe-actions {
-    @apply absolute inset-y-0 end-0 grid w-max auto-cols-[5.25rem] grid-flow-col sm:auto-cols-[6rem];
+    @apply absolute inset-y-0 inset-e-0 grid w-max auto-cols-21 grid-flow-col sm:auto-cols-24;
   }
 
   .operation-swipe-button {

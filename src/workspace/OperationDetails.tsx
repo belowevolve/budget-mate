@@ -1,25 +1,25 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent, useAction } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
-import { ArrowLeftRight, ChevronRight, Link2, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
+import { ArrowLeftRight, Link2 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { categoryDefinition } from '../categories/catalog'
 import { CategoryIcon } from '../components/CategoryIcon'
-import { SheetGrip } from '../shared/ui/SheetGrip'
 import Entry from '../components/journal/Entry'
 import { banks, formatDate, money, needsTransferReview, type Category, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
 import type { Place } from '../places/model'
 import OperationPlaceEditor from '../places/OperationPlaceEditor'
 import { isRefundIncome, RefundError, type RefundIndex } from '../refunds'
+import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
+import { DialogHeaderFrame } from '../shared/ui/DialogHeader'
 import { useDialogBackRecovery } from '../shared/ui/popupBack'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import OperationCategoryDialog from './OperationCategoryDialog'
 import RefundPicker from './RefundPicker'
 import type { OperationPane } from './workspaceState'
-import './operationDetails.css'
 
 type OperationDetailsProps = {
   row: Transaction
@@ -43,6 +43,27 @@ function reatomOperationDetails() {
     close()
   }, 'operationDetails.save').extend(withAsync())
   return { open, show, close, save }
+}
+
+function RelatedOperations({ label, summary, rows, onSelect }: {
+  label: string
+  summary?: string
+  rows: readonly Transaction[]
+  onSelect: (row: Transaction) => void
+}) {
+  return (
+    <section aria-label={label} className="grid min-w-0 gap-0.5 border-t border-line pt-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 px-1 text-xs text-muted">
+        <span className="font-bold">{label}</span>
+        {summary && <span>{summary}</span>}
+      </div>
+      <ul className="min-w-0 list-none divide-y divide-line">
+        {rows.map((row) => (
+          <li key={row.id}><Entry row={row} showDate exactAmount onSelect={onSelect} /></li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 export default reatomFactoryComponent<OperationDetailsProps>(() => {
@@ -126,50 +147,37 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
               onBack={wrap(() => onOpen(row))} onSave={wrap((expenseId) => save(() => onSaveRefund(expenseId)))} />
           ) : (
             <>
-              <div className="dialog-header">
-                <SheetGrip />
+              <DialogHeaderFrame closeDisabled={pending}>
                 <div className="min-w-0">
                   <DialogTitle className="sr-only">{title}</DialogTitle>
                   <DialogDescription className="sr-only">{account} · {formatDate(row.date)}</DialogDescription>
                   <Entry row={row} caption={account} showDate exactAmount refundTarget={refundTarget} refundMinor={compensation?.totalMinor}
                     onChangeCategory={canEditCategory ? () => openCategory(content.current?.querySelector('[data-operation-category-trigger]') ?? null) : undefined} />
                 </div>
-                <DialogClose className="dialog-close" aria-label="Закрыть" disabled={pending}><X size={16} aria-hidden="true" /></DialogClose>
-              </div>
-              <div data-slot="scroll" className="dialog-body grid content-start gap-2 pt-0.5">
+              </DialogHeaderFrame>
+              <div data-slot="scroll" className="dialog-body grid content-start gap-2">
                 {requiresReview && <p className="text-xs text-muted">Неопознанный перевод. Сумма пока вне итогов.</p>}
                 {refundTarget && (
-                  <section aria-label="Связанный расход" className="grid min-w-0 gap-0.5 border-t border-line pt-2">
-                    <span className="px-1 text-xs font-bold text-muted">Связанный расход</span>
-                    <Entry row={refundTarget} showDate exactAmount onSelect={wrap(onOpen)} />
-                  </section>
+                  <RelatedOperations label="Связанный расход" rows={[refundTarget]} onSelect={wrap(onOpen)} />
                 )}
                 {compensation && (
-                  <section aria-label="Компенсации" className="grid min-w-0 gap-0.5 border-t border-line pt-2">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 px-1 text-xs text-muted">
-                      <span className="font-bold">Компенсации</span>
-                      <span>По выписке {money(row.amountMinor, row.currency, true)}</span>
-                    </div>
-                    <ul className="min-w-0 list-none divide-y divide-line">
-                      {compensation.incomes.map((income) => (
-                        <li key={income.id}>
-                          <Entry row={income} showDate exactAmount onSelect={wrap(onOpen)} />
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                  <RelatedOperations label="Компенсации" summary={`По выписке ${money(row.amountMinor, row.currency, true)}`}
+                    rows={compensation.incomes} onSelect={wrap(onOpen)} />
                 )}
                 {canEditCategory && (
-                  <Button aria-label="Категория операции" className="choice-trigger w-full min-w-0 text-left"
+                  <Button aria-label="Категория операции" className="choice-trigger w-full min-w-0 text-start"
                     onClick={(event) => openCategory(event.currentTarget)} disabled={pending}>
-                    <CategoryIcon category={category} className="size-7 rounded-lg" />
-                    <span className="min-w-0 truncate">{categoryDefinition(catalog, category, kind).label}</span>
-                    <ChevronRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
+                    <ChoiceTriggerContent icon={<CategoryIcon category={category} className="size-7 rounded-lg" />} direction="next">
+                      {categoryDefinition(catalog, category, kind).label}
+                    </ChoiceTriggerContent>
                   </Button>
                 )}
                 <OperationPlaceEditor row={row} places={places} write={write} disabled={pending} />
                 {row.description && (row.description !== title || title.length > 50) && (
-                  <p className="statement-source"><span>Из выписки</span>{row.description}</p>
+                  <dl className="grid min-w-0 gap-0.5 text-xs text-muted">
+                    <dt className="font-bold">Из выписки</dt>
+                    <dd className="wrap-anywhere">{row.description}</dd>
+                  </dl>
                 )}
                 {error && <p role="alert" className="error-text">{error}</p>}
               </div>

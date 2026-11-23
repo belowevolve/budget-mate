@@ -1,10 +1,10 @@
 import { Button } from '@ui-sdk/react/button'
 import { Checkbox, CheckboxGroup } from '@ui-sdk/react/checkbox'
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Input } from '@ui-sdk/react/input'
-import { Plus, UserPlus, X } from 'lucide-react'
+import { Plus, UserPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { SheetGrip } from '../shared/ui/SheetGrip'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import type { BillPerson } from './bill'
 import type { BillItemForm } from './model'
 
@@ -45,11 +45,7 @@ export default function BillComposer({ people, targets, fields, disabled, error,
               <UserPlus size={18} aria-hidden="true" />
             </DialogTrigger>
             <DialogContent initialFocus={() => nameInput.current} className="compact-dialog">
-              <div className="dialog-header">
-                <SheetGrip />
-                <DialogTitle className="section-heading">Добавить участника</DialogTitle>
-                <DialogClose className="dialog-close" aria-label="Закрыть"><X size={18} aria-hidden="true" /></DialogClose>
-              </div>
+              <DialogHeader title="Добавить участника" />
               <form autoComplete="off" className="grid min-w-0 gap-2" onSubmit={(event) => {
                 event.preventDefault()
                 if (onAddPerson(personName)) setPersonDialog(false)

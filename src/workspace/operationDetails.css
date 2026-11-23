@@ -1,9 +1,0 @@
-@reference "../index.css";
-
-@layer components {
-  .statement-source {
-    @apply grid min-w-0 gap-0.5 px-1 py-1 text-xs leading-relaxed wrap-anywhere text-muted;
-
-    & > span { @apply font-bold; }
-  }
-}

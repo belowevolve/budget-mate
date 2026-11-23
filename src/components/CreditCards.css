@@ -14,7 +14,7 @@
     @apply grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,max-content)] items-baseline gap-x-2 gap-y-1.5 text-xs;
 
     & > dt { @apply text-muted wrap-anywhere; }
-    & > dd { @apply max-w-[9rem] text-end font-bold wrap-anywhere tabular-nums; }
+    & > dd { @apply max-w-36 text-end font-bold wrap-anywhere tabular-nums; }
   }
 
   .credit-payment-actions {

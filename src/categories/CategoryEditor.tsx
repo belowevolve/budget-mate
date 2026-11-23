@@ -137,7 +137,7 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
             <ul className="surface-panel min-w-0 shrink-0 divide-y divide-line overflow-hidden">
               {list.map(([id, item]) => id !== 'transfer' && (
                 <li key={id} className="min-w-0">
-                  <Button className="grid min-h-11 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-none border-0 bg-transparent px-2 py-1.5 text-left text-sm text-ink shadow-none hover:bg-subtle focus-visible:outline-offset-[-2px]"
+                  <Button className="grid min-h-11 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-none border-0 bg-transparent px-2 py-1.5 text-left text-sm text-ink shadow-none hover:bg-subtle focus-visible:-outline-offset-2"
                     onClick={wrap(() => edit({ id, label: item.label, icon: item.icon, tone: item.tone }))}>
                     <CategoryIcon category={id} className="size-7 rounded-lg" />
                     <span className="min-w-0 truncate">{item.label}{item.archived && <small className="ml-1 text-muted">· Архив</small>}</span>

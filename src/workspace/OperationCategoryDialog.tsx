@@ -1,16 +1,16 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
+import { Dialog, DialogContent } from '@ui-sdk/react/dialog'
 import { Listbox, ListboxItem, ListboxItemIndicator } from '@ui-sdk/react/listbox'
-import { Check, X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useLayoutEffect, useState } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { categoryDefinition, categoryOptions } from '../categories/catalog'
 import { CategoryIcon } from '../components/CategoryIcon'
-import { SheetGrip } from '../shared/ui/SheetGrip'
 import { formatDate, money, needsTransferReview, type Category, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
 import { RefundError } from '../refunds'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SearchSelect } from '../shared/ui/SearchSelect'
 import { useDialogBackRecovery } from '../shared/ui/popupBack'
 import { useDesktopPicker } from '../shared/ui/useDesktopPicker'
@@ -83,22 +83,17 @@ export default reatomFactoryComponent<Props>(() => {
       })} onOpenChangeComplete={complete}>
         <DialogContent key={back.contentKey} initialFocus="content" finalFocus={finalFocus} data-list-sheet
           className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
-          <div className="dialog-header">
-            <SheetGrip />
-            <div className="min-w-0">
-              <DialogTitle className="text-lg leading-tight">Категория операции</DialogTitle>
-              <DialogDescription className="mt-0.5 grid min-w-0 text-xs text-muted">
-                <span className="truncate font-semibold" title={title}>{title}</span>
-                <span>{row.amountMinor > 0 ? '+' : ''}{money(row.amountMinor, row.currency, true)} · {formatDate(row.date)}</span>
-              </DialogDescription>
-            </div>
-            <DialogClose className="dialog-close" aria-label="Закрыть" disabled={pending}><X size={16} aria-hidden="true" /></DialogClose>
-          </div>
+          <DialogHeader title="Категория операции" closeDisabled={pending} description={(
+            <span className="grid min-w-0">
+              <span className="truncate font-semibold" title={title}>{title}</span>
+              <span>{row.amountMinor > 0 ? '+' : ''}{money(row.amountMinor, row.currency, true)} · {formatDate(row.date)}</span>
+            </span>
+          )} />
           <div data-slot="scroll" className="dialog-body">
             <Listbox value={value} activation="manual" aria-label="Категории"
               disabled={pending} className="w-full border-0 bg-transparent p-0" onValueChange={choose}>
               {options.map(({ value, label }) => (
-                <ListboxItem key={value} value={value} label={label} className="choice-item focus-visible:outline-offset-[-2px]">
+                <ListboxItem key={value} value={value} label={label} className="choice-item focus-visible:-outline-offset-2">
                   <span className="flex min-w-0 items-center gap-2">
                     <CategoryIcon category={value} className="size-7 rounded-lg" />
                     <span>{label}</span>

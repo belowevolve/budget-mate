@@ -2,8 +2,10 @@ import {
   Select, SelectContent, SelectEmpty, SelectInput, SelectItem, SelectItemIndicator, SelectItemText, SelectList,
   SelectTrigger, SelectValue, type SelectContentProps, type SelectProps,
 } from '@ui-sdk/react/select'
-import { Check, ChevronDown, Search } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useRef, type ReactNode, type Ref } from 'react'
+import { ChoiceTriggerContent } from './ChoiceTriggerContent'
+import { SearchFieldFrame } from './SearchField'
 import './searchSelect.css'
 
 interface SearchOption<Value extends string> {
@@ -22,10 +24,10 @@ export function SelectSearchField({ label, noResults, action, inputRef }: {
   return (
     <>
       <div className="search-select-tools">
-        <div className="search-select-field">
-          <Search size={16} aria-hidden="true" />
-          <SelectInput ref={inputRef} aria-label={label} placeholder={label} type="search" autoComplete="off" className="search-input" />
-        </div>
+        <SearchFieldFrame className="flex-1">
+          <SelectInput ref={inputRef} aria-label={label} placeholder={label} type="search" autoComplete="off"
+            className="search-input h-9 min-h-9 pe-2" />
+        </SearchFieldFrame>
         {action}
       </div>
       <SelectEmpty className="search-select-empty">{noResults}</SelectEmpty>
@@ -87,10 +89,10 @@ export function SearchSelect<Value extends string>({ label, searchLabel, options
         onOpenChangeComplete?.(open)
       }}>
       {anchor === undefined && (
-        <SelectTrigger ref={triggerRef} aria-label={label} className="choice-trigger search-select-trigger">
-          {triggerIcon ?? selectedIcon}
-          <SelectValue className="min-w-0 truncate" />
-          <ChevronDown size={16} className="ms-auto shrink-0" aria-hidden="true" />
+        <SelectTrigger ref={triggerRef} aria-label={label} className="choice-trigger search-select-trigger group">
+          <ChoiceTriggerContent icon={triggerIcon ?? selectedIcon}>
+            <SelectValue className="min-w-0 truncate" />
+          </ChoiceTriggerContent>
         </SelectTrigger>
       )}
       <SelectContent anchor={anchor} align="start" sideOffset={6} collisionPadding={12}

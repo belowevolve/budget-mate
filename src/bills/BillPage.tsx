@@ -1,11 +1,11 @@
 import { wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Input } from '@ui-sdk/react/input'
-import { FilePlus, History, Save, X } from 'lucide-react'
+import { FilePlus, History, Save } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { SheetGrip } from '../shared/ui/SheetGrip'
+import { DialogHeader } from '../shared/ui/DialogHeader'
 import { formatDate, money, type Ledger, type Transaction } from '../finance'
 import type { VaultWrite } from '../vault-ui/vaultModel'
 import BillComposer from './BillComposer'
@@ -23,11 +23,7 @@ function BillHistory({ bills, selected, onSelect }: { bills: Bill[]; selected: s
         <History size={18} aria-hidden="true" />
       </DialogTrigger>
       <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
-        <div className="dialog-header">
-          <SheetGrip />
-          <DialogTitle className="section-heading">История счетов</DialogTitle>
-          <DialogClose className="dialog-close" aria-label="Закрыть"><X size={18} aria-hidden="true" /></DialogClose>
-        </div>
+        <DialogHeader title="История счетов" />
         <ul className="dialog-body divide-y divide-line" data-slot="scroll">
           {bills.map((bill) => (
             <li key={bill.id}>

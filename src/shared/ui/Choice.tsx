@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react'
 import {
   createSelectController, Select, SelectClear, SelectContent, SelectItem, SelectItemIndicator, SelectList, SelectTrigger, SelectValue,
 } from '@ui-sdk/react/select'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
+import { ChoiceTriggerContent } from './ChoiceTriggerContent'
 import { useAndroidPopupBack } from './popupBack'
 import { SheetGrip } from './SheetGrip'
 
@@ -29,9 +30,9 @@ export function Choice({ label, value, options, onChange, icon, className, prese
   const onOpenChange = useAndroidPopupBack(() => { controller.close({ reason: 'back' }) })
   const trigger = (
     <SelectTrigger aria-label={label} className={className ? `choice-trigger group ${className}` : 'choice-trigger group'}>
-      {icon ?? selectedIcon}
-      <SelectValue className="min-w-0 truncate" />
-      <ChevronDown size={16} className="ml-auto shrink-0 opacity-80 transition-transform group-data-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+      <ChoiceTriggerContent icon={icon ?? selectedIcon}>
+        <SelectValue className="min-w-0 truncate" />
+      </ChoiceTriggerContent>
     </SelectTrigger>
   )
 

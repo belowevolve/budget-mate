@@ -130,7 +130,7 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
         role={periods.length > 8 ? 'region' : undefined}
         aria-label={periods.length > 8 ? 'График по месяцам' : undefined}
       >
-        <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-1.5 [--track-height:5.75rem] ${periods.length > 8 ? 'min-w-[23rem]' : ''}`}>
+        <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-1.5 [--track-height:5.75rem] ${periods.length > 8 ? 'min-w-92' : ''}`}>
           <div className="flex h-(--track-height) flex-col items-end justify-between text-[.62rem] tabular-nums text-muted" aria-hidden="true">
             <span>{shortMoney.format(ceiling / 100)}</span>
             <span>{shortMoney.format(ceiling / 200)}</span>

@@ -1,6 +1,6 @@
 @layer components {
   .choice-trigger {
-    @apply inline-flex h-auto min-h-11 max-w-full items-center gap-1.5 rounded-xl border border-field-line bg-paper px-2.5 text-sm font-bold text-primary after:content-none hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary data-open:bg-subtle;
+    @apply inline-flex h-auto min-h-11 max-w-full items-center gap-1.5 rounded-xl border border-field-line bg-paper px-2.5 text-sm font-bold text-primary after:content-none hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary data-open:bg-subtle;
   }
 
   .choice-popover {

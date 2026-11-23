@@ -13,14 +13,11 @@
   }
 
   .search-select-tools { @apply flex min-w-0 shrink-0 items-center gap-1.5; }
-  .search-select-field {
-    @apply relative min-w-0 flex-1;
+  .search-select-empty {
+    @apply px-2 py-3 text-sm text-muted;
 
-    > svg { @apply pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted; }
-    .search-input { @apply h-9 min-h-9 pe-2; }
+    &:not([data-empty]) { display: none; }
   }
-
-  .search-select-empty { @apply px-2 py-3 text-sm text-muted; }
   .search-select-label { @apply flex min-w-0 items-center gap-2; }
   .search-select-text { @apply grid min-w-0 leading-snug wrap-anywhere; }
   .search-select-detail { @apply text-xs font-medium text-muted; }

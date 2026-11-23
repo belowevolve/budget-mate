@@ -17,13 +17,13 @@
   }
 
   .category-option {
-    @apply grid min-h-11 w-full min-w-0 place-items-center rounded-xl border border-transparent bg-transparent p-0 text-muted shadow-none hover:bg-subtle focus-visible:outline-offset-[-2px];
+    @apply grid min-h-11 w-full min-w-0 place-items-center rounded-xl border border-transparent bg-transparent p-0 text-muted shadow-none hover:bg-subtle focus-visible:-outline-offset-2;
     &[data-checked] { @apply border-primary bg-selected text-primary; }
   }
 
   .category-icon-option {
     @apply border-line;
     & .category-icon { @apply size-6 bg-transparent text-inherit; }
-    & svg { @apply size-[18px]; }
+    & svg { @apply size-4.5; }
   }
 }
