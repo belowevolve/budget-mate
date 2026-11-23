@@ -94,7 +94,7 @@ export default reatomFactoryComponent<RefundPickerProps>(({ row, refunds }) => {
           {groups.length > 0 ? (
             <VirtualOperationList groups={groups} scrollRef={scrollRef} ariaLabel="Подходящие расходы"
               resetKey={resetKey}
-              renderEntry={(entry) => <Entry {...entry} onSelect={select} exactAmount
+              renderEntry={(entry) => <Entry {...entry} onSelect={select} flush exactAmount
                 selection={{ selected: entry.row.id === selectedId, disabled: pending, linked: entry.row.id === currentTarget?.id,
                   amountMinor: remainingExpense.get(entry.row.id) }} />}
             />

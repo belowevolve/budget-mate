@@ -77,7 +77,7 @@ export default reatomFactoryComponent<JournalProps>(({ initial }) => {
 
         {view.groups.length > 0 && (
           <JournalSwipe onFullSwipe={activateFullSwipe}>
-            <VirtualOperationList flush groups={view.groups} ariaLabel={reviewOnly ? 'Неопознанные переводы' : transfersOnly ? 'Переводы и компенсации' : 'Операции'}
+            <VirtualOperationList className="mx-3 sm:mx-0" groups={view.groups} ariaLabel={reviewOnly ? 'Неопознанные переводы' : transfersOnly ? 'Переводы и компенсации' : 'Операции'}
               resetKey={JSON.stringify([periodKey, selection])}
               renderEntry={(entry) => <Entry {...entry} flush onSelect={openDetails} onRefund={openRefund} onChangeCategory={openCategories}
                 onQuickTransfer={markTransfer} />} />

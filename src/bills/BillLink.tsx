@@ -69,7 +69,7 @@ export default reatomFactoryComponent<{
                 <DialogBody>
                   <VirtualOperationList groups={groups} ariaLabel="Подходящие операции" resetKey={bill.id}
                     renderEntry={(entry) => (
-                      <Entry {...entry} exactAmount selection={{ selected: entry.row.id === chosenId, disabled: !ready }}
+                      <Entry {...entry} flush exactAmount selection={{ selected: entry.row.id === chosenId, disabled: !ready }}
                         onSelect={wrap((row) => selected.set(row.id))} />
                     )}
                   />

@@ -8,13 +8,13 @@ type ListItem =
   | { key: string; date: string; entry?: never }
   | { key: string; entry: JournalEntry; groupStart: boolean; groupEnd: boolean }
 
-export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey, scrollRef, flush }: {
+export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey, scrollRef, className }: {
   groups: JournalGroups
   renderEntry: (entry: JournalEntry) => ReactNode
   ariaLabel: string
   resetKey: string
   scrollRef?: RefObject<HTMLElement | null>
-  flush?: boolean
+  className?: string
 }) {
   const listRef = useRef<HTMLUListElement>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -80,7 +80,7 @@ export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey,
   const year = new Date().getFullYear()
 
   return (
-    <ul ref={listRef} className={cn('relative min-w-0 list-none [overflow-anchor:none]', flush && 'mx-3 sm:mx-0')}
+    <ul ref={listRef} className={cn('relative min-w-0 list-none [overflow-anchor:none]', className)}
       aria-label={ariaLabel} style={{ height: virtualizer.getTotalSize() }}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocusedKey(undefined) }}>
       {virtualizer.getVirtualItems().map(({ index, key, start }) => {
@@ -100,10 +100,9 @@ export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey,
           )
         }
         return (
-          <li key={key} ref={virtualizer.measureElement} data-index={index} className={cn(
-            'absolute inset-x-0 min-w-0 border-x border-b border-line bg-paper data-group-start:rounded-t-xl data-group-start:border-t data-group-end:rounded-b-xl',
-            flush ? 'overflow-clip p-0' : 'p-0.5',
-          )} style={style}
+          <li key={key} ref={virtualizer.measureElement} data-index={index}
+            className="absolute inset-x-0 min-w-0 overflow-clip border-x border-b border-line bg-paper data-group-start:rounded-t-xl data-group-start:border-t data-group-end:rounded-b-xl"
+            style={style}
             data-group-start={item.groupStart ? '' : undefined} data-group-end={item.groupEnd ? '' : undefined}
             aria-setsize={items.length} aria-posinset={index + 1} onFocus={() => setFocusedKey(item.key)}>
             {renderEntry(item.entry)}
