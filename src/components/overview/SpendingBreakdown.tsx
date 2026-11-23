@@ -50,7 +50,7 @@ export function SpendingBreakdown({ spending, expenses, currency, onViewCategory
 }) {
   return (
     <Panel className="overflow-clip" aria-labelledby="spending-title">
-      <h2 className="section-heading card-padding" id="spending-title">По категориям</h2>
+      <h2 className="section-heading p-3 sm:p-4" id="spending-title">По категориям</h2>
       {spending.length ? (
         <ul className="list-none divide-y divide-line border-t border-line p-0">
           {spending.map(([category, amount]) => (
@@ -59,7 +59,7 @@ export function SpendingBreakdown({ spending, expenses, currency, onViewCategory
             </li>
           ))}
         </ul>
-      ) : <p className="body-text card-padding pt-0">За этот период расходов нет.</p>}
+      ) : <p className="body-text px-3 pb-3 sm:px-4 sm:pb-4">За этот период расходов нет.</p>}
     </Panel>
   )
 }

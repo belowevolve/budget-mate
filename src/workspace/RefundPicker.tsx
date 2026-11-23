@@ -10,9 +10,10 @@ import { Button } from '../shared/ui/Button'
 import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import SearchField from '../shared/ui/SearchField'
-import { banks, formatDate, money, type Transaction } from '../finance'
+import { banks, money, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
 import { refundCandidates, type RefundIndex } from '../refunds'
+import { formatDate } from '../shared/format'
 import { reatomRefundPicker } from './refundPickerModel'
 
 type RefundPickerProps = {

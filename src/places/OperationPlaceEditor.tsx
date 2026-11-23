@@ -9,6 +9,7 @@ import { CategoryIcon } from '../components/CategoryIcon'
 import type { Transaction } from '../finance'
 import { Button } from '../shared/ui/Button'
 import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
+import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SearchSelect } from '../shared/ui/SearchSelect'
 import { useDialogBackRecovery } from '../shared/ui/popupBack'
@@ -135,29 +136,32 @@ export default reatomFactoryComponent<Props>(() => {
               }
             })}
             searchAction={
-              <Button variant="icon" size="compact" icon={Plus} className="rounded-lg" aria-label="Создать место" disabled={pending} onClick={wrap(() => {
+              <Button variant="secondary" size="icon-sm" className="rounded-lg" aria-label="Создать место" disabled={pending} onClick={wrap(() => {
                 showMode('create')
                 setNextLayer('create')
                 closePicker()
-              })} />
+              })}>
+                <Plus aria-hidden="true" />
+              </Button>
             }
             footer={
-              <div className="search-select-footer">
+              <>
                 {error && <p role="alert" className="error-text">{error}</p>}
-                <div className="search-select-actions">
+                <DialogActions>
                   {current && (
-                    <Button variant="secondary" icon={Unlink} disabled={pending}
+                    <Button variant="secondary" size="small" disabled={pending}
                       onClick={wrap(() => submit((items) => unassignPlace(items, alias), closePicker))}>
-                      Отвязать
+                      <Unlink aria-hidden="true" />
+                      <span>Отвязать</span>
                     </Button>
                   )}
-                  <Button disabled={pending || !canBind} onClick={wrap(() => {
+                  <Button size="small" disabled={pending || !canBind} onClick={wrap(() => {
                     if (chosenId && canBind) submit((items) => assignPlace(items, chosenId, alias), closePicker)
                   })}>
                     {current ? 'Сменить место' : 'Привязать'}
                   </Button>
-                </div>
-              </div>
+                </DialogActions>
+              </>
             } />
         ) : (
           <DialogTrigger ref={trigger} className="choice-trigger w-full min-w-0 text-start" disabled={disabled}>
@@ -202,9 +206,10 @@ export default reatomFactoryComponent<Props>(() => {
                 <Button variant="secondary" disabled={pending} onClick={wrap(backToPlaces)}>К списку</Button>
               )}
               {!isNew && current && (
-                <Button variant="secondary" icon={Unlink} disabled={pending}
+                <Button variant="secondary" disabled={pending}
                   onClick={wrap(() => submit((currentPlaces) => unassignPlace(currentPlaces, alias)))}>
-                  Отвязать
+                  <Unlink aria-hidden="true" />
+                  <span>Отвязать</span>
                 </Button>
               )}
               <Button type="submit" disabled={pending || !canSave}>

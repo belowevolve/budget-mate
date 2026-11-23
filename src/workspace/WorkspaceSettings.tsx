@@ -79,7 +79,7 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
           <SettingsCard title="Номер для СБП" icon={Phone}>
             <TransferSettings maskedPhone={ledger.sbp?.ownPhone?.label} onChange={savePhone} />
           </SettingsCard>
-          <nav aria-label="Другие настройки" className="surface-panel overflow-hidden">
+          <Panel as="nav" aria-label="Другие настройки" className="overflow-hidden">
             <ul className="list-none divide-y divide-line">
               {links.map(({ view, label, icon: Icon }) => (
                 <li key={view}>
@@ -110,7 +110,7 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
                 </Button>
               </li>
             </ul>
-          </nav>
+          </Panel>
         </>
       )}
       {view === 'categories' && <CategoryEditor write={vault.write} />}

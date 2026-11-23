@@ -7,6 +7,7 @@ import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } fro
 import { Archive, ArchiveRestore, Check, ChevronRight, Plus } from 'lucide-react'
 import { CategoryGlyph, CategoryIcon } from '../components/CategoryIcon'
 import { Button } from '../shared/ui/Button'
+import { Panel } from '../shared/ui/Panel'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { useCategoryCatalog } from './categoryContext'
 import {
@@ -84,10 +85,11 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
                   {current.isNew ? 'Новая категория' : 'Название категории'}
                 </label>
                 {definition && canArchiveCategory(current.id) && (
-                  <Button variant="text" size="compact" icon={definition.archived ? ArchiveRestore : Archive}
+                  <Button variant="text" size="compact"
                     className="shrink-0" disabled={disabled || !name.trim()}
                     onClick={() => submit(!definition.archived)}>
-                    {definition.archived ? 'Восстановить' : 'Архивировать'}
+                    {definition.archived ? <ArchiveRestore aria-hidden="true" data-icon="inline-start" /> : <Archive aria-hidden="true" data-icon="inline-start" />}
+                    <span>{definition.archived ? 'Восстановить' : 'Архивировать'}</span>
                   </Button>
                 )}
               </div>
@@ -132,10 +134,13 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
           </form>
         ) : (
           <>
-            <Button variant="secondary" icon={Plus} className="shrink-0 self-start" onClick={wrap(() => edit({
+            <Button variant="secondary" className="shrink-0 self-start" onClick={wrap(() => edit({
               id: `user:${crypto.randomUUID()}`, label: '', isNew: true, icon: fallbackCategory(selected), tone: fallbackCategory(selected),
-            }))}>Добавить</Button>
-            <ul className="surface-panel min-w-0 shrink-0 divide-y divide-line overflow-hidden">
+            }))}>
+              <Plus aria-hidden="true" />
+              <span>Добавить</span>
+            </Button>
+            <Panel as="ul" className="shrink-0 divide-y divide-line overflow-hidden">
               {list.map(([id, item]) => id !== 'transfer' && (
                 <li key={id} className="min-w-0">
                   <ButtonPrimitive className="grid min-h-11 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-none border-0 bg-transparent px-2 py-1.5 text-left text-sm text-ink shadow-none hover:bg-subtle focus-visible:-outline-offset-2"
@@ -146,7 +151,7 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
                   </ButtonPrimitive>
                 </li>
               ))}
-            </ul>
+            </Panel>
           </>
         )}
       </div>

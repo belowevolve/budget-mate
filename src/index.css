@@ -2,7 +2,6 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "@ui-sdk/core/web.css" layer(components);
-@import "./shared/ui/buttons.css";
 @import "./shared/ui/panels.css";
 @import "./shared/ui/fields.css";
 @import "./shared/ui/feedback.css";
@@ -72,6 +71,10 @@
 }
 
 @layer components {
+  :where(button, a, summary, input, select, textarea, [role="tab"], [role="option"]):focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+
   :root {
     color-scheme: light dark;
     background-color: var(--color-surface);

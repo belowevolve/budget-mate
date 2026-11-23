@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible'
 import { FileInput, FileInputDropzone, FileInputTrigger } from '@ui-sdk/react/file-input'
 import { Check, ChevronDown, FileText, FileUp } from 'lucide-react'
-import { banks, formatDate, type ImportEntry } from '../finance'
-import { Button } from '../shared/ui/Button'
+import { banks, type ImportEntry } from '../finance'
+import { formatDate } from '../shared/format'
+import { cn } from '../shared/cn'
+import { Button, buttonVariants } from '../shared/ui/Button'
+import { Panel } from '../shared/ui/Panel'
 import type { ImportPreview } from '../workspace/importModel'
 
 const fileList = 'mt-1 list-none divide-y divide-line'
@@ -24,7 +27,7 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
 
   return (
     <div className="grid min-w-0 gap-3">
-      <section className="surface-panel" aria-label="Импорт выписок">
+      <Panel aria-label="Импорт выписок">
         <FileInput
           className="w-full max-w-none"
           accept={['application/pdf', '.pdf']}
@@ -44,14 +47,14 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
             <span className="dialog-icon"><FileUp size={18} aria-hidden="true" /></span>
             <h2 className="section-heading">Банковские выписки</h2>
             <p className={fileDetail}>Альфа-Банк, ВТБ, Ozon Банк</p>
-            <FileInputTrigger className="btn-primary mt-1 max-w-full">{busy ? 'Обработка…' : 'Выбрать PDF'}</FileInputTrigger>
+            <FileInputTrigger className={cn(buttonVariants(), 'mt-1')}>{busy ? 'Обработка…' : 'Выбрать PDF'}</FileInputTrigger>
           </FileInputDropzone>
         </FileInput>
         {rejection && <p className={`${uploadError} px-3 pb-3`} role="alert">{rejection}</p>}
-      </section>
+      </Panel>
 
       {previews.length > 0 && (
-        <section className="surface-panel card-padding">
+        <Panel padded>
           <div className="flex flex-wrap items-baseline justify-between gap-x-2">
             <h2 className="section-heading">Предпросмотр</h2>
             <p className={fileDetail} aria-live="polite">{busy ? 'Обработка…' : `${readyCount} из ${previews.length}`}</p>
@@ -76,11 +79,11 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
             <Button variant="secondary" disabled={busy} onClick={onClear}>Очистить</Button>
             <Button disabled={busy || !readyCount} onClick={onConfirm}>Сохранить операции</Button>
           </div>
-        </section>
+        </Panel>
       )}
 
       {history.length > 0 && (
-        <Collapsible className="surface-panel">
+        <Collapsible render={<Panel as="div" />}>
           <CollapsibleTrigger className="group flex min-h-12 w-full min-w-0 items-center justify-between gap-2 rounded-[inherit] border-0 bg-transparent px-3 text-left text-sm font-bold text-ink shadow-none after:content-none hover:bg-subtle sm:px-4">
             <span>История импорта</span>
             <ChevronDown size={16} className="shrink-0 transition-transform group-aria-expanded:rotate-180 motion-reduce:transition-none" aria-hidden="true" />

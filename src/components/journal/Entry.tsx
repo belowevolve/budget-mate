@@ -2,9 +2,10 @@ import { Button } from '@ui-sdk/react/button'
 import { ArrowLeftRight, Check, ChevronRight, Link2, Tag } from 'lucide-react'
 import { useCategoryCatalog } from '../../categories/categoryContext'
 import { categoryDefinition } from '../../categories/catalog'
-import { banks, formatDate, money, needsTransferReview, type Transaction } from '../../finance'
+import { banks, money, needsTransferReview, type Transaction } from '../../finance'
 import { operationTitle } from '../../operationPresentation'
 import { isRefundIncome } from '../../refunds'
+import { formatDate } from '../../shared/format'
 import { RowAction } from '../../shared/ui/RowAction'
 import { CategoryIcon } from '../CategoryIcon'
 import { JournalSwipeAction, JournalSwipeActions, JournalSwipeContent, JournalSwipeRow } from '../JournalSwipe'
@@ -92,10 +93,10 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
 
   const entry = changeCategory ? (
     <div className="operation-entry-split">
-      <Button className="operation-category-trigger" aria-label={`Изменить категорию: ${title}`}
+      <Button className="operation-category-trigger peer/category" aria-label={`Изменить категорию: ${title}`}
         data-operation-category-trigger={row.id} onClick={() => changeCategory(row)}>{categoryIcon}</Button>
       {onSelect
-        ? <RowAction className="operation-entry operation-entry-details" data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</RowAction>
+        ? <RowAction className="operation-entry operation-entry-details peer-hover/category:bg-subtle" data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</RowAction>
         : <div className="operation-entry operation-entry-details">{body}</div>}
     </div>
   ) : onSelect ? (

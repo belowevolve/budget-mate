@@ -37,7 +37,7 @@ export default function Overview({
     <div className="grid min-w-0 gap-3">
       <BudgetSummary income={income} expenses={expenses} currency={currency} payments={purchases.length} pendingExpenses={pendingExpenses} />
       {activity.length ? (
-        <div className="grid min-w-0 items-start gap-3 min-[701px]:grid-cols-[minmax(0,1.02fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 items-start gap-3 min-[701px]:grid-cols-2">
           <SpendingBreakdown spending={spending} expenses={expenses} currency={currency} onViewCategory={onViewCategory} />
           <MovementChart key={`${currency}:${month}`} rows={activity} refunds={refunds} currency={currency} month={month} />
         </div>

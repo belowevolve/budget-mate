@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Button } from '@ui-sdk/react/button'
-import { formatMonth, money, transactionAccountingAmount, type Transaction } from '../finance'
+import { money, transactionAccountingAmount, type Transaction } from '../finance'
 import type { RefundIndex } from '../refunds'
+import { formatDayRange, formatMonth, formatMonthAbbreviation } from '../shared/format'
 import { Panel } from '../shared/ui/Panel'
 import { MovementPeriodSummary } from './overview/MovementPeriodSummary'
 import './MovementChart.css'
@@ -14,8 +15,6 @@ interface ChartPeriod {
   expenses: number
 }
 
-const chartDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' })
-const chartMonth = new Intl.DateTimeFormat('ru-RU', { month: 'short', timeZone: 'UTC' })
 const shortMoney = new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 })
 
 function ChartLegendItem({ label, tone }: { label: string; tone: 'expense' | 'income' }) {
@@ -71,7 +70,7 @@ function buildChart(rows: Transaction[], month: string, refunds: RefundIndex) {
       periods.push({
         key: String(start),
         label: start === end ? String(start) : `${start}–${end}`,
-        name: chartDate.formatRange(new Date(Date.UTC(year, monthNumber - 1, start)), new Date(Date.UTC(year, monthNumber - 1, end))),
+        name: formatDayRange(new Date(Date.UTC(year, monthNumber - 1, start)), new Date(Date.UTC(year, monthNumber - 1, end))),
         income: 0,
         expenses: 0,
       })
@@ -89,7 +88,7 @@ function buildChart(rows: Transaction[], month: string, refunds: RefundIndex) {
       const date = new Date(Date.UTC(year, monthNumber - 1 - offset, 1))
       const key = periodMonth(date)
       if (key < earliest) continue
-      periods.push({ key, label: chartMonth.format(date).replace('.', ''), name: formatMonth(key), income: 0, expenses: 0 })
+      periods.push({ key, label: formatMonthAbbreviation(date), name: formatMonth(key), income: 0, expenses: 0 })
     }
   }
 

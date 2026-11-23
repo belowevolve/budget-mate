@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Input } from '@ui-sdk/react/input'
 import { Plus, UserPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { Button } from '../shared/ui/Button'
+import { cn } from '../shared/cn'
+import { Button, buttonVariants } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import type { BillPerson } from './bill'
 import type { BillItemForm } from './model'
@@ -41,7 +42,8 @@ export default function BillComposer({ people, targets, fields, disabled, error,
             // SDK moves touch-opened dialogs to the content to avoid opening the keyboard.
             if (open && input && document.activeElement === input.closest('[role="dialog"]')) input.focus({ preventScroll: true })
           }}>
-            <DialogTrigger className="btn-icon rounded-xl" aria-label="Добавить участника" disabled={disabled}>
+            <DialogTrigger className={cn(buttonVariants({ variant: 'secondary', size: 'icon' }), 'rounded-xl')}
+              aria-label="Добавить участника" disabled={disabled}>
               <UserPlus aria-hidden="true" />
             </DialogTrigger>
             <DialogContent initialFocus={() => nameInput.current} className="compact-dialog">
@@ -70,8 +72,9 @@ export default function BillComposer({ people, targets, fields, disabled, error,
           <Input className="field-input text-base" aria-label="Цена новой позиции, ₽" placeholder="Цена, ₽" autoComplete="off"
             enterKeyHint="done" inputMode="decimal" maxLength={13} required value={fields.price} disabled={disabled}
             onValueChange={(value) => onItemFieldChange('price', value)} />
-          <Button variant="icon" size="large" className="rounded-xl bg-primary text-on-primary hover:bg-primary-hover"
-            icon={Plus} type="submit" aria-label="Добавить позицию" disabled={disabled || !targets.length} />
+          <Button size="icon-lg" className="rounded-xl" type="submit" aria-label="Добавить позицию" disabled={disabled || !targets.length}>
+            <Plus aria-hidden="true" />
+          </Button>
         </form>
         {error && <p className="error-text" role="alert">{error}</p>}
       </div>

@@ -109,8 +109,10 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
           <div className={`mx-auto flex min-h-13 min-w-0 items-center gap-2 px-3 sm:px-5 md:min-h-15 md:px-6 ${settings ? 'max-w-2xl' : 'max-w-315 justify-between'}`}>
             {settings ? (
               <>
-                <Button variant="icon" size="compact" icon={ArrowLeft} className="bg-transparent"
-                  aria-label={settings.view === 'menu' ? 'Назад' : 'Назад к настройкам'} onClick={settings.onBack} />
+                <Button variant="secondary" size="icon-sm" className="bg-transparent"
+                  aria-label={settings.view === 'menu' ? 'Назад' : 'Назад к настройкам'} onClick={settings.onBack}>
+                  <ArrowLeft aria-hidden="true" />
+                </Button>
                 <h1 key={settings.view} ref={settingsHeading} tabIndex={-1} className="min-w-0 text-xl leading-tight wrap-anywhere outline-none md:text-2xl">
                   {settingsTitles[settings.view]}
                 </h1>
@@ -118,11 +120,13 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
             ) : (
               <>
                 <h1 key={page} ref={pageHeading} className="min-w-0 truncate text-xl leading-tight md:text-2xl">{page === 'bills' ? destinations.bills.title : destinations[page].label}</h1>
-                <Button ref={settingsTrigger} id="workspace-actions" variant="icon" size="compact" icon={Settings}
+                <Button ref={settingsTrigger} id="workspace-actions" variant="secondary" size="icon-sm"
                   className="bg-transparent" aria-label="Настройки" onClick={() => {
                   settingsMenuScroll.current = 0
                   onOpenSettings()
-                }} />
+                }}>
+                  <Settings aria-hidden="true" />
+                </Button>
               </>
             )}
           </div>

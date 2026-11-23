@@ -4,9 +4,11 @@ import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react
 import { Input } from '@ui-sdk/react/input'
 import { FilePlus, History, Save } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { Button } from '../shared/ui/Button'
+import { cn } from '../shared/cn'
+import { Button, buttonVariants } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
-import { formatDate, money, type Ledger, type Transaction } from '../finance'
+import { money, type Ledger, type Transaction } from '../finance'
+import { formatDate } from '../shared/format'
 import type { VaultWrite } from '../vault-ui/vaultModel'
 import BillComposer from './BillComposer'
 import { BillDrag } from './BillDrag'
@@ -19,7 +21,8 @@ import './billPage.css'
 function BillHistory({ bills, selected, onSelect }: { bills: Bill[]; selected: string; onSelect: (bill: Bill) => void }) {
   return (
     <Dialog presentation="auto">
-      <DialogTrigger className="btn-icon rounded-xl" aria-label="История счетов" disabled={!bills.length}>
+      <DialogTrigger className={cn(buttonVariants({ variant: 'secondary', size: 'icon' }), 'rounded-xl')}
+        aria-label="История счетов" disabled={!bills.length}>
         <History aria-hidden="true" />
       </DialogTrigger>
       <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
@@ -81,10 +84,14 @@ export default reatomFactoryComponent<{
               <Input className="field-input text-base font-bold" aria-label="Название счёта" autoComplete="off"
                 placeholder="Название счёта" maxLength={80} value={draft.title}
                 onValueChange={wrap(model.setTitle)} disabled={!ready} />
-              <Button variant="icon" className="rounded-xl" icon={Save} aria-label="Сохранить счёт" disabled={!canSave || !ready}
-                onClick={wrap(() => model.save(write, notify))} />
-              <Button variant="icon" className="rounded-xl" icon={FilePlus} aria-label="Новый счёт" disabled={!ready}
-                onClick={wrap(() => model.openBill())} />
+              <Button variant="secondary" size="icon" className="rounded-xl" aria-label="Сохранить счёт" disabled={!canSave || !ready}
+                onClick={wrap(() => model.save(write, notify))}>
+                <Save aria-hidden="true" />
+              </Button>
+              <Button variant="secondary" size="icon" className="rounded-xl" aria-label="Новый счёт" disabled={!ready}
+                onClick={wrap(() => model.openBill())}>
+                <FilePlus aria-hidden="true" />
+              </Button>
               <BillHistory bills={ledger.bills ?? []} selected={draft.id} onSelect={wrap(model.openBill)} />
             </div>
             <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1">

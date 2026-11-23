@@ -11,7 +11,7 @@ Define all application colors as semantic tokens in `src/index.css`, including c
 
 Use ui-sdk for interactive behavior. Build screens from small components that own their markup and styles. Keep reusable UI components in `src/shared/ui` and feature components with their feature. Avoid modules that export strings of Tailwind utilities.
 
-Use the shared `Button` for standard actions. Its variant and size control internal spacing, and its `icon` prop renders a consistently sized leading icon.
+Use the shared `Button` for standard actions. Pass icons and labels as children. The button variant and size control spacing and default icon dimensions. Use Tailwind utilities in the component, `cva` for variants, and `cn` to merge class overrides.
 
 For changes to scrollable UI, follow the [budget mate UI skill](.agents/skills/budget-mate-ui/SKILL.md).
 

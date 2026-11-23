@@ -11,7 +11,7 @@ export function DialogHeaderFrame({ children, closeDisabled, closeLabel = 'За�
       <SheetGrip />
       {children}
       <DialogClose className="dialog-close" aria-label={closeLabel} disabled={closeDisabled}>
-        <X aria-hidden="true" />
+        <X className="pointer-events-none size-4.5 shrink-0" aria-hidden="true" />
       </DialogClose>
     </div>
   )

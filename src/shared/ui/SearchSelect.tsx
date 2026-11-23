@@ -5,7 +5,7 @@ import {
 import { Check } from 'lucide-react'
 import { useRef, type ReactNode, type Ref } from 'react'
 import { ChoiceTriggerContent } from './ChoiceTriggerContent'
-import { SearchFieldFrame } from './SearchField'
+import { SearchFieldFrame, SearchInput } from './SearchField'
 import './searchSelect.css'
 
 interface SearchOption<Value extends string> {
@@ -23,14 +23,14 @@ export function SelectSearchField({ label, noResults, action, inputRef }: {
 }) {
   return (
     <>
-      <div className="search-select-tools">
+      <div className="flex min-w-0 shrink-0 items-center gap-1.5">
         <SearchFieldFrame className="flex-1">
           <SelectInput ref={inputRef} aria-label={label} placeholder={label} type="search" autoComplete="off"
-            className="search-input h-9 min-h-9 pe-2" />
+            render={<SearchInput className="h-9 min-h-9 pe-2" />} />
         </SearchFieldFrame>
         {action}
       </div>
-      <SelectEmpty className="search-select-empty">{noResults}</SelectEmpty>
+      <SelectEmpty className="px-2 py-3 text-sm text-muted not-data-empty:hidden">{noResults}</SelectEmpty>
     </>
   )
 }
@@ -45,11 +45,11 @@ export function SearchSelectList<Value extends string>({ label, options }: { lab
         const { value, label, icon, detail } = option
         return (
           <SelectItem key={value} value={value} label={label} aria-label={label} className="choice-item">
-            <span className="search-select-label">
+            <span className="flex min-w-0 items-center gap-2">
               {icon}
-              <span className="search-select-text">
+              <span className="grid min-w-0 leading-snug wrap-anywhere">
                 <SelectItemText />
-                {detail && <span className="search-select-detail">{detail}</span>}
+                {detail && <span className="text-xs font-medium text-muted">{detail}</span>}
               </span>
             </span>
             <SelectItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></SelectItemIndicator>
@@ -89,7 +89,7 @@ export function SearchSelect<Value extends string>({ label, searchLabel, options
         onOpenChangeComplete?.(open)
       }}>
       {anchor === undefined && (
-        <SelectTrigger ref={triggerRef} aria-label={label} className="choice-trigger search-select-trigger group">
+        <SelectTrigger ref={triggerRef} aria-label={label} className="choice-trigger group w-full min-w-0 text-start">
           <ChoiceTriggerContent icon={triggerIcon ?? selectedIcon}>
             <SelectValue className="min-w-0 truncate" />
           </ChoiceTriggerContent>
@@ -99,7 +99,7 @@ export function SearchSelect<Value extends string>({ label, searchLabel, options
         aria-label={label} className="choice-popover search-select-popover">
         <SelectSearchField label={searchLabel} noResults={noResults} action={searchAction} inputRef={searchInput} />
         <SearchSelectList label={label} options={options} />
-        {footer}
+        {footer && <div className="grid shrink-0 gap-1.5 border-t border-line pt-1.5">{footer}</div>}
       </SelectContent>
     </Select>
   )

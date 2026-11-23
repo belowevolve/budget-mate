@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'rea
 import { Input } from '@ui-sdk/react/input'
 import { ArrowLeft, Fingerprint, KeyRound } from 'lucide-react'
 import { Button } from '../shared/ui/Button'
+import { Panel } from '../shared/ui/Panel'
 import Brand from '../workspace/Brand'
 import { DeviceSetup } from './DeviceSetup'
 import { messageFor, type VaultAccess } from './useVaultSession'
@@ -64,7 +65,7 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
   return (
     <div className="grid min-h-dvh place-items-center content-center gap-4 px-3 py-4">
       <Brand />
-      <main className="surface-panel grid w-full min-w-0 max-w-sm gap-2.5 p-3 sm:p-4" aria-labelledby="access-title">
+      <Panel as="main" padded className="grid w-full max-w-sm gap-2.5" aria-labelledby="access-title">
         <h1 id="access-title" className="text-xl leading-tight wrap-anywhere sm:text-2xl">{title}</h1>
         {setup && !alternate && (
           <>
@@ -84,11 +85,12 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
           </>
         )}
         {locked && screen.methods.device && (
-          <Button icon={screen.methods.deviceMode === 'security-key' ? KeyRound : Fingerprint} disabled={pending} onClick={() => {
+          <Button disabled={pending} onClick={() => {
             launchedUnlock.current = true
             return act(vault.unlockDevice)
           }}>
-            {screen.methods.deviceMode === 'security-key' ? 'Открыть USB- или NFC-ключом' : 'Открыть отпечатком или PIN'}
+            {screen.methods.deviceMode === 'security-key' ? <KeyRound aria-hidden="true" /> : <Fingerprint aria-hidden="true" />}
+            <span>{screen.methods.deviceMode === 'security-key' ? 'Открыть USB- или NFC-ключом' : 'Открыть отпечатком или PIN'}</span>
           </Button>
         )}
         {locked && screen.methods.device && screen.methods.password && !alternate && (
@@ -102,13 +104,14 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
           </form>
         )}
         {setup && alternate && (
-          <Button variant="text" icon={ArrowLeft} className="justify-self-start" disabled={pending}
+          <Button variant="text" className="justify-self-start" disabled={pending}
             onClick={() => { setAlternate(false); setBackup(undefined); setError('') }}>
-            Назад
+            <ArrowLeft aria-hidden="true" data-icon="inline-start" />
+            <span>Назад</span>
           </Button>
         )}
         {(error || screen.kind === 'unavailable') && <p role="alert" className="error-text">{screen.kind === 'unavailable' ? screen.message : error}</p>}
-      </main>
+      </Panel>
     </div>
   )
 }

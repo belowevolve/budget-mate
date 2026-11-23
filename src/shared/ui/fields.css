@@ -1,26 +1,13 @@
 @layer components {
-  .field-input,
-  .search-input {
-    @apply min-h-11 w-full min-w-0 rounded-xl border border-field-line text-ink;
+  .field-input {
+    @apply min-h-11 w-full min-w-0 rounded-xl border border-field-line bg-field px-3 text-sm text-ink;
 
     &:focus-visible { @apply border-primary outline-2 -outline-offset-2 outline-primary; }
     &[data-invalid]:focus-visible { @apply border-danger outline-danger; }
   }
-  .field-input { @apply bg-field px-3 text-sm; }
 
   .checkbox-control {
     @apply size-5 shrink-0 rounded-md border border-field-line bg-paper text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-checked:border-primary data-checked:bg-primary;
-  }
-
-  .search-input {
-    @apply h-11 bg-paper pe-9 ps-8 text-base sm:text-sm;
-
-    &::-webkit-search-cancel-button { @apply appearance-none; }
-  }
-  .search-toolbar { @apply grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2; }
-  .search-action {
-    @apply size-11 rounded-xl border border-field-line bg-paper hover:bg-subtle focus-visible:border-primary focus-visible:-outline-offset-2;
-    &[data-active] { @apply border-primary bg-selected; }
   }
 
   .segmented-control {

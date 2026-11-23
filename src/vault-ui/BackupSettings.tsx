@@ -5,7 +5,8 @@ import { DialogClose, DialogDescription } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
 import { Check, Copy, Download, Upload } from 'lucide-react'
-import { Button } from '../shared/ui/Button'
+import { cn } from '../shared/cn'
+import { Button, buttonVariants } from '../shared/ui/Button'
 import { createBackupCode } from '../vault'
 import { messageFor, type VaultAccess } from './useVaultSession'
 
@@ -114,7 +115,7 @@ export default function BackupSettings({ vault }: { vault: VaultAccess }) {
     return (
       <div className="grid min-w-0 gap-2.5">
         <DialogDescription className="body-text m-0"><span role="status">Хранилище восстановлено из копии.</span></DialogDescription>
-        <DialogClose autoFocus className="btn-primary w-full">Готово</DialogClose>
+        <DialogClose autoFocus className={cn(buttonVariants(), 'w-full')}>Готово</DialogClose>
       </div>
     )
   }
@@ -128,18 +129,21 @@ export default function BackupSettings({ vault }: { vault: VaultAccess }) {
       </div>
       <div className="grid min-w-0 gap-2">
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="secondary" size="compact" icon={Copy} onClick={copy}>
-            {copied ? 'Скопировано' : 'Копировать код'}
+          <Button variant="secondary" size="compact" onClick={copy}>
+            <Copy aria-hidden="true" />
+            <span>{copied ? 'Скопировано' : 'Копировать код'}</span>
           </Button>
-          <Button size="compact" icon={Download} disabled={pending > 0} onClick={download}>
-            Скачать копию
+          <Button size="compact" disabled={pending > 0} onClick={download}>
+            <Download aria-hidden="true" />
+            <span>Скачать копию</span>
           </Button>
         </div>
-        <Button variant="text" icon={Upload} disabled={pending > 0} onClick={() => {
+        <Button variant="text" disabled={pending > 0} onClick={() => {
           setError('')
           setMode('restore')
         }}>
-          Восстановить копию
+          <Upload aria-hidden="true" data-icon="inline-start" />
+          <span>Восстановить копию</span>
         </Button>
       </div>
     </div>

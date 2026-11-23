@@ -16,12 +16,4 @@
     & > dt { @apply text-muted wrap-anywhere; }
     & > dd { @apply max-w-36 text-end font-bold wrap-anywhere tabular-nums; }
   }
-
-  .credit-payment-actions {
-    @apply flex min-w-0 flex-wrap items-center gap-1.5;
-
-    &[data-reminder] > :is(.btn-secondary, .btn-icon) {
-      @apply flex-none bg-paper hover:bg-selected;
-    }
-  }
 }

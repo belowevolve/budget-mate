@@ -80,24 +80,12 @@ export async function setOwnSbpPhone(ledger: Ledger, phone: string | null): Prom
   return reconcileLedger({ ...ledger, sbp: { key, ownPhone: { token, label } } })
 }
 
-export const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
 const moneyFormatters = new Map<string, Intl.NumberFormat>()
 
 export function localDate(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${date.getFullYear()}-${month}-${day}`
-}
-
-export function formatDate(date: string) {
-  return dateFormatter.format(new Date(`${date.slice(0, 10)}T00:00:00Z`))
-}
-
-export function formatMonth(month: string) {
-  if (!month) return 'Весь период'
-  const [year, number] = month.split('-')
-  return `${months[Number(number) - 1]} ${year}`
 }
 
 export function money(amountMinor: number, currency = 'RUB', exact = false) {

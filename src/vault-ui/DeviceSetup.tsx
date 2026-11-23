@@ -69,9 +69,15 @@ export function DeviceSetup({ supported, confirm, onPendingChange, showOtherOpti
         </>
       ) : (
         <>
-          {supported && <Button icon={Fingerprint} disabled={pending} onClick={() => start('platform')}>Настроить отпечаток или PIN</Button>}
+          {supported && <Button disabled={pending} onClick={() => start('platform')}>
+            <Fingerprint aria-hidden="true" />
+            <span>Настроить отпечаток или PIN</span>
+          </Button>}
           {external && (!supported || showOtherOptions) && (
-            <Button variant="secondary" icon={KeyRound} disabled={pending} onClick={() => start('security-key')}>Использовать USB- или NFC-ключ</Button>
+            <Button variant="secondary" disabled={pending} onClick={() => start('security-key')}>
+              <KeyRound aria-hidden="true" />
+              <span>Использовать USB- или NFC-ключ</span>
+            </Button>
           )}
           {supported === false && !external && <p className="body-text">Для настройки входа открой приложение через HTTPS или localhost в браузере с поддержкой ключей доступа.</p>}
         </>

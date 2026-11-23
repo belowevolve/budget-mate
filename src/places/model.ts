@@ -1,6 +1,7 @@
 import { explicitMcc, isExplicitOwnTransfer, isVtbBrokerageFunding, vtbBrokerageDestination } from '../categories/classify'
 import type { Category, CategoryCatalog } from '../categories/catalog'
 import type { Transaction } from '../finance'
+import { formatNumericDate } from '../shared/format'
 import { isCreditRepayment, isSbp, isTransferDescription } from '../statements/transfer'
 
 export interface Place {
@@ -51,7 +52,7 @@ export function isIndividualPlaceAlias(alias: string) {
 export function placeAliasLabel(alias: string) {
   if (isIndividualPlaceAlias(alias)) {
     const date = alias.slice(brokerageOperationPrefix.length, brokerageOperationPrefix.length + 10)
-    return `Пополнение брокерского счёта · ${date.split('-').reverse().join('.')}`
+    return `Пополнение брокерского счёта · ${formatNumericDate(date)}`
   }
   if (alias.startsWith(brokerageDestinationPrefix)) {
     return `ВТБ · Брокерская субпозиция № ${alias.slice(brokerageDestinationPrefix.length).toUpperCase()}`

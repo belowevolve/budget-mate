@@ -14,13 +14,13 @@ function BudgetMetric({ label, icon: Icon, value, featured, negative, className 
   className?: string
   children?: ReactNode
 }) {
-  const layout = featured ? 'gap-1 bg-summary px-4 py-3 text-on-summary sm:px-5 sm:py-4' : 'gap-0.5 px-3 py-2 sm:px-4'
+  const tone = featured ? 'bg-summary text-on-summary' : ''
   const amount = featured
     ? 'text-[clamp(1.75rem,8vw,3.15rem)] leading-[1.08] tracking-[-.06em]'
     : 'text-[clamp(1rem,4.6vw,1.9rem)] leading-tight tracking-tight'
 
   return (
-    <div className={`grid min-w-0 content-center ${layout} ${className}`}>
+    <div className={`grid min-w-0 content-start gap-1 p-3 sm:p-4 ${tone} ${className}`}>
       <dt className={`flex min-w-0 items-center gap-1.5 text-xs font-bold sm:text-sm ${featured ? 'text-on-summary-muted' : ''}`}>
         <Icon size={19} className="shrink-0" aria-hidden="true" /> {label}
       </dt>
@@ -43,8 +43,8 @@ export function BudgetSummary({ income, expenses, payments, pendingExpenses, cur
 
   return (
     <Panel className="overflow-hidden bg-subtle" aria-label="Итоги бюджета">
-      <dl className="grid grid-cols-2 min-[701px]:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]">
-        <BudgetMetric label="Расходы" icon={ArrowUpRight} value={money(expenses, currency)} featured className="col-span-full min-[701px]:col-auto">
+      <dl className="grid grid-cols-2 min-[701px]:grid-cols-4">
+        <BudgetMetric label="Расходы" icon={ArrowUpRight} value={money(expenses, currency)} featured className="col-span-2">
           <span className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-on-summary-muted">
             <span>{payments} {pluralRu(payments, 'платёж', 'платежа', 'платежей')}</span>
             {pendingExpenses > 0 && (

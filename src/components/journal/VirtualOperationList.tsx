@@ -1,12 +1,8 @@
 import { defaultRangeExtractor, measureElement, useVirtualizer, type Range } from '@tanstack/react-virtual'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { formatDate } from '../../finance'
+import { formatDate, formatDayHeading } from '../../shared/format'
 import type { JournalEntry, JournalGroups } from './model'
 import './operationList.css'
-
-const dayFormatter = new Intl.DateTimeFormat('ru-RU', {
-  weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
-})
 
 type ListItem =
   | { key: string; date: string; entry?: never }
@@ -80,7 +76,7 @@ export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey,
     overscan: 8,
     useFlushSync: false,
   })
-  const year = String(new Date().getFullYear())
+  const year = new Date().getFullYear()
 
   return (
     <ul ref={listRef} className="operation-list" aria-label={ariaLabel} style={{ height: virtualizer.getTotalSize() }}
@@ -94,7 +90,7 @@ export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey,
               aria-setsize={items.length} aria-posinset={index + 1}>
               <h2 className="first-letter:uppercase">
                 <time dateTime={item.date} title={formatDate(item.date)}>
-                  {dayFormatter.format(new Date(`${item.date}T00:00:00Z`))}{item.date.slice(0, 4) !== year ? ` ${item.date.slice(0, 4)}` : ''}
+                  {formatDayHeading(item.date, year)}
                 </time>
               </h2>
             </li>

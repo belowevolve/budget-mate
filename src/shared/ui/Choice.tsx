@@ -3,6 +3,8 @@ import {
   createSelectController, Select, SelectClear, SelectContent, SelectItem, SelectItemIndicator, SelectList, SelectTrigger, SelectValue,
 } from '@ui-sdk/react/select'
 import { Check, X } from 'lucide-react'
+import { cn } from '../cn'
+import { buttonVariants } from './Button'
 import { ChoiceTriggerContent } from './ChoiceTriggerContent'
 import { useAndroidPopupBack } from './popupBack'
 import { SheetGrip } from './SheetGrip'
@@ -11,6 +13,14 @@ export interface ChoiceOption {
   value: string
   label: string
   icon?: ReactNode
+}
+
+export function ChoiceClear({ label }: { label: string }) {
+  return (
+    <SelectClear className={cn(buttonVariants({ variant: 'secondary', size: 'icon-lg' }), 'rounded-xl')} aria-label={label}>
+      <X aria-hidden="true" />
+    </SelectClear>
+  )
 }
 
 export interface ChoiceProps {
@@ -45,11 +55,7 @@ export function Choice({ label, value, options, onChange, icon, className, prese
       {clear ? (
         <div className="flex min-w-0 items-center gap-2">
           {trigger}
-          {value !== clear.value && (
-            <SelectClear className="btn-icon btn-large rounded-xl" aria-label={clear.label}>
-              <X aria-hidden="true" />
-            </SelectClear>
-          )}
+          {value !== clear.value && <ChoiceClear label={clear.label} />}
         </div>
       ) : trigger}
       <SelectContent align="start" sideOffset={7} collisionPadding={10} className="choice-popover">

@@ -1,13 +1,7 @@
 @layer components {
-  .surface-panel { @apply min-w-0 rounded-[21px] border border-line bg-paper sm:rounded-3xl; }
-  .list-panel {
-    @apply flex min-h-0 min-w-0 flex-col overflow-hidden;
-
-    & > :is(ul, [data-slot="listbox"]) {
-      @apply min-h-0 w-full min-w-0 list-none divide-y divide-line overflow-y-auto overscroll-y-contain rounded-none border-0 bg-transparent p-0 scroll-edges-y;
-    }
+  [data-slot="list-panel"] > :is(ul, [data-slot="listbox"]) {
+    @apply min-h-0 w-full min-w-0 list-none divide-y divide-line overflow-y-auto overscroll-y-contain rounded-none border-0 bg-transparent p-0 scroll-edges-y;
   }
-  .card-padding { @apply p-3 sm:p-4; }
   .section-heading { @apply text-base leading-tight font-extrabold tracking-tight wrap-anywhere sm:text-lg; }
   .settings-row {
     @apply flex h-auto min-h-11 w-full min-w-0 justify-start gap-2.5 rounded-none border-0 bg-transparent px-3 py-1.5 text-left text-sm font-semibold text-ink shadow-none hover:bg-subtle focus-visible:outline-offset-[-3px];

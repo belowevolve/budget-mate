@@ -24,8 +24,10 @@ export default function BillParticipant({ person, items, subtotal, currency, dis
         <h2 className="section-heading">{person.name}</h2>
         <strong className="min-w-0 text-sm wrap-anywhere tabular-nums">{money(subtotal, currency, true)}</strong>
         {person.id !== ownerId &&
-          <Button variant="icon" size="compact" className="ms-auto" icon={X} aria-label={`Убрать участника ${person.name}`} disabled={disabled}
-            onClick={() => onRemovePerson(person.id)} />}
+          <Button variant="secondary" size="icon-sm" className="ms-auto" aria-label={`Убрать участника ${person.name}`} disabled={disabled}
+            onClick={() => onRemovePerson(person.id)}>
+            <X aria-hidden="true" />
+          </Button>}
       </div>
       {items.length > 0 ? <ul className="grid min-w-0 gap-1.5" aria-label={`Позиции участника ${person.name}`}>
         {items.map((item) => {
@@ -44,8 +46,10 @@ export default function BillParticipant({ person, items, subtotal, currency, dis
                 {people.length > 1 && <BillSharePicker name={description} price={money(item.priceMinor, currency, true)}
                   personId={person.id} people={people} assigned={assigned}
                   disabled={disabled} onApply={(personIds) => onSetItemPeople(item.id, personIds)} />}
-                <Button variant="icon" size="compact" icon={X} aria-label={`Убрать: ${description}`} disabled={disabled}
-                  onClick={() => onRemoveItem(item.id)} />
+                <Button variant="secondary" size="icon-sm" aria-label={`Убрать: ${description}`} disabled={disabled}
+                  onClick={() => onRemoveItem(item.id)}>
+                  <X aria-hidden="true" />
+                </Button>
               </div>
               <div className="bill-item-equation">
                 <NumberInput className="min-w-0" locale="ru-RU" format={priceFormat} value={item.priceMinor / 100}

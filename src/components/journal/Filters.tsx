@@ -3,21 +3,22 @@ import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import {
-  createSelectController, Select, SelectClear, SelectContent, SelectItem, SelectItemIndicator, SelectLabel, SelectList, SelectTrigger, SelectValue,
+  createSelectController, Select, SelectContent, SelectItem, SelectItemIndicator, SelectLabel, SelectList, SelectTrigger, SelectValue,
 } from '@ui-sdk/react/select'
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle'
-import { Check, SlidersHorizontal, X } from 'lucide-react'
+import { Check, SlidersHorizontal } from 'lucide-react'
 import { useCategoryCatalog } from '../../categories/categoryContext'
 import { categoryDefinition } from '../../categories/catalog'
 import { banks, type Category } from '../../finance'
 import type { BankId } from '../../statements/types'
 import { CategoryIcon } from '../CategoryIcon'
-import { Button } from '../../shared/ui/Button'
-import type { ChoiceOption } from '../../shared/ui/Choice'
+import { cn } from '../../shared/cn'
+import { Button, buttonVariants } from '../../shared/ui/Button'
+import { ChoiceClear, type ChoiceOption } from '../../shared/ui/Choice'
 import { ChoiceTriggerContent } from '../../shared/ui/ChoiceTriggerContent'
 import { DialogHeader } from '../../shared/ui/DialogHeader'
-import SearchField from '../../shared/ui/SearchField'
+import SearchField, { SearchToolbar } from '../../shared/ui/SearchField'
 import { SearchSelectList, SelectSearchField } from '../../shared/ui/SearchSelect'
 import { SheetGrip } from '../../shared/ui/SheetGrip'
 import { useAndroidPopupBack } from '../../shared/ui/popupBack'
@@ -95,9 +96,7 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
               </SelectValue>
             </ChoiceTriggerContent>
           </SelectTrigger>
-          <SelectClear className="btn-icon btn-large rounded-xl" aria-label={clearLabel}>
-            <X aria-hidden="true" />
-          </SelectClear>
+          <ChoiceClear label={clearLabel} />
         </div>
       </div>
       <SelectContent align="start" sideOffset={7} collisionPadding={10}
@@ -167,10 +166,11 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
         options={journalTabs.map((tab) => ({ ...tab, pending: tab.value === 'transfer' && activeTab !== 'transfer' ? reviewCount : 0 }))} />
       {activeTab === 'transfer' && (reviewCount > 0 || transferScope !== 'all') && <JournalTabs label="Тип переводов" value={transferScope} onChange={model.setTransferScope}
         options={transferTabs.map((tab) => ({ ...tab, pending: tab.value === 'review' ? reviewCount : 0 }))} />}
-      <div className="search-toolbar">
+      <SearchToolbar>
         <SearchField label="Поиск по операциям" placeholder="Поиск" value={query} onChange={wrap(model.setQuery)} />
         <Dialog presentation="auto">
-          <DialogTrigger aria-label="Фильтры" className="btn-icon search-action" data-active={hasSelections ? '' : undefined}>
+          <DialogTrigger aria-label="Фильтры" data-active={hasSelections ? '' : undefined}
+            className={cn(buttonVariants({ variant: 'outline', size: 'icon-lg' }), 'rounded-xl')}>
             <SlidersHorizontal aria-hidden="true" />
           </DialogTrigger>
           <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
@@ -201,11 +201,11 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
             </div>
             <div className="flex items-center justify-end gap-2">
               {hasSelections && <Button variant="text" onClick={wrap(model.clearSelections)}>Сбросить фильтры</Button>}
-              <DialogClose className="btn-primary grow" aria-label="Готово, закрыть фильтры">Готово</DialogClose>
+              <DialogClose className={cn(buttonVariants(), 'grow')} aria-label="Готово, закрыть фильтры">Готово</DialogClose>
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </SearchToolbar>
       {activeLabels && <p className="min-w-0 px-0.5 text-xs leading-snug text-muted wrap-anywhere">{activeLabels}</p>}
     </>
   )

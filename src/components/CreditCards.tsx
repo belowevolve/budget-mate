@@ -7,7 +7,9 @@ import {
 } from '../credits/creditAccounts'
 import CreditEditor from '../credits/CreditEditor'
 import { creditCalendarUrl, creditToday, reatomCreditPayment } from '../credits/model'
-import { banks, formatDate, money, type Ledger } from '../finance'
+import { banks, money, type Ledger } from '../finance'
+import { cn } from '../shared/cn'
+import { formatDate } from '../shared/format'
 import { Button } from '../shared/ui/Button'
 import type { Notify } from '../shared/ui/feedback'
 import { Panel } from '../shared/ui/Panel'
@@ -43,7 +45,8 @@ function CreditPayment({ account, reminder, today, write, notify, editor }: {
       </div>}
       {reminder?.paid?.source === 'bank' && <p className="text-xs">Подтверждено выпиской</p>}
       {reminder && !reminder.paid && !amount && <p className="text-xs">Сумма пока неизвестна</p>}
-      <div className="credit-payment-actions" data-reminder={reminder ? '' : undefined}>
+      <div className={cn('flex min-w-0 flex-wrap items-center gap-1.5',
+        reminder && '[&>:is(button,a)]:flex-none [&>:is(button,a)]:bg-paper [&>:is(button,a)]:hover:bg-selected')}>
         {reminder && reminder.paid?.source !== 'bank' && (
           <Button variant="secondary" size="compact" disabled={!ready} onClick={async () => {
             try {
@@ -58,8 +61,10 @@ function CreditPayment({ account, reminder, today, write, notify, editor }: {
         )}
         {editor}
         {calendarUrl && (
-          <Button variant="icon" size="large" icon={CalendarPlus} aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
-            render={<a href={calendarUrl} target="_blank" rel="noreferrer" />} />
+          <Button variant="secondary" size="icon-lg" aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
+            render={<a href={calendarUrl} target="_blank" rel="noreferrer" />}>
+            <CalendarPlus aria-hidden="true" />
+          </Button>
         )}
       </div>
     </div>

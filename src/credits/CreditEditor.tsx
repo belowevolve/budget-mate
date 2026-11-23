@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react'
-import { Button } from '../shared/ui/Button'
+import { cn } from '../shared/cn'
+import { Button, buttonVariants } from '../shared/ui/Button'
 import { Choice, type ChoiceOption } from '../shared/ui/Choice'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SheetGrip } from '../shared/ui/SheetGrip'
@@ -35,6 +36,7 @@ function ReminderDateField({ value, disabled, onChange }: {
 }) {
   const [controller] = useState(createDatePickerController)
   const watchBack = useAndroidPopupBack(() => { controller.close({ reason: 'back' }) })
+  const calendarButton = buttonVariants({ variant: 'secondary', size: 'icon' })
 
   return (
     <Field name="dueOn" className="grid min-w-0 gap-1">
@@ -44,7 +46,8 @@ function ReminderDateField({ value, disabled, onChange }: {
         <div className="relative min-w-0">
           <DatePickerInput className="field-input pe-12 text-base" placeholder="ДД.ММ.ГГГГ" inputMode="numeric" autoComplete="off" />
           <span className="absolute inset-y-0 inset-e-1 flex items-center">
-            <DatePickerTrigger aria-label="Выбрать дату платежа" className="btn-icon rounded-lg bg-transparent focus-visible:-outline-offset-2 data-open:bg-subtle">
+            <DatePickerTrigger aria-label="Выбрать дату платежа"
+              className={cn(calendarButton, 'rounded-lg bg-transparent focus-visible:-outline-offset-2 data-open:bg-subtle')}>
               <CalendarDays aria-hidden="true" />
             </DatePickerTrigger>
           </span>
@@ -53,11 +56,11 @@ function ReminderDateField({ value, disabled, onChange }: {
           <SheetGrip />
           <div className="mx-auto grid min-h-0 w-full max-w-84 grid-rows-[auto_minmax(0,1fr)] gap-1 pb-1">
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
-              <CalendarPrevious aria-label="Предыдущий месяц" className="btn-icon">
+              <CalendarPrevious aria-label="Предыдущий месяц" className={calendarButton}>
                 <ChevronLeft aria-hidden="true" />
               </CalendarPrevious>
               <CalendarHeading className="text-sm font-bold first-letter:uppercase" />
-              <CalendarNext aria-label="Следующий месяц" className="btn-icon">
+              <CalendarNext aria-label="Следующий месяц" className={calendarButton}>
                 <ChevronRight aria-hidden="true" />
               </CalendarNext>
             </div>
@@ -112,8 +115,9 @@ const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, w
           </Button>
         )}
         {reminder && !reminder.paid && reminder.dueOn === dueOn && (
-          <Button variant="secondary" icon={Download} className="justify-self-start" onClick={() => downloadCreditReminder(reminder)}>
-            Скачать событие (.ics)
+          <Button variant="secondary" className="justify-self-start" onClick={() => downloadCreditReminder(reminder)}>
+            <Download aria-hidden="true" />
+            <span>Скачать событие (.ics)</span>
           </Button>
         )}
         {validationMessage && <p className="error-text" role="alert">{validationMessage}</p>}
@@ -148,7 +152,8 @@ export default reatomFactoryComponent<EditorProps>((_, { name }) => {
           if (nextOpen) openEditor(props)
           else open.set(false)
         })}>
-        <DialogTrigger className={`btn-secondary ${compactTrigger ? 'btn-compact' : 'justify-self-start'}`}
+        <DialogTrigger className={cn(buttonVariants({ variant: 'secondary', size: compactTrigger ? 'compact' : 'default' }),
+          !compactTrigger && 'justify-self-start')}
           aria-label={compactTrigger ? 'Изменить напоминание' : undefined}>
           {account ? <Bell aria-hidden="true" data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
           <span>{account ? compactTrigger ? 'Изменить' : account.reminder ? 'Изменить напоминание' : 'Напоминание' : 'Добавить счёт'}</span>

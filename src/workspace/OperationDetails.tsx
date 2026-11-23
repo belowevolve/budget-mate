@@ -8,11 +8,12 @@ import { useCategoryCatalog } from '../categories/categoryContext'
 import { categoryDefinition } from '../categories/catalog'
 import { CategoryIcon } from '../components/CategoryIcon'
 import Entry from '../components/journal/Entry'
-import { banks, formatDate, money, needsTransferReview, type Category, type Transaction } from '../finance'
+import { banks, money, needsTransferReview, type Category, type Transaction } from '../finance'
 import { operationTitle } from '../operationPresentation'
 import type { Place } from '../places/model'
 import OperationPlaceEditor from '../places/OperationPlaceEditor'
 import { isRefundIncome, RefundError, type RefundIndex } from '../refunds'
+import { formatDate } from '../shared/format'
 import { Button } from '../shared/ui/Button'
 import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
 import { DialogActions } from '../shared/ui/DialogActions'
@@ -185,10 +186,16 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
               </div>
               {hasFooter && (
                 <DialogActions>
-                  {canRefund && <Button variant="text" icon={Link2} disabled={pending}
-                    onClick={wrap(() => onOpen(row, 'refund'))}>К расходу</Button>}
-                  {canMarkTransfer && <Button variant="secondary" icon={ArrowLeftRight} disabled={pending}
-                    onClick={wrap(() => save(() => onSave('transfer')))}>Свой перевод</Button>}
+                  {canRefund && <Button variant="text" disabled={pending}
+                    onClick={wrap(() => onOpen(row, 'refund'))}>
+                    <Link2 aria-hidden="true" data-icon="inline-start" />
+                    <span>К расходу</span>
+                  </Button>}
+                  {canMarkTransfer && <Button variant="secondary" disabled={pending}
+                    onClick={wrap(() => save(() => onSave('transfer')))}>
+                    <ArrowLeftRight aria-hidden="true" />
+                    <span>Свой перевод</span>
+                  </Button>}
                 </DialogActions>
               )}
               <OperationCategoryDialog row={row} open={categoryOpen} allowTransfer={!compensation} onSave={onSave}

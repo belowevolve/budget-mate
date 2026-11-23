@@ -3,12 +3,13 @@ import { reatomFactoryComponent } from '@reatom/react'
 import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Link2 } from 'lucide-react'
 import { useMemo } from 'react'
-import { Button } from '../shared/ui/Button'
+import { Button, buttonVariants } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import Entry from '../components/journal/Entry'
 import { groupJournalEntries } from '../components/journal/model'
 import { VirtualOperationList } from '../components/journal/VirtualOperationList'
-import { formatDate, type Ledger, type Transaction } from '../finance'
+import type { Ledger, Transaction } from '../finance'
+import { formatDate } from '../shared/format'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { billExpenseOptions, setBillExpense, type Bill } from './bill'
 
@@ -58,7 +59,7 @@ export default reatomFactoryComponent<{
                 open.set(value)
               }
             })}>
-              <DialogTrigger className="btn-secondary" disabled={!ready}>
+              <DialogTrigger className={buttonVariants({ variant: 'secondary' })} disabled={!ready}>
                 <Link2 data-icon="inline-start" aria-hidden="true" /> {linked ? 'Изменить связь' : 'Связать с операцией'}
               </DialogTrigger>
               <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">

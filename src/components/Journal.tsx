@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button } from '../shared/ui/Button'
+import { Panel } from '../shared/ui/Panel'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { isBudgetTransaction, money, type Transaction } from '../finance'
 import { isRefundIncome, type RefundIndex } from '../refunds'
@@ -68,10 +69,10 @@ export default reatomFactoryComponent<JournalProps>(({ initial }) => {
         </div>
 
         {view.groups.length === 0 && (
-          <div className="surface-panel mx-3 grid justify-items-center gap-2 p-4 text-center sm:mx-0 sm:p-5">
+          <Panel as="div" className="mx-3 grid justify-items-center gap-2 p-4 text-center sm:mx-0 sm:p-5">
             <p className="text-sm font-bold text-muted">{reviewOnly ? 'Неопознанных переводов нет' : transfersOnly ? 'Переводов и компенсаций нет' : 'Операций нет'}</p>
             {hasFilter && <Button variant="secondary" onClick={wrap(model.clearFilters)}>Сбросить фильтры</Button>}
-          </div>
+          </Panel>
         )}
 
         {view.groups.length > 0 && (
