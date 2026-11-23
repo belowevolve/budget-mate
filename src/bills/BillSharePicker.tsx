@@ -1,8 +1,8 @@
-import { Button } from '@ui-sdk/react/button'
 import { Checkbox, CheckboxGroup, CheckboxIndicator } from '@ui-sdk/react/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Check, UserRoundPlus } from 'lucide-react'
 import { useState } from 'react'
+import { Button } from '../shared/ui/Button'
 import { SheetGrip } from '../shared/ui/SheetGrip'
 import type { BillPerson } from './bill'
 
@@ -31,8 +31,8 @@ export default function BillSharePicker({ name, price, personId, people, assigne
       }
       setOpen(next)
     }}>
-      <DialogTrigger className="btn-icon size-9" aria-label={`Участники позиции: ${name}`} disabled={disabled}>
-        <UserRoundPlus size={16} aria-hidden="true" />
+      <DialogTrigger className="btn-icon btn-compact" aria-label={`Участники позиции: ${name}`} disabled={disabled}>
+        <UserRoundPlus aria-hidden="true" />
       </DialogTrigger>
       <DialogContent className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]" initialFocus="content">
         <div className="grid min-w-0 gap-2">
@@ -65,7 +65,7 @@ export default function BillSharePicker({ name, price, personId, people, assigne
           {failed && <p className="error-text" role="alert">Не удалось изменить участников позиции.</p>}
           <div className="grid grid-cols-2 gap-2">
             <DialogClose className="btn-secondary">Отмена</DialogClose>
-            <Button className="btn-primary" disabled={disabled || !changed || !selected.length} onClick={() => {
+            <Button disabled={disabled || !changed || !selected.length} onClick={() => {
               if (onApply(selected)) setOpen(false)
               else setFailed(true)
             }}>Применить</Button>

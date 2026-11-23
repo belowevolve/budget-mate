@@ -1,6 +1,5 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { MapPin, Plus, Unlink } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -8,6 +7,7 @@ import { categoryDefinition } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
 import type { Transaction } from '../finance'
+import { Button } from '../shared/ui/Button'
 import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SearchSelect } from '../shared/ui/SearchSelect'
@@ -135,25 +135,23 @@ export default reatomFactoryComponent<Props>(() => {
               }
             })}
             searchAction={
-              <Button className="btn-icon size-9 rounded-lg" aria-label="Создать место" disabled={pending} onClick={wrap(() => {
+              <Button variant="icon" size="compact" icon={Plus} className="rounded-lg" aria-label="Создать место" disabled={pending} onClick={wrap(() => {
                 showMode('create')
                 setNextLayer('create')
                 closePicker()
-              })}>
-                <Plus size={16} aria-hidden="true" />
-              </Button>
+              })} />
             }
             footer={
               <div className="search-select-footer">
                 {error && <p role="alert" className="error-text">{error}</p>}
                 <div className="search-select-actions">
                   {current && (
-                    <Button className="btn-secondary" disabled={pending}
+                    <Button variant="secondary" icon={Unlink} disabled={pending}
                       onClick={wrap(() => submit((items) => unassignPlace(items, alias), closePicker))}>
-                      <Unlink size={15} aria-hidden="true" /> Отвязать
+                      Отвязать
                     </Button>
                   )}
-                  <Button className="btn-primary" disabled={pending || !canBind} onClick={wrap(() => {
+                  <Button disabled={pending || !canBind} onClick={wrap(() => {
                     if (chosenId && canBind) submit((items) => assignPlace(items, chosenId, alias), closePicker)
                   })}>
                     {current ? 'Сменить место' : 'Привязать'}
@@ -201,15 +199,15 @@ export default reatomFactoryComponent<Props>(() => {
             )}
             <div className={`grid min-w-0 gap-2 ${hasSecondaryAction ? 'grid-cols-[auto_minmax(0,1fr)]' : ''}`}>
               {mode === 'create' && (
-                <Button type="button" className="btn-secondary" disabled={pending} onClick={wrap(backToPlaces)}>К списку</Button>
+                <Button variant="secondary" disabled={pending} onClick={wrap(backToPlaces)}>К списку</Button>
               )}
               {!isNew && current && (
-                <Button type="button" className="btn-secondary" disabled={pending}
+                <Button variant="secondary" icon={Unlink} disabled={pending}
                   onClick={wrap(() => submit((currentPlaces) => unassignPlace(currentPlaces, alias)))}>
-                  <Unlink size={16} aria-hidden="true" /> Отвязать
+                  Отвязать
                 </Button>
               )}
-              <Button type="submit" className="btn-primary min-w-0 whitespace-normal" disabled={pending || !canSave}>
+              <Button type="submit" disabled={pending || !canSave}>
                 {isNew ? 'Создать и привязать' : current ? 'Сменить место' : 'Привязать'}
               </Button>
             </div>

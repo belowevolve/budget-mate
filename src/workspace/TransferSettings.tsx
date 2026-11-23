@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Button } from '@ui-sdk/react/button'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
+import { Button } from '../shared/ui/Button'
 
 export default function TransferSettings({ maskedPhone, onChange }: {
   maskedPhone?: string
@@ -41,14 +41,14 @@ export default function TransferSettings({ maskedPhone, onChange }: {
               setPhone(value)
               setError('')
             }} />
-          <Button type="submit" className="btn-primary px-3" disabled={pending || !phone.trim()}>
+          <Button type="submit" disabled={pending || !phone.trim()}>
             {pending ? 'Сохраняем…' : 'Сохранить'}
           </Button>
         </div>
         {error && <FieldError match className="error-text" role="alert">{error}</FieldError>}
       </Field>
       {maskedPhone && (
-        <Button type="button" className="btn-text justify-self-start px-2" disabled={pending} onClick={() => save(null)}>
+        <Button variant="text" className="justify-self-start" disabled={pending} onClick={() => save(null)}>
           Убрать номер
         </Button>
       )}

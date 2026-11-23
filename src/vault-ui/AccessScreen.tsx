@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react'
-import { Button } from '@ui-sdk/react/button'
 import { Input } from '@ui-sdk/react/input'
 import { ArrowLeft, Fingerprint, KeyRound } from 'lucide-react'
+import { Button } from '../shared/ui/Button'
 import Brand from '../workspace/Brand'
 import { DeviceSetup } from './DeviceSetup'
 import { messageFor, type VaultAccess } from './useVaultSession'
@@ -71,9 +71,9 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
             <p className="body-text">Данные зашифрованы и хранятся в этом браузере.</p>
             <DeviceSetup supported={supported} confirm={vault.create} onPendingChange={setPending} showOtherOptions={otherOptions} />
             <div className="flex min-w-0 flex-wrap justify-between gap-x-1">
-              {supported && <Button className="btn-text px-2 text-xs" disabled={pending} aria-expanded={otherOptions}
+              {supported && <Button variant="text" size="compact" disabled={pending} aria-expanded={otherOptions}
                 onClick={() => setOtherOptions(!otherOptions)}>Другие способы</Button>}
-              <Button className="btn-text px-2 text-xs" disabled={pending} onClick={() => { setAlternate(true); setError('') }}>Восстановить копию</Button>
+              <Button variant="text" size="compact" disabled={pending} onClick={() => { setAlternate(true); setError('') }}>Восстановить копию</Button>
             </div>
           </>
         )}
@@ -84,24 +84,27 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
           </>
         )}
         {locked && screen.methods.device && (
-          <Button className="btn-primary" disabled={pending} onClick={() => {
+          <Button icon={screen.methods.deviceMode === 'security-key' ? KeyRound : Fingerprint} disabled={pending} onClick={() => {
             launchedUnlock.current = true
             return act(vault.unlockDevice)
-          }}>{screen.methods.deviceMode === 'security-key' ? <KeyRound size={18} aria-hidden="true" /> : <Fingerprint size={18} aria-hidden="true" />} {screen.methods.deviceMode === 'security-key' ? 'Открыть USB- или NFC-ключом' : 'Открыть отпечатком или PIN'}</Button>
+          }}>
+            {screen.methods.deviceMode === 'security-key' ? 'Открыть USB- или NFC-ключом' : 'Открыть отпечатком или PIN'}
+          </Button>
         )}
         {locked && screen.methods.device && screen.methods.password && !alternate && (
-          <Button className="btn-text" disabled={pending} onClick={() => { setAlternate(true); setError('') }}>Ввести код или пароль</Button>
+          <Button variant="text" disabled={pending} onClick={() => { setAlternate(true); setError('') }}>Ввести код или пароль</Button>
         )}
         {passwordForm && (
           <form onSubmit={submit} className="grid gap-2" autoComplete={setup ? 'off' : undefined}>
             <label htmlFor="vault-password" className="text-sm font-bold">{setup ? 'Код или пароль копии' : 'Код или пароль хранилища'}</label>
             <Input id="vault-password" name="password" type="password" required autoComplete={setup ? 'off' : 'current-password'} data-agent-secret className="field-input text-base" disabled={pending} />
-            <Button type="submit" disabled={pending} className="btn-primary">{setup ? 'Открыть копию' : 'Разблокировать'}</Button>
+            <Button type="submit" disabled={pending}>{setup ? 'Открыть копию' : 'Разблокировать'}</Button>
           </form>
         )}
         {setup && alternate && (
-          <Button className="btn-text justify-self-start px-2" disabled={pending} onClick={() => { setAlternate(false); setBackup(undefined); setError('') }}>
-            <ArrowLeft size={16} aria-hidden="true" /> Назад
+          <Button variant="text" icon={ArrowLeft} className="justify-self-start" disabled={pending}
+            onClick={() => { setAlternate(false); setBackup(undefined); setError('') }}>
+            Назад
           </Button>
         )}
         {(error || screen.kind === 'unavailable') && <p role="alert" className="error-text">{screen.kind === 'unavailable' ? screen.message : error}</p>}

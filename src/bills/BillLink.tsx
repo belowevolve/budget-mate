@@ -1,9 +1,9 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Link2 } from 'lucide-react'
 import { useMemo } from 'react'
+import { Button } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import Entry from '../components/journal/Entry'
 import { groupJournalEntries } from '../components/journal/model'
@@ -59,7 +59,7 @@ export default reatomFactoryComponent<{
               }
             })}>
               <DialogTrigger className="btn-secondary" disabled={!ready}>
-                <Link2 size={16} aria-hidden="true" /> {linked ? 'Изменить связь' : 'Связать с операцией'}
+                <Link2 data-icon="inline-start" aria-hidden="true" /> {linked ? 'Изменить связь' : 'Связать с операцией'}
               </DialogTrigger>
               <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
                 <DialogHeader title="Операция из выписки" description="На сумму счёта или твоей доли" closeDisabled={!ready} />
@@ -73,13 +73,13 @@ export default reatomFactoryComponent<{
                 </div>
                 <div className="grid gap-1">
                   {error() && <p className="error-text" role="alert">{error()}</p>}
-                  <Button className="btn-primary" disabled={!ready || !chosenId || chosenId === bill.expenseId}
+                  <Button disabled={!ready || !chosenId || chosenId === bill.expenseId}
                     onClick={wrap(() => save(write, bill.id, notify, chosenId))}>Привязать</Button>
                 </div>
               </DialogContent>
             </Dialog>
           )}
-          {bill.expenseId && <Button className="btn-text" disabled={!ready} onClick={wrap(() => save(write, bill.id, notify))}>Отвязать</Button>}
+          {bill.expenseId && <Button variant="text" disabled={!ready} onClick={wrap(() => save(write, bill.id, notify))}>Отвязать</Button>}
         </div>
         {!options.length && <p className="text-xs text-muted">Связь появится после импорта операции на ту же сумму.</p>}
         {!open() && error() && <p className="error-text" role="alert">{error()}</p>}

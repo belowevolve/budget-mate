@@ -1,7 +1,7 @@
-import { Button } from '@ui-sdk/react/button'
 import { Input } from '@ui-sdk/react/input'
 import { Search, X } from 'lucide-react'
 import { useRef, type ReactNode } from 'react'
+import { Button } from './Button'
 
 export function SearchFieldFrame({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
@@ -29,13 +29,12 @@ export default function SearchField({ label, placeholder = label, value, onChang
           if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.currentTarget.form) event.preventDefault()
         }} />
       {value && (
-        <Button type="button" className="absolute inset-e-1 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 text-muted shadow-none hover:bg-subtle"
+        <Button variant="icon" size="compact" icon={X}
+          className="absolute inset-e-1 top-1/2 size-8 -translate-y-1/2 rounded-lg bg-transparent text-muted hover:bg-subtle"
           aria-label="Очистить поиск" disabled={disabled} onClick={() => {
             input.current?.focus({ preventScroll: true })
             onChange('')
-          }}>
-          <X size={16} aria-hidden="true" />
-        </Button>
+          }} />
       )}
     </SearchFieldFrame>
   )

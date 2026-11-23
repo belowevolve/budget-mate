@@ -96,6 +96,8 @@
 
   .operation-swipe-button {
     @apply flex h-full min-h-11 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-none border-0 p-1 text-center text-xs leading-tight font-bold whitespace-normal shadow-none;
+
+    & > svg { @apply pointer-events-none size-4 shrink-0; }
   }
 
   .operation-swipe-refund { @apply bg-primary text-on-primary hover:bg-primary-hover; }

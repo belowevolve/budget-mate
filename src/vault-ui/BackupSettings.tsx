@@ -1,11 +1,11 @@
 import { useId, useState, type FormEvent } from 'react'
 import { useAtom } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { Checkbox, CheckboxIndicator } from '@ui-sdk/react/checkbox'
 import { DialogClose, DialogDescription } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
 import { Check, Copy, Download, Upload } from 'lucide-react'
+import { Button } from '../shared/ui/Button'
 import { createBackupCode } from '../vault'
 import { messageFor, type VaultAccess } from './useVaultSession'
 
@@ -65,8 +65,8 @@ function RestoreBackup({ vault, onBack, onRestored }: { vault: VaultAccess; onBa
         {error && <p className="error-text" role="alert">{error}</p>}
       </div>
       <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
-        <Button className="btn-secondary min-w-0 px-3" disabled={pending > 0} onClick={onBack}>Назад</Button>
-        <Button type="submit" data-agent-confirm className="btn-primary min-w-0 bg-danger px-3 whitespace-normal hover:bg-danger-strong"
+        <Button variant="secondary" disabled={pending > 0} onClick={onBack}>Назад</Button>
+        <Button variant="danger" type="submit" data-agent-confirm
           disabled={!file || !password || !confirmed || pending > 0}>
           {pending ? 'Восстанавливаем…' : 'Восстановить хранилище'}
         </Button>
@@ -128,18 +128,18 @@ export default function BackupSettings({ vault }: { vault: VaultAccess }) {
       </div>
       <div className="grid min-w-0 gap-2">
         <div className="grid grid-cols-2 gap-2">
-          <Button className="btn-secondary min-w-0 px-2 whitespace-normal" onClick={copy}>
-            <Copy size={16} className="shrink-0" aria-hidden="true" />{copied ? 'Скопировано' : 'Копировать код'}
+          <Button variant="secondary" size="compact" icon={Copy} onClick={copy}>
+            {copied ? 'Скопировано' : 'Копировать код'}
           </Button>
-          <Button className="btn-primary min-w-0 px-2 whitespace-normal" disabled={pending > 0} onClick={download}>
-            <Download size={16} className="shrink-0" aria-hidden="true" /> Скачать копию
+          <Button size="compact" icon={Download} disabled={pending > 0} onClick={download}>
+            Скачать копию
           </Button>
         </div>
-        <Button className="btn-text min-w-0 px-2 whitespace-normal" disabled={pending > 0} onClick={() => {
+        <Button variant="text" icon={Upload} disabled={pending > 0} onClick={() => {
           setError('')
           setMode('restore')
         }}>
-          <Upload size={16} className="shrink-0" aria-hidden="true" /> Восстановить копию
+          Восстановить копию
         </Button>
       </div>
     </div>

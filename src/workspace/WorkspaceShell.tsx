@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { Button } from '@ui-sdk/react/button'
+import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
 import { ArrowLeft, CreditCard, FileUp, LayoutDashboard, List, ReceiptText, Settings } from 'lucide-react'
+import { Button } from '../shared/ui/Button'
 import Brand from './Brand'
 import type { Page, SettingsView } from './workspaceState'
 import './workspaceShell.css'
@@ -91,13 +92,13 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
           {pages.map((id) => {
             const { label, icon: Icon } = destinations[id]
             return (
-              <Button key={id} aria-current={page === id ? 'page' : undefined} onClick={() => onNavigate(id)}
+              <ButtonPrimitive key={id} aria-current={page === id ? 'page' : undefined} onClick={() => onNavigate(id)}
                 className="group flex h-auto min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border-0 bg-transparent px-0.5 py-0.5 text-center text-[11px] leading-tight font-semibold text-muted shadow-none hover:bg-subtle aria-[current=page]:font-extrabold aria-[current=page]:text-primary md:flex-row md:justify-start md:gap-2.5 md:px-2 md:text-sm md:aria-[current=page]:bg-selected">
                 <span className="grid size-7 shrink-0 place-items-center rounded-lg group-aria-[current=page]:bg-primary group-aria-[current=page]:text-on-primary motion-safe:transition-[background-color,color,scale] motion-safe:duration-150 motion-safe:group-active:scale-90">
                   <Icon size={18} aria-hidden="true" />
                 </span>
                 <span className="max-w-full wrap-anywhere">{label}</span>
-              </Button>
+              </ButtonPrimitive>
             )
           })}
         </nav>
@@ -108,9 +109,8 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
           <div className={`mx-auto flex min-h-13 min-w-0 items-center gap-2 px-3 sm:px-5 md:min-h-15 md:px-6 ${settings ? 'max-w-2xl' : 'max-w-315 justify-between'}`}>
             {settings ? (
               <>
-                <Button className="btn-icon size-9 min-h-9 bg-transparent" aria-label={settings.view === 'menu' ? 'Назад' : 'Назад к настройкам'} onClick={settings.onBack}>
-                  <ArrowLeft size={20} aria-hidden="true" />
-                </Button>
+                <Button variant="icon" size="compact" icon={ArrowLeft} className="bg-transparent"
+                  aria-label={settings.view === 'menu' ? 'Назад' : 'Назад к настройкам'} onClick={settings.onBack} />
                 <h1 key={settings.view} ref={settingsHeading} tabIndex={-1} className="min-w-0 text-xl leading-tight wrap-anywhere outline-none md:text-2xl">
                   {settingsTitles[settings.view]}
                 </h1>
@@ -118,12 +118,11 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
             ) : (
               <>
                 <h1 key={page} ref={pageHeading} className="min-w-0 truncate text-xl leading-tight md:text-2xl">{page === 'bills' ? destinations.bills.title : destinations[page].label}</h1>
-                <Button ref={settingsTrigger} id="workspace-actions" className="btn-icon size-9 min-h-9 bg-transparent" aria-label="Настройки" onClick={() => {
+                <Button ref={settingsTrigger} id="workspace-actions" variant="icon" size="compact" icon={Settings}
+                  className="bg-transparent" aria-label="Настройки" onClick={() => {
                   settingsMenuScroll.current = 0
                   onOpenSettings()
-                }}>
-                  <Settings size={19} aria-hidden="true" />
-                </Button>
+                }} />
               </>
             )}
           </div>

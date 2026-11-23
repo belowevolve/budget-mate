@@ -118,19 +118,19 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
       <JournalSwipeActions value={row.id} className="operation-swipe-actions">
         {openRefund && (
           <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-refund" onAction={() => openRefund(row)}>
-            <Link2 size={16} aria-hidden="true" />
+            <Link2 aria-hidden="true" />
             К расходу
           </JournalSwipeAction>
         )}
         {markTransfer && (
           <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-transfer" onAction={() => { void markTransfer(row) }}>
-            <ArrowLeftRight size={16} aria-hidden="true" />
+            <ArrowLeftRight aria-hidden="true" />
             Свой перевод
           </JournalSwipeAction>
         )}
         {openCategories && (
           <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-category" onAction={() => openCategories(row)}>
-            <Tag size={16} aria-hidden="true" />
+            <Tag aria-hidden="true" />
             Категория
           </JournalSwipeAction>
         )}

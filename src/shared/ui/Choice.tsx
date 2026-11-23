@@ -46,8 +46,8 @@ export function Choice({ label, value, options, onChange, icon, className, prese
         <div className="flex min-w-0 items-center gap-2">
           {trigger}
           {value !== clear.value && (
-            <SelectClear className="btn-icon size-11 rounded-xl" aria-label={clear.label}>
-              <X size={17} aria-hidden="true" />
+            <SelectClear className="btn-icon btn-large rounded-xl" aria-label={clear.label}>
+              <X aria-hidden="true" />
             </SelectClear>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@ui-sdk/react/button'
 import { Fingerprint, KeyRound } from 'lucide-react'
+import { Button } from '../shared/ui/Button'
 import { deviceUnlockAvailable, prepareDeviceUnlock, type DeviceKeyMode, type DeviceUnlockConfirmation } from '../vault'
 import { messageFor } from './useVaultSession'
 
@@ -64,14 +64,14 @@ export function DeviceSetup({ supported, confirm, onPendingChange, showOtherOpti
       {stage ? (
         <>
           {!stage.verifiedOnCreate && <p className="body-text">Подтверди вход на устройстве.</p>}
-          <Button className="btn-primary" disabled={pending} onClick={finish}>{stage.verifiedOnCreate ? 'Продолжить' : 'Подтвердить вход'}</Button>
-          <Button className="btn-text" disabled={pending} onClick={() => { setStage(undefined); setError('') }}>Выбрать другой ключ</Button>
+          <Button disabled={pending} onClick={finish}>{stage.verifiedOnCreate ? 'Продолжить' : 'Подтвердить вход'}</Button>
+          <Button variant="text" disabled={pending} onClick={() => { setStage(undefined); setError('') }}>Выбрать другой ключ</Button>
         </>
       ) : (
         <>
-          {supported && <Button className="btn-primary" disabled={pending} onClick={() => start('platform')}><Fingerprint size={19} aria-hidden="true" /> Настроить отпечаток или PIN</Button>}
+          {supported && <Button icon={Fingerprint} disabled={pending} onClick={() => start('platform')}>Настроить отпечаток или PIN</Button>}
           {external && (!supported || showOtherOptions) && (
-            <Button className="btn-secondary" disabled={pending} onClick={() => start('security-key')}><KeyRound size={18} aria-hidden="true" /> Использовать USB- или NFC-ключ</Button>
+            <Button variant="secondary" icon={KeyRound} disabled={pending} onClick={() => start('security-key')}>Использовать USB- или NFC-ключ</Button>
           )}
           {supported === false && !external && <p className="body-text">Для настройки входа открой приложение через HTTPS или localhost в браузере с поддержкой ключей доступа.</p>}
         </>

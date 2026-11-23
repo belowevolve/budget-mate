@@ -1,12 +1,13 @@
 import { wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { useMemo, useRef } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { categoryDefinition } from '../categories/catalog'
 import Entry from '../components/journal/Entry'
 import { groupJournalEntries } from '../components/journal/model'
 import { VirtualOperationList } from '../components/journal/VirtualOperationList'
+import { Button } from '../shared/ui/Button'
+import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import SearchField from '../shared/ui/SearchField'
 import { banks, formatDate, money, type Transaction } from '../finance'
@@ -69,11 +70,11 @@ export default reatomFactoryComponent<RefundPickerProps>(({ row, refunds }) => {
         </div>
         <div className="grid min-w-0 gap-1.5">
           {error && <p className="error-text" role="alert">{error}</p>}
-          <div className="flex min-w-0 flex-wrap gap-1.5">
-            <Button className="btn-secondary min-w-0 px-2" disabled={pending} onClick={wrap(onBack)}>К операции</Button>
-            <Button className="btn-primary min-w-0 flex-1 px-2" disabled={!selected || selected.row.id === currentTarget?.id || pending}
+          <DialogActions>
+            <Button variant="secondary" disabled={pending} onClick={wrap(onBack)}>К операции</Button>
+            <Button disabled={!selected || selected.row.id === currentTarget?.id || pending}
               onClick={wrap(() => { if (selected) return onSave(selected.row.id) })}>{currentTarget ? 'Сохранить' : 'Привязать'}</Button>
-          </div>
+          </DialogActions>
         </div>
       </>
     )

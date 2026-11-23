@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button } from '@ui-sdk/react/button'
+import { Button } from '../shared/ui/Button'
 import type { VaultUnlockMethods } from '../vault'
 import type { VaultAccess } from './useVaultSession'
 import { DeviceSetup } from './DeviceSetup'
@@ -18,7 +18,7 @@ export function AccessSettings({ vault, methods, canReplaceKey }: {
         {methods.password && ' Вход прежним паролем также доступен.'}
       </p>}
       {methods.device && !replacing && (canReplaceKey
-        ? <Button className="btn-secondary" onClick={() => setReplacing(true)}>Заменить ключ доступа</Button>
+        ? <Button variant="secondary" onClick={() => setReplacing(true)}>Заменить ключ доступа</Button>
         : <p className="body-text">Чтобы заменить ключ, открой хранилище прежним паролем.</p>)}
       {(!methods.device || replacing) && <DeviceSetup supported={vault.supported} showOtherOptions confirm={async (confirmation) => {
         await vault.enableDevice(confirmation, replacing)

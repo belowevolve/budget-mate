@@ -1,11 +1,12 @@
 import { action, atom, reatomForm, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
+import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
 import { Input } from '@ui-sdk/react/input'
 import { Radio, RadioGroup } from '@ui-sdk/react/radio'
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Archive, ArchiveRestore, Check, ChevronRight, Plus } from 'lucide-react'
 import { CategoryGlyph, CategoryIcon } from '../components/CategoryIcon'
+import { Button } from '../shared/ui/Button'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { useCategoryCatalog } from './categoryContext'
 import {
@@ -83,9 +84,9 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
                   {current.isNew ? 'Новая категория' : 'Название категории'}
                 </label>
                 {definition && canArchiveCategory(current.id) && (
-                  <Button type="button" className="btn-text shrink-0 gap-1.5 px-2 text-xs" disabled={disabled || !name.trim()}
+                  <Button variant="text" size="compact" icon={definition.archived ? ArchiveRestore : Archive}
+                    className="shrink-0" disabled={disabled || !name.trim()}
                     onClick={() => submit(!definition.archived)}>
-                    {definition.archived ? <ArchiveRestore size={15} aria-hidden="true" /> : <Archive size={15} aria-hidden="true" />}
                     {definition.archived ? 'Восстановить' : 'Архивировать'}
                   </Button>
                 )}
@@ -125,24 +126,24 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
             </div>
             {failure && <p role="alert" className="text-sm wrap-anywhere text-danger">{failure}</p>}
             <div className="grid grid-cols-2 gap-2">
-              <Button type="button" className="btn-secondary" disabled={disabled} onClick={wrap(() => edit(null))}>Назад</Button>
-              <Button type="submit" className="btn-primary" disabled={disabled || !name.trim()}>Сохранить</Button>
+              <Button variant="secondary" disabled={disabled} onClick={wrap(() => edit(null))}>Назад</Button>
+              <Button type="submit" disabled={disabled || !name.trim()}>Сохранить</Button>
             </div>
           </form>
         ) : (
           <>
-            <Button className="btn-secondary shrink-0 self-start" onClick={wrap(() => edit({
+            <Button variant="secondary" icon={Plus} className="shrink-0 self-start" onClick={wrap(() => edit({
               id: `user:${crypto.randomUUID()}`, label: '', isNew: true, icon: fallbackCategory(selected), tone: fallbackCategory(selected),
-            }))}><Plus size={17} aria-hidden="true" />Добавить</Button>
+            }))}>Добавить</Button>
             <ul className="surface-panel min-w-0 shrink-0 divide-y divide-line overflow-hidden">
               {list.map(([id, item]) => id !== 'transfer' && (
                 <li key={id} className="min-w-0">
-                  <Button className="grid min-h-11 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-none border-0 bg-transparent px-2 py-1.5 text-left text-sm text-ink shadow-none hover:bg-subtle focus-visible:-outline-offset-2"
+                  <ButtonPrimitive className="grid min-h-11 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-none border-0 bg-transparent px-2 py-1.5 text-left text-sm text-ink shadow-none hover:bg-subtle focus-visible:-outline-offset-2"
                     onClick={wrap(() => edit({ id, label: item.label, icon: item.icon, tone: item.tone }))}>
                     <CategoryIcon category={id} className="size-7 rounded-lg" />
                     <span className="min-w-0 truncate">{item.label}{item.archived && <small className="ml-1 text-muted">· Архив</small>}</span>
                     <ChevronRight size={15} className="text-muted" aria-hidden="true" />
-                  </Button>
+                  </ButtonPrimitive>
                 </li>
               ))}
             </ul>

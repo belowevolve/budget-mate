@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { action, atom, wrap } from '@reatom/core'
 import { bindField, reatomComponent, reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import {
   CalendarDay, CalendarGrid, CalendarHeading, CalendarNext, CalendarPrevious, CalendarWeekday, CalendarWeekdays, CalendarWeeks,
   createDatePickerController, DatePicker, DatePickerContent, DatePickerInput, DatePickerTrigger,
@@ -10,6 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
 import { Input } from '@ui-sdk/react/input'
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react'
+import { Button } from '../shared/ui/Button'
 import { Choice, type ChoiceOption } from '../shared/ui/Choice'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SheetGrip } from '../shared/ui/SheetGrip'
@@ -45,7 +45,7 @@ function ReminderDateField({ value, disabled, onChange }: {
           <DatePickerInput className="field-input pe-12 text-base" placeholder="ДД.ММ.ГГГГ" inputMode="numeric" autoComplete="off" />
           <span className="absolute inset-y-0 inset-e-1 flex items-center">
             <DatePickerTrigger aria-label="Выбрать дату платежа" className="btn-icon rounded-lg bg-transparent focus-visible:-outline-offset-2 data-open:bg-subtle">
-              <CalendarDays size={18} aria-hidden="true" />
+              <CalendarDays aria-hidden="true" />
             </DatePickerTrigger>
           </span>
         </div>
@@ -54,11 +54,11 @@ function ReminderDateField({ value, disabled, onChange }: {
           <div className="mx-auto grid min-h-0 w-full max-w-84 grid-rows-[auto_minmax(0,1fr)] gap-1 pb-1">
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
               <CalendarPrevious aria-label="Предыдущий месяц" className="btn-icon">
-                <ChevronLeft size={18} aria-hidden="true" />
+                <ChevronLeft aria-hidden="true" />
               </CalendarPrevious>
               <CalendarHeading className="text-sm font-bold first-letter:uppercase" />
               <CalendarNext aria-label="Следующий месяц" className="btn-icon">
-                <ChevronRight size={18} aria-hidden="true" />
+                <ChevronRight aria-hidden="true" />
               </CalendarNext>
             </div>
             <div className="min-h-0 overflow-y-auto overscroll-y-auto scroll-edges-y">
@@ -107,20 +107,19 @@ const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, w
             value={amount.value} onValueChange={amount.onChange} onBlur={amount.onBlur} onFocus={amount.onFocus} />
         </Field>
         {dueOn && (
-          <Button type="button" className="btn-text justify-self-start px-1" disabled={!ready} onClick={wrap(form.clearDueOn)}>
+          <Button variant="text" className="justify-self-start" disabled={!ready} onClick={wrap(form.clearDueOn)}>
             Убрать дату напоминания
           </Button>
         )}
         {reminder && !reminder.paid && reminder.dueOn === dueOn && (
-          <Button className="btn-secondary justify-self-start" onClick={() => downloadCreditReminder(reminder)}>
-            <Download size={16} aria-hidden="true" />
+          <Button variant="secondary" icon={Download} className="justify-self-start" onClick={() => downloadCreditReminder(reminder)}>
             Скачать событие (.ics)
           </Button>
         )}
         {validationMessage && <p className="error-text" role="alert">{validationMessage}</p>}
         {error && !validationMessage && <p className="error-text" role="alert">{messageFor(error, 'Не удалось сохранить настройки кредитки.')}</p>}
       </div>
-      <Button type="submit" disabled={!ready} className="btn-primary min-w-0 whitespace-normal">
+      <Button type="submit" disabled={!ready}>
         {ready ? account ? 'Сохранить' : 'Добавить кредитку' : 'Сохраняем…'}
       </Button>
     </form>
@@ -149,10 +148,10 @@ export default reatomFactoryComponent<EditorProps>((_, { name }) => {
           if (nextOpen) openEditor(props)
           else open.set(false)
         })}>
-        <DialogTrigger className={`btn-secondary min-w-0 whitespace-normal ${compactTrigger ? 'flex-1 px-2 text-xs' : 'justify-self-start'}`}
+        <DialogTrigger className={`btn-secondary ${compactTrigger ? 'btn-compact' : 'justify-self-start'}`}
           aria-label={compactTrigger ? 'Изменить напоминание' : undefined}>
-          {account ? <Bell size={16} className="shrink-0" aria-hidden="true" /> : <Plus size={17} className="shrink-0" aria-hidden="true" />}
-          {account ? compactTrigger ? 'Изменить' : account.reminder ? 'Изменить напоминание' : 'Напоминание' : 'Добавить счёт'}
+          {account ? <Bell aria-hidden="true" data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
+          <span>{account ? compactTrigger ? 'Изменить' : account.reminder ? 'Изменить напоминание' : 'Напоминание' : 'Добавить счёт'}</span>
         </DialogTrigger>
         <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
           <DialogHeader title={title} />

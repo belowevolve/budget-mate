@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import {
   createSelectController, Select, SelectClear, SelectContent, SelectItem, SelectItemIndicator, SelectLabel, SelectList, SelectTrigger, SelectValue,
@@ -14,6 +13,7 @@ import { categoryDefinition } from '../../categories/catalog'
 import { banks, type Category } from '../../finance'
 import type { BankId } from '../../statements/types'
 import { CategoryIcon } from '../CategoryIcon'
+import { Button } from '../../shared/ui/Button'
 import type { ChoiceOption } from '../../shared/ui/Choice'
 import { ChoiceTriggerContent } from '../../shared/ui/ChoiceTriggerContent'
 import { DialogHeader } from '../../shared/ui/DialogHeader'
@@ -95,8 +95,8 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
               </SelectValue>
             </ChoiceTriggerContent>
           </SelectTrigger>
-          <SelectClear className="btn-icon size-11 rounded-xl" aria-label={clearLabel}>
-            <X size={17} aria-hidden="true" />
+          <SelectClear className="btn-icon btn-large rounded-xl" aria-label={clearLabel}>
+            <X aria-hidden="true" />
           </SelectClear>
         </div>
       </div>
@@ -121,7 +121,7 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
           </>
         )}
         <div className="shrink-0 px-0.5 pt-2 pb-3">
-          <Button className="btn-primary w-full" onClick={() => { controller.close() }}>Готово</Button>
+          <Button className="w-full" onClick={() => { controller.close() }}>Готово</Button>
         </div>
       </SelectContent>
     </Select>
@@ -171,7 +171,7 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
         <SearchField label="Поиск по операциям" placeholder="Поиск" value={query} onChange={wrap(model.setQuery)} />
         <Dialog presentation="auto">
           <DialogTrigger aria-label="Фильтры" className="btn-icon search-action" data-active={hasSelections ? '' : undefined}>
-            <SlidersHorizontal size={18} aria-hidden="true" />
+            <SlidersHorizontal aria-hidden="true" />
           </DialogTrigger>
           <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
             <DialogHeader title="Фильтры" />
@@ -200,7 +200,7 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
               )}
             </div>
             <div className="flex items-center justify-end gap-2">
-              {hasSelections && <Button className="btn-text" onClick={wrap(model.clearSelections)}>Сбросить фильтры</Button>}
+              {hasSelections && <Button variant="text" onClick={wrap(model.clearSelections)}>Сбросить фильтры</Button>}
               <DialogClose className="btn-primary grow" aria-label="Готово, закрыть фильтры">Готово</DialogClose>
             </div>
           </DialogContent>

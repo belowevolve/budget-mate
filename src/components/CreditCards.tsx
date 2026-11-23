@@ -1,6 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useAction, useAtom } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { Bell, CalendarPlus, Check, CreditCard } from 'lucide-react'
 import {
   calendarDayOffset, creditAccountShortLabel, dueCreditAccounts, getCreditAccounts, plannedAmount,
@@ -9,6 +8,7 @@ import {
 import CreditEditor from '../credits/CreditEditor'
 import { creditCalendarUrl, creditToday, reatomCreditPayment } from '../credits/model'
 import { banks, formatDate, money, type Ledger } from '../finance'
+import { Button } from '../shared/ui/Button'
 import type { Notify } from '../shared/ui/feedback'
 import { Panel } from '../shared/ui/Panel'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
@@ -45,7 +45,7 @@ function CreditPayment({ account, reminder, today, write, notify, editor }: {
       {reminder && !reminder.paid && !amount && <p className="text-xs">Сумма пока неизвестна</p>}
       <div className="credit-payment-actions" data-reminder={reminder ? '' : undefined}>
         {reminder && reminder.paid?.source !== 'bank' && (
-          <Button className="btn-secondary min-w-0 flex-1 px-2 text-xs whitespace-normal" disabled={!ready} onClick={async () => {
+          <Button variant="secondary" size="compact" disabled={!ready} onClick={async () => {
             try {
               await setPaid(write, account.accountKey, reminder.id, !reminder.paid)
               notify(reminder.paid ? 'Напоминание снова активно' : 'Платёж отмечен как оплаченный')
@@ -58,10 +58,8 @@ function CreditPayment({ account, reminder, today, write, notify, editor }: {
         )}
         {editor}
         {calendarUrl && (
-          <Button className="btn-icon min-h-11 min-w-11" aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
-            render={<a href={calendarUrl} target="_blank" rel="noreferrer" />}>
-            <CalendarPlus size={16} className="shrink-0" aria-hidden="true" />
-          </Button>
+          <Button variant="icon" size="large" icon={CalendarPlus} aria-label="Добавить в Google Календарь" title="Добавить в Google Календарь"
+            render={<a href={calendarUrl} target="_blank" rel="noreferrer" />} />
         )}
       </div>
     </div>
@@ -134,7 +132,7 @@ export default function CreditCards({ ledger, write, notify, onImport }: {
         <Panel className="empty-card">
           <span className="empty-icon"><CreditCard size={19} aria-hidden="true" /></span>
           <h2 className="section-heading">Данных по кредиткам нет</h2>
-          <Button className="btn-primary" onClick={onImport}>Импортировать PDF</Button>
+          <Button onClick={onImport}>Импортировать PDF</Button>
         </Panel>
       )}
       {tracked.length > 0 && (

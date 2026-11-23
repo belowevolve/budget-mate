@@ -1,12 +1,13 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
+import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
 import { Listbox, ListboxItem, ListboxItemIndicator } from '@ui-sdk/react/listbox'
 import { Check, ChevronRight, Link2, Plus, SearchX } from 'lucide-react'
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { categoryDefinition } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
+import { Button } from '../shared/ui/Button'
 import SearchField from '../shared/ui/SearchField'
 import type { Transaction } from '../finance'
 import { pluralRu } from '../shared/format'
@@ -48,9 +49,7 @@ export function PlaceSearchToolbar({ value, onChange, onCreate, disabled }: {
   return (
     <div className="search-toolbar shrink-0">
       <SearchField label="Поиск мест" value={value} onChange={onChange} />
-      <Button type="button" className="btn-icon search-action" aria-label="Создать место" disabled={disabled} onClick={onCreate}>
-        <Plus size={18} aria-hidden="true" />
-      </Button>
+      <Button variant="icon" icon={Plus} className="search-action" aria-label="Создать место" disabled={disabled} onClick={onCreate} />
     </div>
   )
 }
@@ -63,9 +62,7 @@ function EmptyPlaceSearch({ onCreate, disabled }: { onCreate?: () => void; disab
           <span className="empty-icon" aria-hidden="true"><SearchX size={20} /></span>
           <p role="status" className="section-heading">Места не найдены</p>
           {onCreate && (
-            <Button type="button" className="btn-primary" disabled={disabled} onClick={onCreate}>
-              <Plus size={17} aria-hidden="true" /> Добавить место
-            </Button>
+            <Button icon={Plus} disabled={disabled} onClick={onCreate}>Добавить место</Button>
           )}
         </div>
       </div>
@@ -155,10 +152,10 @@ function PlaceBindings({ place, places, transactions, pending, error, onBack, on
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="surface-panel list-panel">
             {place.aliases.length > 1 && (
-              <Button className="settings-row shrink-0 border-b border-line text-primary" disabled={pending}
+              <ButtonPrimitive className="settings-row shrink-0 border-b border-line text-primary" disabled={pending}
                 onClick={() => setSelected(allSelected ? [] : place.aliases)}>
                 {allSelected ? 'Снять выбор' : 'Выбрать все'}
-              </Button>
+              </ButtonPrimitive>
             )}
             <Listbox multiple activation="manual" aria-label="Привязки из выписки" value={selectedAliases} disabled={pending}
               onValueChange={setSelected}>
@@ -178,17 +175,17 @@ function PlaceBindings({ place, places, transactions, pending, error, onBack, on
       ) : <p className="body-text flex-1">Привязки можно добавить в карточке операции.</p>}
       {error && <p role="alert" className="error-text shrink-0">{error}</p>}
       <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2">
-        <Button className="btn-text" disabled={pending} onClick={choosingTarget ? () => {
+        <Button variant="text" disabled={pending} onClick={choosingTarget ? () => {
           setTargetId(null)
           setTargetQuery('')
           setChoosingTarget(false)
         } : onBack}>Назад</Button>
         {!choosingTarget && place.aliases.length > 0 && (
-          <Button className="btn-secondary flex-1 text-danger" disabled={pending || !selectedAliases.length}
+          <Button variant="secondary" className="flex-1 text-danger" disabled={pending || !selectedAliases.length}
             onClick={() => apply(null)}>Отвязать</Button>
         )}
         {targets.length > 0 && place.aliases.length > 0 && (
-          <Button className="btn-primary flex-1" disabled={pending || !selectedAliases.length || (choosingTarget && !target)}
+          <Button className="flex-1" disabled={pending || !selectedAliases.length || (choosingTarget && !target)}
             onClick={() => { if (choosingTarget && target) apply(target.id); else setChoosingTarget(true) }}>Перенести</Button>
         )}
       </div>
@@ -244,23 +241,21 @@ export default reatomFactoryComponent<{
       return (
         <section data-settings-fill aria-label="Список мест" className="flex min-h-0 min-w-0 flex-col gap-2">
           {list.length > 0 ? <PlaceSearchToolbar value={query} onChange={setQuery} onCreate={createPlace} disabled={pending} /> : (
-            <Button className="btn-secondary shrink-0 self-start" onClick={createPlace} disabled={pending}>
-              <Plus size={17} aria-hidden="true" /> Добавить место
-            </Button>
+            <Button variant="secondary" icon={Plus} className="shrink-0 self-start" onClick={createPlace} disabled={pending}>Добавить место</Button>
           )}
           {visiblePlaces.length > 0 ? (
             <div className="surface-panel list-panel">
               <ul key={query}>
                 {visiblePlaces.map((place) => (
                   <li key={place.id}>
-                    <Button className="settings-row" onClick={wrap(() => {
+                    <ButtonPrimitive className="settings-row" onClick={wrap(() => {
                       setDraft({ name: place.name, category: place.category })
                       showPanel({ kind: 'edit', placeId: place.id })
                     })}>
                       <PlaceRowLabel title={place.name} detail={categoryDefinition(catalog, place.category).label}
                         icon={<CategoryIcon category={place.category} className="size-7 rounded-lg" />} />
                       <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
-                    </Button>
+                    </ButtonPrimitive>
                   </li>
                 ))}
               </ul>
@@ -297,19 +292,19 @@ export default reatomFactoryComponent<{
             autoFocus={panel.kind === 'create'} />
           {error && <p role="alert" className="error-text">{error}</p>}
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" className="btn-secondary" disabled={pending} onClick={wrap(() => showPanel(null))}>Отмена</Button>
-            <Button type="submit" className="btn-primary" disabled={pending || !draft.name.trim()}>Сохранить</Button>
+            <Button variant="secondary" disabled={pending} onClick={wrap(() => showPanel(null))}>Отмена</Button>
+            <Button type="submit" disabled={pending || !draft.name.trim()}>Сохранить</Button>
           </div>
         </form>
         {current && (
           <div className="surface-panel overflow-hidden">
-            <Button className="settings-row" disabled={pending} autoFocus={panel.kind === 'edit' && panel.focusBindings}
+            <ButtonPrimitive className="settings-row" disabled={pending} autoFocus={panel.kind === 'edit' && panel.focusBindings}
               onClick={wrap(() => showPanel({ kind: 'bindings', placeId: current.id }))}>
               <Link2 size={17} className="shrink-0 text-primary" aria-hidden="true" />
               <span>Привязки</span>
               <span className="text-xs text-muted">{current.aliases.length}</span>
               <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
-            </Button>
+            </ButtonPrimitive>
           </div>
         )}
       </>

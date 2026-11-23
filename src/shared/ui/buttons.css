@@ -5,15 +5,34 @@
 
   .btn-primary,
   .btn-secondary,
-  .btn-text {
-    @apply inline-flex h-auto min-h-11 items-center justify-center gap-2 rounded-full border-0 px-4 py-2 text-center text-sm font-bold shadow-none disabled:opacity-60;
+  .btn-text,
+  .btn-danger {
+    @apply inline-flex h-auto min-h-11 min-w-0 max-w-full items-center justify-center gap-2 rounded-full border-0 px-4 py-2 text-center text-sm font-bold whitespace-normal wrap-anywhere shadow-none disabled:opacity-60;
+
+    & > svg { @apply pointer-events-none size-4.5 shrink-0; }
   }
 
   .btn-primary { @apply bg-primary text-on-primary hover:bg-primary-hover; }
   .btn-secondary { @apply bg-subtle text-primary hover:bg-selected; }
-  .btn-text { @apply bg-transparent text-primary hover:bg-subtle; }
+  .btn-danger { @apply bg-danger text-on-primary hover:bg-danger-strong; }
+  .btn-text {
+    @apply bg-transparent px-3 text-primary hover:bg-subtle;
+
+    &:where(:has(> [data-icon="inline-start"])) { @apply pe-4; }
+  }
+
+  .btn-compact { @apply px-3 text-xs; }
 
   .btn-icon {
-    @apply grid size-10 shrink-0 place-items-center rounded-full border-0 bg-subtle p-0 text-primary shadow-none hover:bg-selected;
+    @apply grid size-10 shrink-0 place-items-center rounded-full border-0 bg-subtle p-0 text-primary shadow-none hover:bg-selected disabled:opacity-60;
+
+    &.btn-compact {
+      @apply size-9;
+      > svg { @apply size-4.5; }
+    }
+    &.btn-large { @apply size-11; }
+    & > svg { @apply pointer-events-none size-5 shrink-0; }
   }
+
+  .dialog-close > svg { @apply pointer-events-none size-4.5 shrink-0; }
 }

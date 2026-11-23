@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Button } from '@ui-sdk/react/button'
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible'
 import { FileInput, FileInputDropzone, FileInputTrigger } from '@ui-sdk/react/file-input'
 import { Check, ChevronDown, FileText, FileUp } from 'lucide-react'
 import { banks, formatDate, type ImportEntry } from '../finance'
+import { Button } from '../shared/ui/Button'
 import type { ImportPreview } from '../workspace/importModel'
 
 const fileList = 'mt-1 list-none divide-y divide-line'
@@ -73,8 +73,8 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
             ))}
           </ul>
           <div className="mt-2 flex flex-wrap justify-end gap-2">
-            <Button className="btn-secondary" disabled={busy} onClick={onClear}>Очистить</Button>
-            <Button className="btn-primary" disabled={busy || !readyCount} onClick={onConfirm}>Сохранить операции</Button>
+            <Button variant="secondary" disabled={busy} onClick={onClear}>Очистить</Button>
+            <Button disabled={busy || !readyCount} onClick={onConfirm}>Сохранить операции</Button>
           </div>
         </section>
       )}

@@ -1,8 +1,8 @@
-import { Button } from '@ui-sdk/react/button'
 import { Input } from '@ui-sdk/react/input'
 import { NumberInput, NumberInputControl, NumberInputDecrement, NumberInputGroup, NumberInputIncrement } from '@ui-sdk/react/number-input'
 import { Minus, Plus, X } from 'lucide-react'
 import { money } from '../finance'
+import { Button } from '../shared/ui/Button'
 import { BillDragItem, BillDragList, BillDragSurface } from './BillDrag'
 import BillSharePicker from './BillSharePicker'
 import { billItemGroup, ownerId, type BillItem, type BillItemChanges, type BillPerson } from './bill'
@@ -24,8 +24,8 @@ export default function BillParticipant({ person, items, subtotal, currency, dis
         <h2 className="section-heading">{person.name}</h2>
         <strong className="min-w-0 text-sm wrap-anywhere tabular-nums">{money(subtotal, currency, true)}</strong>
         {person.id !== ownerId &&
-          <Button className="btn-icon ml-auto size-9" aria-label={`Убрать участника ${person.name}`} disabled={disabled}
-            onClick={() => onRemovePerson(person.id)}><X size={15} aria-hidden="true" /></Button>}
+          <Button variant="icon" size="compact" className="ms-auto" icon={X} aria-label={`Убрать участника ${person.name}`} disabled={disabled}
+            onClick={() => onRemovePerson(person.id)} />}
       </div>
       {items.length > 0 ? <ul className="grid min-w-0 gap-1.5" aria-label={`Позиции участника ${person.name}`}>
         {items.map((item) => {
@@ -44,8 +44,8 @@ export default function BillParticipant({ person, items, subtotal, currency, dis
                 {people.length > 1 && <BillSharePicker name={description} price={money(item.priceMinor, currency, true)}
                   personId={person.id} people={people} assigned={assigned}
                   disabled={disabled} onApply={(personIds) => onSetItemPeople(item.id, personIds)} />}
-                <Button className="btn-icon size-9" aria-label={`Убрать: ${description}`} disabled={disabled}
-                  onClick={() => onRemoveItem(item.id)}><X size={15} aria-hidden="true" /></Button>
+                <Button variant="icon" size="compact" icon={X} aria-label={`Убрать: ${description}`} disabled={disabled}
+                  onClick={() => onRemoveItem(item.id)} />
               </div>
               <div className="bill-item-equation">
                 <NumberInput className="min-w-0" locale="ru-RU" format={priceFormat} value={item.priceMinor / 100}

@@ -1,9 +1,9 @@
-import { Button } from '@ui-sdk/react/button'
 import { Checkbox, CheckboxGroup } from '@ui-sdk/react/checkbox'
 import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Input } from '@ui-sdk/react/input'
 import { Plus, UserPlus } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { Button } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import type { BillPerson } from './bill'
 import type { BillItemForm } from './model'
@@ -42,7 +42,7 @@ export default function BillComposer({ people, targets, fields, disabled, error,
             if (open && input && document.activeElement === input.closest('[role="dialog"]')) input.focus({ preventScroll: true })
           }}>
             <DialogTrigger className="btn-icon rounded-xl" aria-label="Добавить участника" disabled={disabled}>
-              <UserPlus size={18} aria-hidden="true" />
+              <UserPlus aria-hidden="true" />
             </DialogTrigger>
             <DialogContent initialFocus={() => nameInput.current} className="compact-dialog">
               <DialogHeader title="Добавить участника" />
@@ -55,7 +55,7 @@ export default function BillComposer({ people, targets, fields, disabled, error,
                   autoComplete="off" maxLength={40} required value={personName}
                   onValueChange={(value) => { setPersonName(value); setPersonError('') }} />
                 {personError && <p className="error-text" role="alert">{personError}</p>}
-                <Button className="btn-primary justify-self-end" type="submit">Добавить</Button>
+                <Button className="justify-self-end" type="submit">Добавить</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -70,9 +70,8 @@ export default function BillComposer({ people, targets, fields, disabled, error,
           <Input className="field-input text-base" aria-label="Цена новой позиции, ₽" placeholder="Цена, ₽" autoComplete="off"
             enterKeyHint="done" inputMode="decimal" maxLength={13} required value={fields.price} disabled={disabled}
             onValueChange={(value) => onItemFieldChange('price', value)} />
-          <Button className="bill-add-button" type="submit" aria-label="Добавить позицию" disabled={disabled || !targets.length}>
-            <Plus size={20} aria-hidden="true" />
-          </Button>
+          <Button variant="icon" size="large" className="rounded-xl bg-primary text-on-primary hover:bg-primary-hover"
+            icon={Plus} type="submit" aria-label="Добавить позицию" disabled={disabled || !targets.length} />
         </form>
         {error && <p className="error-text" role="alert">{error}</p>}
       </div>

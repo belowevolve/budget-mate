@@ -1,6 +1,6 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent, useAction } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
+import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
 import { ArrowLeftRight, Link2 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -13,7 +13,9 @@ import { operationTitle } from '../operationPresentation'
 import type { Place } from '../places/model'
 import OperationPlaceEditor from '../places/OperationPlaceEditor'
 import { isRefundIncome, RefundError, type RefundIndex } from '../refunds'
+import { Button } from '../shared/ui/Button'
 import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
+import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeaderFrame } from '../shared/ui/DialogHeader'
 import { useDialogBackRecovery } from '../shared/ui/popupBack'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
@@ -165,12 +167,12 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                     rows={compensation.incomes} onSelect={wrap(onOpen)} />
                 )}
                 {canEditCategory && (
-                  <Button aria-label="Категория операции" className="choice-trigger w-full min-w-0 text-start"
+                  <ButtonPrimitive aria-label="Категория операции" className="choice-trigger w-full min-w-0 text-start"
                     onClick={(event) => openCategory(event.currentTarget)} disabled={pending}>
                     <ChoiceTriggerContent icon={<CategoryIcon category={category} className="size-7 rounded-lg" />} direction="next">
                       {categoryDefinition(catalog, category, kind).label}
                     </ChoiceTriggerContent>
-                  </Button>
+                  </ButtonPrimitive>
                 )}
                 <OperationPlaceEditor row={row} places={places} write={write} disabled={pending} />
                 {row.description && (row.description !== title || title.length > 50) && (
@@ -181,16 +183,14 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                 )}
                 {error && <p role="alert" className="error-text">{error}</p>}
               </div>
-              {hasFooter && <div className="flex min-w-0 flex-wrap gap-1.5">
-                {canRefund && <Button className="btn-text min-w-0 px-2 whitespace-normal" disabled={pending}
-                  onClick={wrap(() => onOpen(row, 'refund'))}>
-                  <Link2 size={16} className="shrink-0" aria-hidden="true" />К расходу
-                </Button>}
-                {canMarkTransfer && <Button className="btn-secondary min-w-0 flex-1 px-2 whitespace-normal" disabled={pending}
-                  onClick={wrap(() => save(() => onSave('transfer')))}>
-                  <ArrowLeftRight size={16} className="shrink-0" aria-hidden="true" /><span>Свой перевод</span>
-                </Button>}
-              </div>}
+              {hasFooter && (
+                <DialogActions>
+                  {canRefund && <Button variant="text" icon={Link2} disabled={pending}
+                    onClick={wrap(() => onOpen(row, 'refund'))}>К расходу</Button>}
+                  {canMarkTransfer && <Button variant="secondary" icon={ArrowLeftRight} disabled={pending}
+                    onClick={wrap(() => save(() => onSave('transfer')))}>Свой перевод</Button>}
+                </DialogActions>
+              )}
               <OperationCategoryDialog row={row} open={categoryOpen} allowTransfer={!compensation} onSave={onSave}
                 finalFocus={() => categoryTrigger.current?.isConnected ? categoryTrigger.current : content.current}
                 onClose={() => setCategoryOpen(false)} />

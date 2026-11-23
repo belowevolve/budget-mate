@@ -1,7 +1,7 @@
 import { action, atom, onEvent, withAsync, withConnectHook, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
 import { browserNotificationPermission, showNotificationTest } from '../notifications/browser'
+import { Button } from '../shared/ui/Button'
 import type { Notify } from '../shared/ui/feedback'
 
 export default reatomFactoryComponent<{ onPermission: () => void; notify: Notify }>(() => {
@@ -52,10 +52,10 @@ export default reatomFactoryComponent<{ onPermission: () => void; notify: Notify
           <p className="mt-0.5 text-sm leading-snug text-muted">{explanation}</p>
         </div>
         {status === 'default' && (
-          <Button className="btn-secondary shrink-0 px-3" disabled={!enable.ready()} onClick={wrap(() => enable(onPermission, notify))}>Разрешить</Button>
+          <Button variant="secondary" className="shrink-0" disabled={!enable.ready()} onClick={wrap(() => enable(onPermission, notify))}>Разрешить</Button>
         )}
         {status === 'granted' && (
-          <Button className="btn-secondary shrink-0 px-3" disabled={!sendTest.ready()} onClick={wrap(() => sendTest(notify))}>Проверить</Button>
+          <Button variant="secondary" className="shrink-0" disabled={!sendTest.ready()} onClick={wrap(() => sendTest(notify))}>Проверить</Button>
         )}
       </div>
     )
