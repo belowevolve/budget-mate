@@ -1,8 +1,9 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Link2 } from 'lucide-react'
 import { useMemo } from 'react'
+import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import Entry from '../components/journal/Entry'
@@ -12,6 +13,7 @@ import type { Ledger, Transaction } from '../finance'
 import { formatDate } from '../shared/format'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { billExpenseOptions, setBillExpense, type Bill } from './bill'
+import { ErrorText } from '../shared/ui/Text'
 
 export default reatomFactoryComponent<{
   bill: Bill; ledger: Ledger; write: VaultWrite
@@ -62,28 +64,28 @@ export default reatomFactoryComponent<{
               <DialogTrigger className={buttonVariants({ variant: 'secondary' })} disabled={!ready}>
                 <Link2 data-icon="inline-start" aria-hidden="true" /> {linked ? 'Изменить связь' : 'Связать с операцией'}
               </DialogTrigger>
-              <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
+              <DialogSurface initialFocus="content" className="grid-rows-[auto_minmax(0,1fr)_auto]">
                 <DialogHeader title="Операция из выписки" description="На сумму счёта или твоей доли" closeDisabled={!ready} />
-                <div className="dialog-body" data-slot="scroll">
+                <DialogBody>
                   <VirtualOperationList groups={groups} ariaLabel="Подходящие операции" resetKey={bill.id}
                     renderEntry={(entry) => (
                       <Entry {...entry} exactAmount selection={{ selected: entry.row.id === chosenId, disabled: !ready }}
                         onSelect={wrap((row) => selected.set(row.id))} />
                     )}
                   />
-                </div>
+                </DialogBody>
                 <div className="grid gap-1">
-                  {error() && <p className="error-text" role="alert">{error()}</p>}
+                  {error() && <ErrorText role="alert">{error()}</ErrorText>}
                   <Button disabled={!ready || !chosenId || chosenId === bill.expenseId}
                     onClick={wrap(() => save(write, bill.id, notify, chosenId))}>Привязать</Button>
                 </div>
-              </DialogContent>
+              </DialogSurface>
             </Dialog>
           )}
           {bill.expenseId && <Button variant="text" disabled={!ready} onClick={wrap(() => save(write, bill.id, notify))}>Отвязать</Button>}
         </div>
         {!options.length && <p className="text-xs text-muted">Связь появится после импорта операции на ту же сумму.</p>}
-        {!open() && error() && <p className="error-text" role="alert">{error()}</p>}
+        {!open() && error() && <ErrorText role="alert">{error()}</ErrorText>}
       </div>
     )
   }

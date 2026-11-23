@@ -1,4 +1,5 @@
 import { Button } from '@ui-sdk/react/button'
+import { cn } from 'cn'
 import { ArrowLeftRight, Check, ChevronRight, Link2, Tag } from 'lucide-react'
 import { useCategoryCatalog } from '../../categories/categoryContext'
 import { categoryDefinition } from '../../categories/catalog'
@@ -11,7 +12,6 @@ import { CategoryIcon } from '../CategoryIcon'
 import { JournalSwipeAction, JournalSwipeActions, JournalSwipeContent, JournalSwipeRow } from '../JournalSwipe'
 import { PendingStatus } from '../../shared/ui/PendingStatus'
 import type { JournalEntry } from './model'
-import './operationList.css'
 
 function endpoint(row: Transaction) {
   const digits = /[•*]\s*(\d{4})$/.exec(row.accountLabel)?.[1]
@@ -33,6 +33,7 @@ type EntryProps = JournalEntry & {
   showDate?: boolean
   caption?: string
   exactAmount?: boolean
+  flush?: boolean
   onSelect?: (row: Transaction) => void
   onRefund?: (row: Transaction) => void
   onChangeCategory?: (row: Transaction) => void
@@ -40,7 +41,7 @@ type EntryProps = JournalEntry & {
   selection?: { selected: boolean; disabled?: boolean; amountMinor?: number; linked?: boolean }
 }
 
-export default function Entry({ row, counterpart, refundTarget, refundMinor, showDate, caption, exactAmount,
+export default function Entry({ row, counterpart, refundTarget, refundMinor, showDate, caption, exactAmount, flush,
   onSelect, onRefund, onChangeCategory, onQuickTransfer, selection }: EntryProps) {
   const catalog = useCategoryCatalog()
   const transfer = row.category === 'transfer'
@@ -68,44 +69,59 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   const secondaryText = showDate ? `${description} · ${formatDate(row.date)}` : description
   const OffsetIcon = refundTarget ? Link2 : ArrowLeftRight
   const categoryIcon = refundTarget || review
-    ? <span className="operation-offset-icon"><OffsetIcon size={16} aria-hidden="true" /></span>
-    : <CategoryIcon category={row.category} className="operation-category-icon" />
+    ? <span className="grid size-7 place-items-center rounded-lg bg-transfer-soft text-transfer sm:size-8"><OffsetIcon size={16} aria-hidden="true" /></span>
+    : <CategoryIcon category={row.category} className="size-7 rounded-lg sm:size-8" />
   const changeCategory = !counterpart && !refundTarget && !selection ? onChangeCategory : undefined
   const body = (
     <>
       <span className="grid min-w-0">
         <strong className="block truncate text-sm leading-tight font-bold">{title}</strong>
-        <small className={counterpart ? 'operation-caption operation-caption-route' : 'operation-caption'}>
+        <small className={cn('text-xs leading-tight font-medium text-muted',
+          counterpart ? 'line-clamp-2 whitespace-normal wrap-anywhere' : 'block truncate')}>
           {secondaryText}
         </small>
       </span>
-      <strong className="operation-amount" data-income={gain ? '' : undefined} data-transfer={transferAmount ? '' : undefined}>
+      <strong className={cn(
+        'flex max-w-[min(11rem,39vw)] min-w-0 items-center justify-end gap-1 text-right text-xs font-extrabold wrap-anywhere tabular-nums sm:text-sm',
+        gain && 'text-income',
+        transferAmount && 'text-muted',
+      )}>
         {row.status === 'pending' && <PendingStatus />}<span>{amount}</span>
       </strong>
       {selection ? (
-        <span className="operation-indicator">
+        <span className="grid size-4 place-items-center text-muted">
           {selection.selected && <Check className="text-primary" size={16} aria-hidden="true" />}
           {selection.linked && <span className="sr-only">Отвязать компенсацию</span>}
         </span>
-      ) : onSelect && <ChevronRight className="operation-indicator" size={14} aria-hidden="true" />}
+      ) : onSelect && <ChevronRight className="size-4 text-muted" size={14} aria-hidden="true" />}
     </>
   )
 
+  const layout = cn(
+    'grid h-auto min-h-12 w-full min-w-0 items-center gap-2 px-2 text-start',
+    flush ? 'rounded-none py-0' : 'rounded-lg py-1',
+    changeCategory ? 'ps-11 sm:ps-12' : '',
+    changeCategory
+      ? onSelect ? 'grid-cols-[minmax(0,1fr)_minmax(0,auto)_1rem]' : 'grid-cols-[minmax(0,1fr)_minmax(0,auto)]'
+      : onSelect ? 'grid-cols-[auto_minmax(0,1fr)_minmax(0,auto)_1rem]' : 'grid-cols-[auto_minmax(0,1fr)_minmax(0,auto)]',
+  )
   const entry = changeCategory ? (
-    <div className="operation-entry-split">
-      <Button className="operation-category-trigger peer/category" aria-label={`Изменить категорию: ${title}`}
+    <div className="relative min-w-0">
+      <Button
+        className="peer/category absolute inset-s-2 top-1/2 z-1 grid size-7 min-h-0 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 shadow-none hover:[&>span]:bg-selected focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary sm:size-8"
+        aria-label={`Изменить категорию: ${title}`}
         data-operation-category-trigger={row.id} onClick={() => changeCategory(row)}>{categoryIcon}</Button>
       {onSelect
-        ? <RowAction className="operation-entry operation-entry-details peer-hover/category:bg-subtle" data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</RowAction>
-        : <div className="operation-entry operation-entry-details">{body}</div>}
+        ? <RowAction className={cn(layout, 'peer-hover/category:bg-subtle')} data-operation-trigger={row.id} onClick={() => onSelect(row)}>{body}</RowAction>
+        : <div className={layout}>{body}</div>}
     </div>
   ) : onSelect ? (
-    <RowAction className="operation-entry" data-operation-trigger={row.id} aria-pressed={selection?.selected}
+    <RowAction className={layout} data-operation-trigger={row.id} aria-pressed={selection?.selected}
       disabled={selection?.disabled} onClick={() => onSelect(row)}>
       {categoryIcon}
       {body}
     </RowAction>
-  ) : <div className="operation-entry">{categoryIcon}{body}</div>
+  ) : <div className={layout}>{categoryIcon}{body}</div>
   if (!onSelect) return entry
   const openRefund = isRefundIncome(row) ? onRefund : undefined
   const markTransfer = review ? onQuickTransfer : undefined
@@ -113,30 +129,30 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   if (!openRefund && !markTransfer && !openCategories) return entry
 
   return (
-    <JournalSwipeRow value={row.id} tabIndex={-1} className="operation-swipe-row"
+    <JournalSwipeRow value={row.id} tabIndex={-1} flush={flush}
       data-refund-full={openRefund && !review ? '' : undefined}
       data-category-full={openCategories && !openRefund && !review ? '' : undefined}>
-      <JournalSwipeActions value={row.id} className="operation-swipe-actions">
+      <JournalSwipeActions value={row.id}>
         {openRefund && (
-          <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-refund" onAction={() => openRefund(row)}>
+          <JournalSwipeAction value={row.id} tone="refund" onAction={() => openRefund(row)}>
             <Link2 aria-hidden="true" />
             К расходу
           </JournalSwipeAction>
         )}
         {markTransfer && (
-          <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-transfer" onAction={() => { void markTransfer(row) }}>
+          <JournalSwipeAction value={row.id} tone="transfer" onAction={() => { void markTransfer(row) }}>
             <ArrowLeftRight aria-hidden="true" />
             Свой перевод
           </JournalSwipeAction>
         )}
         {openCategories && (
-          <JournalSwipeAction value={row.id} className="operation-swipe-button operation-swipe-category" onAction={() => openCategories(row)}>
+          <JournalSwipeAction value={row.id} tone="category" onAction={() => openCategories(row)}>
             <Tag aria-hidden="true" />
             Категория
           </JournalSwipeAction>
         )}
       </JournalSwipeActions>
-      <JournalSwipeContent value={row.id} className="operation-swipe-content">
+      <JournalSwipeContent value={row.id}>
         {entry}
       </JournalSwipeContent>
     </JournalSwipeRow>

@@ -1,12 +1,12 @@
 import {
-  Select, SelectContent, SelectEmpty, SelectInput, SelectItem, SelectItemIndicator, SelectItemText, SelectList,
+  Select, SelectEmpty, SelectInput, SelectItemIndicator, SelectItemText,
   SelectTrigger, SelectValue, type SelectContentProps, type SelectProps,
 } from '@ui-sdk/react/select'
 import { Check } from 'lucide-react'
 import { useRef, type ReactNode, type Ref } from 'react'
+import { ChoiceItem, ChoiceList, ChoiceTriggerButton, SelectPopover } from './ChoiceParts'
 import { ChoiceTriggerContent } from './ChoiceTriggerContent'
 import { SearchFieldFrame, SearchInput } from './SearchField'
-import './searchSelect.css'
 
 interface SearchOption<Value extends string> {
   value: Value
@@ -38,13 +38,13 @@ export function SelectSearchField({ label, noResults, action, inputRef }: {
 export function SearchSelectList<Value extends string>({ label, options }: { label: string; options: SearchOption<Value>[] }) {
   const byValue = new Map(options.map((option) => [option.value, option]))
   return (
-    <SelectList aria-label={label}>
+    <ChoiceList aria-label={label}>
       {({ items }) => (items as { value: Value }[]).map((item) => {
         const option = byValue.get(item.value)
         if (!option) return null
         const { value, label, icon, detail } = option
         return (
-          <SelectItem key={value} value={value} label={label} aria-label={label} className="choice-item">
+          <ChoiceItem key={value} value={value} label={label} aria-label={label} compact>
             <span className="flex min-w-0 items-center gap-2">
               {icon}
               <span className="grid min-w-0 leading-snug wrap-anywhere">
@@ -53,10 +53,10 @@ export function SearchSelectList<Value extends string>({ label, options }: { lab
               </span>
             </span>
             <SelectItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></SelectItemIndicator>
-          </SelectItem>
+          </ChoiceItem>
         )
       })}
-    </SelectList>
+    </ChoiceList>
   )
 }
 
@@ -89,18 +89,17 @@ export function SearchSelect<Value extends string>({ label, searchLabel, options
         onOpenChangeComplete?.(open)
       }}>
       {anchor === undefined && (
-        <SelectTrigger ref={triggerRef} aria-label={label} className="choice-trigger group w-full min-w-0 text-start">
+        <SelectTrigger ref={triggerRef} aria-label={label} render={<ChoiceTriggerButton />} className="w-full min-w-0 text-start">
           <ChoiceTriggerContent icon={triggerIcon ?? selectedIcon}>
             <SelectValue className="min-w-0 truncate" />
           </ChoiceTriggerContent>
         </SelectTrigger>
       )}
-      <SelectContent anchor={anchor} align="start" sideOffset={6} collisionPadding={12}
-        aria-label={label} className="choice-popover search-select-popover">
+      <SelectPopover anchor={anchor} align="start" sideOffset={6} collisionPadding={12} aria-label={label} searchable>
         <SelectSearchField label={searchLabel} noResults={noResults} action={searchAction} inputRef={searchInput} />
         <SearchSelectList label={label} options={options} />
         {footer && <div className="grid shrink-0 gap-1.5 border-t border-line pt-1.5">{footer}</div>}
-      </SelectContent>
+      </SelectPopover>
     </Select>
   )
 }

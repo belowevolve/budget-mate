@@ -1,11 +1,12 @@
 import { action, atom, reatomForm, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
 import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
-import { Input } from '@ui-sdk/react/input'
 import { Radio, RadioGroup } from '@ui-sdk/react/radio'
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Archive, ArchiveRestore, Check, ChevronRight, Plus } from 'lucide-react'
-import { CategoryGlyph, CategoryIcon } from '../components/CategoryIcon'
+import { cn } from 'cn'
+import type { ComponentProps } from 'react'
+import { CategoryAccent, CategoryGlyph, CategoryIcon } from '../components/CategoryIcon'
 import { Button } from '../shared/ui/Button'
 import { Panel } from '../shared/ui/Panel'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
@@ -14,11 +15,19 @@ import {
   canArchiveCategory, CategoryError, categoryIconLabels, categoryLabelLimit, categoryPalette, editCategory, fallbackCategory,
   type Category, type CategoryAppearance, type CategoryIconId, type CategoryKind, type CategoryTone,
 } from './catalog'
+import { FieldInput } from '../shared/ui/FieldInput'
 
 type EditableId = Exclude<Category, 'transfer'>
 type Draft = CategoryAppearance & { id: EditableId; label: string; isNew?: boolean }
 const iconOptions = (Object.entries(categoryIconLabels) as [CategoryIconId, string][]).filter(([icon]) => icon !== 'transfer')
 const colorOptions = Object.entries(categoryPalette) as [Exclude<CategoryTone, 'income'>, string][]
+
+function CategoryOption({ className, ...props }: Omit<ComponentProps<typeof Radio>, 'className'> & { className?: string }) {
+  return <Radio {...props} className={cn(
+    'grid min-h-11 w-full min-w-0 place-items-center rounded-xl border border-transparent bg-transparent p-0 text-muted shadow-none hover:bg-subtle focus-visible:-outline-offset-2 data-checked:border-primary data-checked:bg-selected data-checked:text-primary',
+    className,
+  )} />
+}
 
 export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
   const kind = atom<CategoryKind>('expense', 'categories.kind')
@@ -95,7 +104,7 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
               </div>
               <div className="flex min-w-0 items-center gap-2">
                 <CategoryGlyph icon={icon} tone={tone} className="size-11" />
-                <Input key={current.id} id="category-name" className="field-input" autoComplete="off" autoFocus
+                <FieldInput key={current.id} id="category-name" autoComplete="off" autoFocus
                   maxLength={categoryLabelLimit} disabled={disabled} value={name} onValueChange={wrap(form.fields.label.change)} />
               </div>
             </div>
@@ -104,11 +113,11 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
               <RadioGroup className="grid grid-cols-8 gap-1" aria-labelledby="category-color-label" value={selectedColor} disabled={disabled}
                 onValueChange={wrap((value) => { if (value) form.fields.tone.change(value) })}>
                 {colorOptions.map(([color, label]) => (
-                  <Radio key={color} value={color} aria-label={label} title={label} className="category-option">
-                    <span className="category-accent grid size-5 place-items-center rounded-full bg-(--category-accent)" data-category={color} aria-hidden="true">
+                  <CategoryOption key={color} value={color} aria-label={label} title={label}>
+                    <CategoryAccent tone={color} className="grid size-5 place-items-center rounded-full bg-(--category-accent)" aria-hidden="true">
                       {selectedColor === color && <Check size={13} strokeWidth={2.8} className="rounded-full bg-paper p-0.5 text-ink" />}
-                    </span>
-                  </Radio>
+                    </CategoryAccent>
+                  </CategoryOption>
                 ))}
               </RadioGroup>
             </div>
@@ -120,9 +129,9 @@ export default reatomFactoryComponent<{ write: VaultWrite }>(() => {
               <RadioGroup className="grid grid-cols-7 gap-1" aria-labelledby="category-icon-label" value={icon} disabled={disabled}
                 onValueChange={wrap((value) => { if (value) form.fields.icon.change(value) })}>
                 {iconOptions.map(([option, label]) => (
-                  <Radio key={option} value={option} aria-label={label} title={label} className="category-option category-icon-option">
-                    <CategoryGlyph icon={option} tone={tone} />
-                  </Radio>
+                  <CategoryOption key={option} value={option} aria-label={label} title={label} className="border-line">
+                    <CategoryGlyph icon={option} tone={tone} className="size-6 bg-transparent text-inherit [&>svg]:size-4.5" />
+                  </CategoryOption>
                 ))}
               </RadioGroup>
             </div>

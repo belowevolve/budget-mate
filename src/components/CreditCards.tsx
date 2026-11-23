@@ -8,14 +8,23 @@ import {
 import CreditEditor from '../credits/CreditEditor'
 import { creditCalendarUrl, creditToday, reatomCreditPayment } from '../credits/model'
 import { banks, money, type Ledger } from '../finance'
-import { cn } from '../shared/cn'
+import { cn } from 'cn'
 import { formatDate } from '../shared/format'
 import { Button } from '../shared/ui/Button'
 import type { Notify } from '../shared/ui/feedback'
-import { Panel } from '../shared/ui/Panel'
+import { Panel, PanelIcon, EmptyPanel } from '../shared/ui/Panel'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import Notice from '../shared/ui/Notice'
-import './CreditCards.css'
+import { SectionHeading } from '../shared/ui/Text'
+
+function CreditFact({ label, children }: { label: ReactNode; children: ReactNode }) {
+  return (
+    <>
+      <dt className="wrap-anywhere text-muted">{label}</dt>
+      <dd className="max-w-36 text-end font-bold wrap-anywhere tabular-nums">{children}</dd>
+    </>
+  )
+}
 
 function CreditPayment({ account, reminder, today, write, notify, editor }: {
   account: CreditAccount; reminder?: CreditReminder; today: string; write: VaultWrite; notify: Notify; editor: ReactNode
@@ -81,30 +90,33 @@ function CreditCardDetails({ account, today, write, notify }: {
     compactTrigger={Boolean(reminder)} onSaved={(hasDate) => notify(hasDate ? 'Дата напоминания сохранена' : 'Ручное напоминание удалено')} />
 
   return (
-    <Panel padded className="credit-card">
+    <Panel padded className="grid grid-rows-[minmax(0,1fr)_auto] gap-3">
       <div className="grid min-w-0 content-start gap-2.5">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="dialog-icon"><CreditCard size={17} aria-hidden="true" /></span>
+          <PanelIcon><CreditCard size={17} aria-hidden="true" /></PanelIcon>
           <div className="min-w-0 flex-1">
-            <h2 className="section-heading">{bank}</h2>
+            <SectionHeading>{bank}</SectionHeading>
             {label && label !== bank && <p className="text-xs text-muted wrap-anywhere">{label}</p>}
           </div>
         </div>
         {(snapshot?.gracePeriodEnd || snapshot?.gracePaymentAmountMinor !== undefined ||
           snapshot?.minimumPaymentDate || snapshot?.minimumPaymentAmountMinor !== undefined || debtMinor !== undefined) && (
-          <dl className="credit-facts">
-            {snapshot?.gracePeriodEnd && <><dt>Грейс до</dt><dd>{formatDate(snapshot.gracePeriodEnd)}</dd></>}
-            {snapshot?.gracePaymentAmountMinor !== undefined && <><dt>Платёж для грейса</dt><dd>{money(snapshot.gracePaymentAmountMinor, currency, true)}</dd></>}
-            {snapshot?.minimumPaymentAmountMinor !== undefined && <><dt>Минимальный платёж</dt><dd>{money(snapshot.minimumPaymentAmountMinor, currency, true)}</dd></>}
-            {snapshot?.minimumPaymentDate && <><dt>Срок мин. платежа</dt><dd>{formatDate(snapshot.minimumPaymentDate)}</dd></>}
-            {debtMinor !== undefined && <>
-              <dt>
+          <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,max-content)] items-baseline gap-x-2 gap-y-1.5 text-xs">
+            {snapshot?.gracePeriodEnd && <CreditFact label="Грейс до">{formatDate(snapshot.gracePeriodEnd)}</CreditFact>}
+            {snapshot?.gracePaymentAmountMinor !== undefined &&
+              <CreditFact label="Платёж для грейса">{money(snapshot.gracePaymentAmountMinor, currency, true)}</CreditFact>}
+            {snapshot?.minimumPaymentAmountMinor !== undefined &&
+              <CreditFact label="Минимальный платёж">{money(snapshot.minimumPaymentAmountMinor, currency, true)}</CreditFact>}
+            {snapshot?.minimumPaymentDate && <CreditFact label="Срок мин. платежа">{formatDate(snapshot.minimumPaymentDate)}</CreditFact>}
+            {debtMinor !== undefined && (
+              <CreditFact label={<>
                 {snapshot?.totalOutstandingAmountMinor !== undefined ? 'Долг по выписке' : 'Расходы минус пополнения'}
                 {snapshot?.totalOutstandingAsOf && snapshot.totalOutstandingAsOf !== snapshot.observedOn &&
                   <span className="block">{formatDate(snapshot.totalOutstandingAsOf)}</span>}
-              </dt>
-              <dd>{snapshot?.totalOutstandingAmountMinor !== undefined ? '' : '≈ '}{money(debtMinor, currency, true)}</dd>
-            </>}
+              </>}>
+                {snapshot?.totalOutstandingAmountMinor !== undefined ? '' : '≈ '}{money(debtMinor, currency, true)}
+              </CreditFact>
+            )}
           </dl>
         )}
         {!snapshot?.gracePeriodEnd && !snapshot?.minimumPaymentDate && !reminder && (
@@ -134,14 +146,14 @@ export default function CreditCards({ ledger, write, notify, onImport }: {
         </div>
       )}
       {!tracked.length && !available.length && (
-        <Panel className="empty-card">
-          <span className="empty-icon"><CreditCard size={19} aria-hidden="true" /></span>
-          <h2 className="section-heading">Данных по кредиткам нет</h2>
+        <EmptyPanel>
+          <PanelIcon large><CreditCard size={19} aria-hidden="true" /></PanelIcon>
+          <SectionHeading>Данных по кредиткам нет</SectionHeading>
           <Button onClick={onImport}>Импортировать PDF</Button>
-        </Panel>
+        </EmptyPanel>
       )}
       {tracked.length > 0 && (
-        <div className="credit-cards">
+        <div className="grid max-w-6xl min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-3">
           {tracked.map((account) => <CreditCardDetails key={account.accountKey} account={account} today={today} write={write} notify={notify} />)}
         </div>
       )}

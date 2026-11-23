@@ -1,7 +1,7 @@
 import { Input } from '@ui-sdk/react/input'
 import { Search, X } from 'lucide-react'
 import { useRef, type ComponentProps, type ReactNode } from 'react'
-import { cn } from '../cn'
+import { cn } from 'cn'
 import { Button } from './Button'
 
 export function SearchToolbar({ className, ...props }: ComponentProps<'div'>) {

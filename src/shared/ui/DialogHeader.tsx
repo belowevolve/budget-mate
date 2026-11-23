@@ -1,4 +1,5 @@
 import { DialogClose, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
+import { cn } from 'cn'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { SheetGrip } from './SheetGrip'
@@ -7,11 +8,15 @@ type CloseProps = { closeDisabled?: boolean; closeLabel?: string }
 
 export function DialogHeaderFrame({ children, closeDisabled, closeLabel = 'Закрыть' }: CloseProps & { children: ReactNode }) {
   return (
-    <div className="dialog-header">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 has-[>[data-slot=dialog-close]:not(:focus-visible)]:grid-cols-1">
       <SheetGrip />
       {children}
-      <DialogClose className="dialog-close" aria-label={closeLabel} disabled={closeDisabled}>
-        <X className="pointer-events-none size-4.5 shrink-0" aria-hidden="true" />
+      <DialogClose aria-label={closeLabel} disabled={closeDisabled}
+        className={cn(
+          'grid size-9 shrink-0 place-items-center rounded-lg border-0 bg-transparent p-0 text-muted shadow-none not-focus-visible:sr-only hover:bg-subtle hover:text-ink',
+          'in-data-[presentation=sheet]:focus-visible:w-auto in-data-[presentation=sheet]:focus-visible:px-2 in-data-[presentation=sheet]:focus-visible:text-xs in-data-[presentation=sheet]:focus-visible:font-bold in-data-[presentation=sheet]:focus-visible:after:content-[attr(aria-label)]',
+        )}>
+        <X className="pointer-events-none size-4.5 shrink-0 in-data-[presentation=sheet]:hidden" aria-hidden="true" />
       </DialogClose>
     </div>
   )

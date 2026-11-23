@@ -4,7 +4,8 @@ import { categoryDefinition } from '../../categories/catalog'
 import { money, type Category } from '../../finance'
 import { Panel } from '../../shared/ui/Panel'
 import { RowAction } from '../../shared/ui/RowAction'
-import { CategoryIcon } from '../CategoryIcon'
+import { CategoryAccent, CategoryIcon } from '../CategoryIcon'
+import { SectionHeading, BodyText } from '../../shared/ui/Text'
 
 const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 0 })
 
@@ -22,9 +23,9 @@ function SpendingRow({ category, amount, expenses, currency, onViewCategory }: {
       <CategoryIcon category={category} />
       <span className="grid min-w-0 gap-1 text-xs sm:text-sm">
         <strong className="font-bold wrap-anywhere">{definition.label}</strong>
-        <span className="category-accent block h-1 overflow-hidden rounded-full bg-subtle" data-category={definition.tone} aria-hidden="true">
+        <CategoryAccent tone={definition.tone} className="block h-1 overflow-hidden rounded-full bg-subtle" aria-hidden="true">
           <span className="block h-full min-w-0.5 rounded-full bg-(--category-accent)" style={{ width: `${share * 100}%` }} />
-        </span>
+        </CategoryAccent>
       </span>
       <span className="grid max-w-[38vw] min-w-0 justify-items-end gap-0.5 text-right text-xs wrap-anywhere tabular-nums sm:max-w-none sm:text-sm">
         <strong className="font-extrabold">{money(amount, currency)}</strong>
@@ -50,7 +51,7 @@ export function SpendingBreakdown({ spending, expenses, currency, onViewCategory
 }) {
   return (
     <Panel className="overflow-clip" aria-labelledby="spending-title">
-      <h2 className="section-heading p-3 sm:p-4" id="spending-title">По категориям</h2>
+      <SectionHeading className="p-3 sm:p-4" id="spending-title">По категориям</SectionHeading>
       {spending.length ? (
         <ul className="list-none divide-y divide-line border-t border-line p-0">
           {spending.map(([category, amount]) => (
@@ -59,7 +60,7 @@ export function SpendingBreakdown({ spending, expenses, currency, onViewCategory
             </li>
           ))}
         </ul>
-      ) : <p className="body-text px-3 pb-3 sm:px-4 sm:pb-4">За этот период расходов нет.</p>}
+      ) : <BodyText className="px-3 pb-3 sm:px-4 sm:pb-4">За этот период расходов нет.</BodyText>}
     </Panel>
   )
 }

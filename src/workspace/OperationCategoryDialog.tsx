@@ -1,7 +1,7 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Dialog, DialogContent } from '@ui-sdk/react/dialog'
-import { Listbox, ListboxItem, ListboxItemIndicator } from '@ui-sdk/react/listbox'
+import { Dialog } from '@ui-sdk/react/dialog'
+import { Listbox, ListboxItemIndicator } from '@ui-sdk/react/listbox'
 import { Check } from 'lucide-react'
 import { useLayoutEffect, useState } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
@@ -11,11 +11,14 @@ import { money, needsTransferReview, type Category, type Transaction } from '../
 import { operationTitle } from '../operationPresentation'
 import { RefundError } from '../refunds'
 import { formatDate } from '../shared/format'
+import { ChoiceListboxItem } from '../shared/ui/ChoiceParts'
+import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SearchSelect } from '../shared/ui/SearchSelect'
 import { useDialogBackRecovery } from '../shared/ui/popupBack'
 import { useDesktopPicker } from '../shared/ui/useDesktopPicker'
 import { messageFor } from '../vault-ui/vaultModel'
+import { ErrorText } from '../shared/ui/Text'
 
 type Props = {
   row: Transaction
@@ -68,7 +71,7 @@ export default reatomFactoryComponent<Props>(() => {
             if (save.pending() > 0) details.cancel()
             else onClose()
           })} onOpenChangeComplete={complete}
-          footer={error && <p role="alert" className="error-text">{error}</p>} />
+          footer={error && <ErrorText role="alert">{error}</ErrorText>} />
       )
     }
 
@@ -82,30 +85,30 @@ export default reatomFactoryComponent<Props>(() => {
         }
         onClose()
       })} onOpenChangeComplete={complete}>
-        <DialogContent key={back.contentKey} initialFocus="content" finalFocus={finalFocus} data-list-sheet
-          className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
+        <DialogSurface key={back.contentKey} initialFocus="content" finalFocus={finalFocus} data-list-sheet
+          className="grid-rows-[auto_minmax(0,1fr)_auto]">
           <DialogHeader title="Категория операции" closeDisabled={pending} description={(
             <span className="grid min-w-0">
               <span className="truncate font-semibold" title={title}>{title}</span>
               <span>{row.amountMinor > 0 ? '+' : ''}{money(row.amountMinor, row.currency, true)} · {formatDate(row.date)}</span>
             </span>
           )} />
-          <div data-slot="scroll" className="dialog-body">
+          <DialogBody>
             <Listbox value={value} activation="manual" aria-label="Категории"
               disabled={pending} className="w-full border-0 bg-transparent p-0" onValueChange={choose}>
               {options.map(({ value, label }) => (
-                <ListboxItem key={value} value={value} label={label} className="choice-item focus-visible:-outline-offset-2">
+                <ChoiceListboxItem key={value} value={value} label={label} className="focus-visible:-outline-offset-2">
                   <span className="flex min-w-0 items-center gap-2">
                     <CategoryIcon category={value} className="size-7 rounded-lg" />
                     <span>{label}</span>
                   </span>
                   <ListboxItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></ListboxItemIndicator>
-                </ListboxItem>
+                </ChoiceListboxItem>
               ))}
             </Listbox>
-          </div>
-          {error && <p role="alert" className="error-text">{error}</p>}
-        </DialogContent>
+          </DialogBody>
+          {error && <ErrorText role="alert">{error}</ErrorText>}
+        </DialogSurface>
       </Dialog>
     )
   }

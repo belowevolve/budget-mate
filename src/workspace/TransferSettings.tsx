@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@ui-sdk/react/field'
-import { Input } from '@ui-sdk/react/input'
 import { Button } from '../shared/ui/Button'
+import { FieldInput } from '../shared/ui/FieldInput'
+import { ErrorText } from '../shared/ui/Text'
 
 export default function TransferSettings({ maskedPhone, onChange }: {
   maskedPhone?: string
@@ -36,8 +37,8 @@ export default function TransferSettings({ maskedPhone, onChange }: {
           {maskedPhone ? `Текущий номер: ${maskedPhone}` : 'По этому номеру распознаются переводы между своими счетами.'}
         </FieldDescription>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
-          <Input name="phone" type="tel" inputMode="tel" placeholder="+7 999 123-45-67" autoComplete="off" data-agent-secret
-            className="field-input min-w-0 text-base" required value={phone} onValueChange={(value) => {
+          <FieldInput name="phone" type="tel" inputMode="tel" placeholder="+7 999 123-45-67" autoComplete="off" data-agent-secret
+            className="text-base" required value={phone} onValueChange={(value) => {
               setPhone(value)
               setError('')
             }} />
@@ -45,7 +46,7 @@ export default function TransferSettings({ maskedPhone, onChange }: {
             {pending ? 'Сохраняем…' : 'Сохранить'}
           </Button>
         </div>
-        {error && <FieldError match className="error-text" role="alert">{error}</FieldError>}
+        {error && <FieldError match render={<ErrorText />} role="alert">{error}</FieldError>}
       </Field>
       {maskedPhone && (
         <Button variant="text" className="justify-self-start" disabled={pending} onClick={() => save(null)}>

@@ -4,10 +4,10 @@ import { FileInput, FileInputDropzone, FileInputTrigger } from '@ui-sdk/react/fi
 import { Check, ChevronDown, FileText, FileUp } from 'lucide-react'
 import { banks, type ImportEntry } from '../finance'
 import { formatDate } from '../shared/format'
-import { cn } from '../shared/cn'
 import { Button, buttonVariants } from '../shared/ui/Button'
-import { Panel } from '../shared/ui/Panel'
+import { Panel, PanelIcon } from '../shared/ui/Panel'
 import type { ImportPreview } from '../workspace/importModel'
+import { SectionHeading } from '../shared/ui/Text'
 
 const fileList = 'mt-1 list-none divide-y divide-line'
 const fileRow = 'grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 py-2 text-sm'
@@ -44,10 +44,10 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
           onReject={() => setRejection('До 20 PDF, до 25 МБ на файл.')}
         >
           <FileInputDropzone className="grid min-w-0 justify-items-center gap-2 rounded-2xl border-0 px-3 py-4 text-center text-ink data-drag-accept:bg-income-soft sm:py-6">
-            <span className="dialog-icon"><FileUp size={18} aria-hidden="true" /></span>
-            <h2 className="section-heading">Банковские выписки</h2>
+            <PanelIcon><FileUp size={18} aria-hidden="true" /></PanelIcon>
+            <SectionHeading>Банковские выписки</SectionHeading>
             <p className={fileDetail}>Альфа-Банк, ВТБ, Ozon Банк</p>
-            <FileInputTrigger className={cn(buttonVariants(), 'mt-1')}>{busy ? 'Обработка…' : 'Выбрать PDF'}</FileInputTrigger>
+            <FileInputTrigger className={buttonVariants({ className: 'mt-1' })}>{busy ? 'Обработка…' : 'Выбрать PDF'}</FileInputTrigger>
           </FileInputDropzone>
         </FileInput>
         {rejection && <p className={`${uploadError} px-3 pb-3`} role="alert">{rejection}</p>}
@@ -56,13 +56,13 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
       {previews.length > 0 && (
         <Panel padded>
           <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-            <h2 className="section-heading">Предпросмотр</h2>
+            <SectionHeading>Предпросмотр</SectionHeading>
             <p className={fileDetail} aria-live="polite">{busy ? 'Обработка…' : `${readyCount} из ${previews.length}`}</p>
           </div>
           <ul className={fileList}>
             {previews.map((item) => (
               <li key={item.id} className={fileRow}>
-                <span className="dialog-icon"><FileText size={16} aria-hidden="true" /></span>
+                <PanelIcon><FileText size={16} aria-hidden="true" /></PanelIcon>
                 <div className="min-w-0">
                   <strong className="block truncate" title={item.name}>{item.name}</strong>
                   <p className={item.error ? uploadError : fileDetail}>
@@ -92,7 +92,7 @@ export function Statements({ busy, previews, history, onFiles, onConfirm, onClea
             <ul className={fileList}>
               {history.map((entry) => (
                 <li key={entry.id} className={fileRow}>
-                  <span className="dialog-icon"><Check size={16} aria-hidden="true" /></span>
+                  <PanelIcon><Check size={16} aria-hidden="true" /></PanelIcon>
                   <div className="min-w-0">
                     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
                       <strong className="truncate" title={entry.accountLabel}>{entry.accountLabel}</strong>

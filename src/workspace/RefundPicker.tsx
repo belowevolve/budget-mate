@@ -6,6 +6,7 @@ import { categoryDefinition } from '../categories/catalog'
 import Entry from '../components/journal/Entry'
 import { groupJournalEntries } from '../components/journal/model'
 import { VirtualOperationList } from '../components/journal/VirtualOperationList'
+import { DialogBody } from '../shared/ui/DialogSurface'
 import { Button } from '../shared/ui/Button'
 import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeader } from '../shared/ui/DialogHeader'
@@ -15,6 +16,7 @@ import { operationTitle } from '../operationPresentation'
 import { refundCandidates, type RefundIndex } from '../refunds'
 import { formatDate } from '../shared/format'
 import { reatomRefundPicker } from './refundPickerModel'
+import { BodyText, ErrorText } from '../shared/ui/Text'
 
 type RefundPickerProps = {
   row: Transaction
@@ -59,7 +61,7 @@ export default reatomFactoryComponent<RefundPickerProps>(({ row, refunds }) => {
           <SearchField label="Поиск расхода" value={query} onChange={wrap(model.setQuery)} disabled={pending} />
           {currentTarget && <p className="text-xs text-muted">Нажми на связанный расход, чтобы отвязать его.</p>}
         </div>
-        <div ref={scrollRef} className="dialog-body" data-slot="scroll">
+        <DialogBody ref={scrollRef}>
           {groups.length > 0 ? (
             <VirtualOperationList groups={groups} scrollRef={scrollRef} ariaLabel="Подходящие расходы"
               resetKey={query}
@@ -67,10 +69,10 @@ export default reatomFactoryComponent<RefundPickerProps>(({ row, refunds }) => {
                 selection={{ selected: entry.row.id === selectedId, disabled: pending, linked: entry.row.id === currentTarget?.id,
                   amountMinor: remainingExpense.get(entry.row.id) }} />}
             />
-          ) : <p className="body-text">{search.text ? 'Поиск ничего не нашёл.' : 'Нет подходящих расходов на эту сумму.'}</p>}
-        </div>
+          ) : <BodyText>{search.text ? 'Поиск ничего не нашёл.' : 'Нет подходящих расходов на эту сумму.'}</BodyText>}
+        </DialogBody>
         <div className="grid min-w-0 gap-1.5">
-          {error && <p className="error-text" role="alert">{error}</p>}
+          {error && <ErrorText role="alert">{error}</ErrorText>}
           <DialogActions>
             <Button variant="secondary" disabled={pending} onClick={wrap(onBack)}>К операции</Button>
             <Button disabled={!selected || selected.row.id === currentTarget?.id || pending}

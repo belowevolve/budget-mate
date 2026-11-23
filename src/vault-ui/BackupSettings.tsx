@@ -1,14 +1,15 @@
 import { useId, useState, type FormEvent } from 'react'
 import { useAtom } from '@reatom/react'
-import { Checkbox, CheckboxIndicator } from '@ui-sdk/react/checkbox'
 import { DialogClose, DialogDescription } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
-import { Input } from '@ui-sdk/react/input'
-import { Check, Copy, Download, Upload } from 'lucide-react'
-import { cn } from '../shared/cn'
+import { Copy, Download, Upload } from 'lucide-react'
+import { DialogBody } from '../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../shared/ui/Button'
+import { Checkbox } from '../shared/ui/Checkbox'
 import { createBackupCode } from '../vault'
 import { messageFor, type VaultAccess } from './useVaultSession'
+import { FileField, FieldInput } from '../shared/ui/FieldInput'
+import { BodyText, ErrorText } from '../shared/ui/Text'
 
 function RestoreBackup({ vault, onBack, onRestored }: { vault: VaultAccess; onBack: () => void; onRestored: () => void }) {
   const fileId = useId()
@@ -34,14 +35,13 @@ function RestoreBackup({ vault, onBack, onRestored }: { vault: VaultAccess; onBa
 
   return (
     <form autoComplete="off" onSubmit={restore} className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-2.5">
-      <div className="dialog-body grid content-start gap-2.5" data-slot="scroll">
-        <DialogDescription className="body-text m-0">
+      <DialogBody className="grid content-start gap-2.5">
+        <DialogDescription render={<BodyText />} className="m-0">
           Данные из файла заменят все данные в этом профиле. Если нужна текущая версия, сначала скачай её копию.
         </DialogDescription>
         <div className="grid min-w-0 gap-1">
           <label htmlFor={fileId} className="text-sm font-bold">Файл резервной копии (.bmvault)</label>
-          <input id={fileId} type="file" accept=".bmvault" required autoFocus disabled={pending > 0}
-            className="field-input max-w-full truncate py-2 file:mr-2 file:rounded-lg file:border-0 file:bg-subtle file:px-2 file:py-1"
+          <FileField id={fileId} accept=".bmvault" required autoFocus disabled={pending > 0}
             onChange={(event) => {
               setFile(event.currentTarget.files?.[0])
               setConfirmed(false)
@@ -50,21 +50,19 @@ function RestoreBackup({ vault, onBack, onRestored }: { vault: VaultAccess; onBa
         </div>
         <Field name="password" className="grid min-w-0 gap-1">
           <FieldLabel className="text-sm font-bold">Код или пароль копии</FieldLabel>
-          <Input type="password" autoComplete="off" data-agent-secret required disabled={pending > 0}
-            className="field-input text-base" value={password} onValueChange={(value) => {
+          <FieldInput type="password" autoComplete="off" data-agent-secret required disabled={pending > 0}
+            className="text-base" value={password} onValueChange={(value) => {
               setPassword(value)
               if (error) setError('')
             }} />
         </Field>
         <label className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 px-2 text-sm font-semibold has-data-disabled:cursor-default">
-          <Checkbox checked={confirmed} disabled={pending > 0} className="checkbox-control"
-            onCheckedChange={(value) => setConfirmed(value === true)}>
-            <CheckboxIndicator><Check size={13} aria-hidden="true" /></CheckboxIndicator>
-          </Checkbox>
+          <Checkbox checked={confirmed} disabled={pending > 0}
+            onCheckedChange={(value) => setConfirmed(value === true)} />
           Заменить все текущие данные
         </label>
-        {error && <p className="error-text" role="alert">{error}</p>}
-      </div>
+        {error && <ErrorText role="alert">{error}</ErrorText>}
+      </DialogBody>
       <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
         <Button variant="secondary" disabled={pending > 0} onClick={onBack}>Назад</Button>
         <Button variant="danger" type="submit" data-agent-confirm
@@ -114,19 +112,19 @@ export default function BackupSettings({ vault }: { vault: VaultAccess }) {
   if (mode === 'done') {
     return (
       <div className="grid min-w-0 gap-2.5">
-        <DialogDescription className="body-text m-0"><span role="status">Хранилище восстановлено из копии.</span></DialogDescription>
-        <DialogClose autoFocus className={cn(buttonVariants(), 'w-full')}>Готово</DialogClose>
+        <DialogDescription render={<BodyText />} className="m-0"><span role="status">Хранилище восстановлено из копии.</span></DialogDescription>
+        <DialogClose autoFocus className={buttonVariants({ className: 'w-full' })}>Готово</DialogClose>
       </div>
     )
   }
 
   return (
     <div className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-2.5">
-      <div className="dialog-body grid content-start gap-2.5" data-slot="scroll">
-        <DialogDescription className="body-text m-0">Сохрани код отдельно от файла. Восстановление потребует их оба.</DialogDescription>
+      <DialogBody className="grid content-start gap-2.5">
+        <DialogDescription render={<BodyText />} className="m-0">Сохрани код отдельно от файла. Восстановление потребует их оба.</DialogDescription>
         <code className="select-text wrap-anywhere rounded-xl bg-subtle px-3 py-2 text-sm font-semibold" data-agent-secret>{code}</code>
-        {error && <p className="error-text" role="alert">{error}</p>}
-      </div>
+        {error && <ErrorText role="alert">{error}</ErrorText>}
+      </DialogBody>
       <div className="grid min-w-0 gap-2">
         <div className="grid grid-cols-2 gap-2">
           <Button variant="secondary" size="compact" onClick={copy}>

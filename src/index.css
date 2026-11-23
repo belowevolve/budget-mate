@@ -2,12 +2,6 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "@ui-sdk/core/web.css" layer(components);
-@import "./shared/ui/panels.css";
-@import "./shared/ui/fields.css";
-@import "./shared/ui/feedback.css";
-@import "./shared/ui/overlay.css";
-@import "./shared/ui/select.css";
-@import "./categories/category.css";
 
 @utility scroll-edges-y {
   @supports (animation-timeline: scroll()) {
@@ -68,6 +62,12 @@
   --color-category-transfer: light-dark(#647c82, #9cb4ba);
   --shadow-popup: 0 8px 28px color-mix(in srgb, var(--color-shadow) 15%, transparent);
   --shadow-top-bar: 0 3px 12px color-mix(in srgb, var(--color-shadow) 8%, transparent);
+  --animate-workspace-title-in: workspace-title-in 160ms ease-out both;
+
+  @keyframes workspace-title-in {
+    from { opacity: 0.6; translate: 0 3px; }
+    to { opacity: 1; translate: 0 0; }
+  }
 }
 
 @layer components {
@@ -95,6 +95,70 @@
   }
   :root[data-theme="light"] { color-scheme: light; }
   :root[data-theme="dark"] { color-scheme: dark; }
+  :root:has([data-slot="workspace-shell"]) {
+    @apply overflow-hidden overscroll-none;
+    & > body { @apply min-h-0 overflow-clip; }
+  }
+
+  [data-sheet-surface][data-presentation="sheet"] {
+    --sheet-backdrop: var(--color-scrim);
+    /* Cover the edge in browsers without the scroll-driven correction. */
+    box-shadow: 0 2rem 0 var(--color-paper), var(--shadow-popup);
+  }
+
+  @supports (animation-timeline: view(block 0px 1px)) and (block-size: 1cqh) and (animation-range: contain 0px contain 100dvh) {
+    :is([data-slot="dialog-viewport"], [data-slot="select-viewport"], [data-slot="date-picker-viewport"]):has(> [data-sheet-surface][data-presentation="sheet"]) {
+      container-type: size;
+
+      & > [data-sheet-surface][data-presentation="sheet"] {
+        --sheet-viewport-overhang: max(0px, calc(100cqh - 100dvh + var(--keyboard-inset, 0px)));
+        /* The sheet enters full view at its open stop. Offset only the scroll beyond it. */
+        animation: auto linear keep-sheet-flush both;
+        animation-timeline: view(block 0px var(--sheet-viewport-overhang));
+        animation-range: contain 0px contain 100dvh;
+      }
+    }
+
+    @keyframes keep-sheet-flush {
+      from { transform: none; }
+      to { transform: translateY(100dvh); }
+    }
+  }
+
+  [data-slot="toast-region"][data-workspace] {
+    --toast-peek: 0.375rem;
+    --toast-gap: 0.625rem;
+    height: calc(var(--toast-front-height, 0px) + max(0, var(--toast-count, 1) - 1) * var(--toast-peek));
+
+    &[data-expanded] {
+      height: calc(var(--toast-stack-height, 0px) + max(0, var(--toast-count, 1) - 1) * var(--toast-gap));
+    }
+
+    & [data-slot="toast"] {
+      --toast-position: calc(var(--toast-index, 0) * -1 * var(--toast-peek));
+      --toast-x: var(--workspace-toast-drag-x, 0px);
+      --toast-y: var(--workspace-toast-drag-y, 0px);
+      z-index: calc(10 - var(--toast-index, 0));
+      height: var(--toast-height, auto);
+      translate: var(--toast-x) calc(var(--toast-position) + var(--toast-y));
+      scale: calc(1 - var(--toast-index, 0) * 0.045);
+
+      &:not([data-front], [data-expanded]) {
+        height: var(--toast-front-height, auto);
+        & > * { opacity: 0; }
+      }
+
+      &[data-expanded] {
+        --toast-position: calc(-1 * (var(--toast-offset, 0px) + var(--toast-index, 0) * var(--toast-gap)));
+        scale: 1;
+      }
+
+      &[data-starting-style][data-front] { --toast-y: 0.75rem; }
+      &[data-ending-style][data-drag-dismiss="left"] { --toast-x: calc(-100% - 1.5rem); }
+      &[data-ending-style][data-drag-dismiss="right"] { --toast-x: calc(100% + 1.5rem); }
+      &[data-ending-style][data-drag-dismiss="down"] { --toast-y: calc(100% + 1rem); }
+    }
+  }
 }
 
 @layer base {

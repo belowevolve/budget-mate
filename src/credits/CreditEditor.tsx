@@ -3,15 +3,16 @@ import { action, atom, wrap } from '@reatom/core'
 import { bindField, reatomComponent, reatomFactoryComponent } from '@reatom/react'
 import {
   CalendarDay, CalendarGrid, CalendarHeading, CalendarNext, CalendarPrevious, CalendarWeekday, CalendarWeekdays, CalendarWeeks,
-  createDatePickerController, DatePicker, DatePickerContent, DatePickerInput, DatePickerTrigger,
+  createDatePickerController, DatePicker, DatePickerInput, DatePickerTrigger,
 } from '@ui-sdk/react/date-picker'
-import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogTrigger } from '@ui-sdk/react/dialog'
 import { Field, FieldLabel } from '@ui-sdk/react/field'
-import { Input } from '@ui-sdk/react/input'
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Download, Plus } from 'lucide-react'
-import { cn } from '../shared/cn'
+import { cn } from 'cn'
+import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../shared/ui/Button'
 import { Choice, type ChoiceOption } from '../shared/ui/Choice'
+import { CalendarPopover } from '../shared/ui/ChoiceParts'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { SheetGrip } from '../shared/ui/SheetGrip'
 import { banks } from '../finance'
@@ -19,6 +20,8 @@ import { useAndroidPopupBack } from '../shared/ui/popupBack'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { upcomingBankPayment, type CreditAccount } from './creditAccounts'
 import { CreditFormError, downloadCreditReminder, reatomCreditReminderForm } from './model'
+import { FieldInputElement, FieldInput } from '../shared/ui/FieldInput'
+import { ErrorText } from '../shared/ui/Text'
 
 interface EditorProps {
   account?: CreditAccount
@@ -44,7 +47,7 @@ function ReminderDateField({ value, disabled, onChange }: {
       <DatePicker controller={controller} value={value || null} disabled={disabled} locale="ru-RU" presentation="auto" fixedWeeks
         className="w-full min-w-0" onValueChange={(date) => onChange(typeof date === 'string' ? date : '')} onOpenChange={watchBack}>
         <div className="relative min-w-0">
-          <DatePickerInput className="field-input pe-12 text-base" placeholder="ДД.ММ.ГГГГ" inputMode="numeric" autoComplete="off" />
+          <DatePickerInput render={<FieldInputElement />} className="pe-12 text-base" placeholder="ДД.ММ.ГГГГ" inputMode="numeric" autoComplete="off" />
           <span className="absolute inset-y-0 inset-e-1 flex items-center">
             <DatePickerTrigger aria-label="Выбрать дату платежа"
               className={cn(calendarButton, 'rounded-lg bg-transparent focus-visible:-outline-offset-2 data-open:bg-subtle')}>
@@ -52,7 +55,7 @@ function ReminderDateField({ value, disabled, onChange }: {
             </DatePickerTrigger>
           </span>
         </div>
-        <DatePickerContent aria-label="Календарь платежа" align="end" sideOffset={6} collisionPadding={10} className="choice-popover">
+        <CalendarPopover aria-label="Календарь платежа" align="end" sideOffset={6} collisionPadding={10}>
           <SheetGrip />
           <div className="mx-auto grid min-h-0 w-full max-w-84 grid-rows-[auto_minmax(0,1fr)] gap-1 pb-1">
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
@@ -71,7 +74,7 @@ function ReminderDateField({ value, disabled, onChange }: {
               </CalendarGrid>
             </div>
           </div>
-        </DatePickerContent>
+        </CalendarPopover>
       </DatePicker>
     </Field>
   )
@@ -99,14 +102,14 @@ const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, w
 
   return (
     <form className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-2.5" onSubmit={save}>
-      <div className="dialog-body grid content-start gap-2.5" data-slot="scroll">
+      <DialogBody className="grid content-start gap-2.5">
         {options && <Choice label="Кредитный счёт" value={fields.accountKey()} options={options} onChange={wrap(fields.accountKey.change)}
           className="w-full min-w-0" />}
         {account && <p className="truncate text-xs text-muted" title={account.accountLabel}>{account.accountLabel || banks[account.bank]}</p>}
         <ReminderDateField value={dueOn} disabled={!ready} onChange={wrap(fields.dueOn.change)} />
         <Field name="amount" className="grid min-w-0 gap-1">
           <FieldLabel className="text-sm font-bold">Сумма платежа</FieldLabel>
-          <Input className="field-input min-w-0 text-base" inputMode="decimal" placeholder="По выписке, если есть" disabled={!ready}
+          <FieldInput className="text-base" inputMode="decimal" placeholder="По выписке, если есть" disabled={!ready}
             value={amount.value} onValueChange={amount.onChange} onBlur={amount.onBlur} onFocus={amount.onFocus} />
         </Field>
         {dueOn && (
@@ -120,9 +123,9 @@ const CreditForm = reatomComponent<CreditFormProps>(({ account, options, form, w
             <span>Скачать событие (.ics)</span>
           </Button>
         )}
-        {validationMessage && <p className="error-text" role="alert">{validationMessage}</p>}
-        {error && !validationMessage && <p className="error-text" role="alert">{messageFor(error, 'Не удалось сохранить настройки кредитки.')}</p>}
-      </div>
+        {validationMessage && <ErrorText role="alert">{validationMessage}</ErrorText>}
+        {error && !validationMessage && <ErrorText role="alert">{messageFor(error, 'Не удалось сохранить настройки кредитки.')}</ErrorText>}
+      </DialogBody>
       <Button type="submit" disabled={!ready}>
         {ready ? account ? 'Сохранить' : 'Добавить кредитку' : 'Сохраняем…'}
       </Button>
@@ -152,17 +155,16 @@ export default reatomFactoryComponent<EditorProps>((_, { name }) => {
           if (nextOpen) openEditor(props)
           else open.set(false)
         })}>
-        <DialogTrigger className={cn(buttonVariants({ variant: 'secondary', size: compactTrigger ? 'compact' : 'default' }),
-          !compactTrigger && 'justify-self-start')}
+        <DialogTrigger className={buttonVariants({ variant: 'secondary', size: compactTrigger ? 'compact' : 'default', className: !compactTrigger && 'justify-self-start' })}
           aria-label={compactTrigger ? 'Изменить напоминание' : undefined}>
           {account ? <Bell aria-hidden="true" data-icon="inline-start" /> : <Plus aria-hidden="true" data-icon="inline-start" />}
           <span>{account ? compactTrigger ? 'Изменить' : account.reminder ? 'Изменить напоминание' : 'Напоминание' : 'Добавить счёт'}</span>
         </DialogTrigger>
-        <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
+        <DialogSurface initialFocus="content" className="grid-rows-[auto_minmax(0,1fr)]">
           <DialogHeader title={title} />
           <CreditForm account={account} options={options} write={write} form={form}
             onSaved={(hasDate) => { props.onSaved(hasDate); open.set(false) }} />
-        </DialogContent>
+        </DialogSurface>
       </Dialog>
     )
   }

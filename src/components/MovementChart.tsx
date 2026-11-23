@@ -5,7 +5,7 @@ import type { RefundIndex } from '../refunds'
 import { formatDayRange, formatMonth, formatMonthAbbreviation } from '../shared/format'
 import { Panel } from '../shared/ui/Panel'
 import { MovementPeriodSummary } from './overview/MovementPeriodSummary'
-import './MovementChart.css'
+import { SectionHeading } from '../shared/ui/Text'
 
 interface ChartPeriod {
   key: string
@@ -116,9 +116,9 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
 
   return (
     <Panel padded aria-labelledby="movement-title">
-      <h2 className="section-heading" id="movement-title">
+      <SectionHeading id="movement-title">
         Движение денег {recentMonthsOnly && <span className="text-xs font-semibold text-muted">· 12 мес.</span>}
-      </h2>
+      </SectionHeading>
       <div className="mt-2 mb-2 flex flex-wrap gap-x-3 gap-y-1">
         <ChartLegendItem label="Расходы" tone="expense" />
         <ChartLegendItem label="Поступления" tone="income" />
@@ -136,7 +136,7 @@ export default function MovementChart({ rows, refunds, currency, month }: { rows
             <span>0</span>
           </div>
           <ul
-            className="movement-chart-grid relative grid list-none auto-cols-fr grid-flow-col rounded-xl p-0"
+            className="relative grid list-none auto-cols-fr grid-flow-col rounded-xl bg-[linear-gradient(to_top,var(--color-line)_1px,transparent_1px)] bg-size-[100%_calc(var(--track-height)/2)] bg-repeat-y p-0"
             aria-label={month ? 'Итоги по интервалам месяца' : 'Итоги по месяцам'}
           >
             {periods.map((period) => (

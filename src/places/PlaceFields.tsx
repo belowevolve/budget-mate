@@ -1,5 +1,4 @@
 import { Field, FieldLabel } from '@ui-sdk/react/field'
-import { Input } from '@ui-sdk/react/input'
 import { categoryOptions } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
@@ -7,6 +6,7 @@ import { Choice } from '../shared/ui/Choice'
 import { SearchSelect } from '../shared/ui/SearchSelect'
 import { useDesktopPicker } from '../shared/ui/useDesktopPicker'
 import { placeNameLimit, type Place } from './model'
+import { FieldInput } from '../shared/ui/FieldInput'
 
 export type PlaceDraft = Pick<Place, 'name' | 'category'>
 
@@ -32,7 +32,7 @@ export function PlaceFields({ value, onChange, disabled, autoFocus }: {
     <fieldset disabled={disabled} className="grid min-w-0 gap-3">
       <Field name="place-name" className="grid min-w-0 gap-1">
         <FieldLabel className="text-sm font-bold">Название места</FieldLabel>
-        <Input className="field-input min-w-0 text-base" placeholder="Например, Пятёрочка" value={value.name}
+        <FieldInput className="text-base" placeholder="Например, Пятёрочка" value={value.name}
           onValueChange={(name) => onChange({ ...value, name })} required disabled={disabled} autoComplete="off"
           maxLength={placeNameLimit} autoFocus={autoFocus} />
       </Field>

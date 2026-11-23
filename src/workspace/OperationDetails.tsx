@@ -1,7 +1,7 @@
 import { action, atom, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent, useAction } from '@reatom/react'
 import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
+import { Dialog, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog'
 import { ArrowLeftRight, Link2 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useCategoryCatalog } from '../categories/categoryContext'
@@ -14,7 +14,9 @@ import type { Place } from '../places/model'
 import OperationPlaceEditor from '../places/OperationPlaceEditor'
 import { isRefundIncome, RefundError, type RefundIndex } from '../refunds'
 import { formatDate } from '../shared/format'
+import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { Button } from '../shared/ui/Button'
+import { ChoiceTriggerButton } from '../shared/ui/ChoiceParts'
 import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
 import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeaderFrame } from '../shared/ui/DialogHeader'
@@ -23,6 +25,7 @@ import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import OperationCategoryDialog from './OperationCategoryDialog'
 import RefundPicker from './RefundPicker'
 import type { OperationPane } from './workspaceState'
+import { ErrorText } from '../shared/ui/Text'
 
 type OperationDetailsProps = {
   row: Transaction
@@ -143,8 +146,8 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
           }
           model.close()
         })} onOpenChangeComplete={wrap((open) => { if (!open) onClose() })}>
-        <DialogContent key={back.contentKey} ref={content} initialFocus="content" finalFocus={restoreJournalFocus}
-          className={`compact-dialog ${hasFooter ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]'}`}>
+        <DialogSurface key={back.contentKey} ref={content} initialFocus="content" finalFocus={restoreJournalFocus}
+          className={hasFooter ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]'}>
           {pane === 'refund' ? (
             <RefundPicker row={row} transactions={transactions} refunds={refunds} pending={pending} error={error}
               onBack={wrap(() => onOpen(row))} onSave={wrap((expenseId) => save(() => onSaveRefund(expenseId)))} />
@@ -158,7 +161,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                     onChangeCategory={canEditCategory ? () => openCategory(content.current?.querySelector('[data-operation-category-trigger]') ?? null) : undefined} />
                 </div>
               </DialogHeaderFrame>
-              <div data-slot="scroll" className="dialog-body grid content-start gap-2">
+              <DialogBody className="grid content-start gap-2">
                 {requiresReview && <p className="text-xs text-muted">Неопознанный перевод. Сумма пока вне итогов.</p>}
                 {refundTarget && (
                   <RelatedOperations label="Связанный расход" rows={[refundTarget]} onSelect={wrap(onOpen)} />
@@ -168,7 +171,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                     rows={compensation.incomes} onSelect={wrap(onOpen)} />
                 )}
                 {canEditCategory && (
-                  <ButtonPrimitive aria-label="Категория операции" className="choice-trigger w-full min-w-0 text-start"
+                  <ButtonPrimitive aria-label="Категория операции" render={<ChoiceTriggerButton />} className="w-full min-w-0 text-start"
                     onClick={(event) => openCategory(event.currentTarget)} disabled={pending}>
                     <ChoiceTriggerContent icon={<CategoryIcon category={category} className="size-7 rounded-lg" />} direction="next">
                       {categoryDefinition(catalog, category, kind).label}
@@ -182,8 +185,8 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                     <dd className="wrap-anywhere">{row.description}</dd>
                   </dl>
                 )}
-                {error && <p role="alert" className="error-text">{error}</p>}
-              </div>
+                {error && <ErrorText role="alert">{error}</ErrorText>}
+              </DialogBody>
               {hasFooter && (
                 <DialogActions>
                   {canRefund && <Button variant="text" disabled={pending}
@@ -203,7 +206,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                 onClose={() => setCategoryOpen(false)} />
             </>
           )}
-        </DialogContent>
+        </DialogSurface>
       </Dialog>
     )
   }

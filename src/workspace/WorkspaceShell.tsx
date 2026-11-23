@@ -4,7 +4,6 @@ import { ArrowLeft, CreditCard, FileUp, LayoutDashboard, List, ReceiptText, Sett
 import { Button } from '../shared/ui/Button'
 import Brand from './Brand'
 import type { Page, SettingsView } from './workspaceState'
-import './workspaceShell.css'
 
 const destinations = {
   overview: { label: 'Обзор', icon: LayoutDashboard },
@@ -36,7 +35,6 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
   const settingsArea = useRef<HTMLElement>(null)
   const settingsHeading = useRef<HTMLHeadingElement>(null)
   const settingsTrigger = useRef<HTMLButtonElement>(null)
-  const pageHeading = useRef<HTMLHeadingElement>(null)
   const previousSettings = useRef<SettingsView>(null)
   const pageScroll = useRef(0)
   const settingsMenuScroll = useRef(0)
@@ -47,7 +45,6 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
     pageScroll.current = 0
     scrollArea.current?.scrollTo({ top: 0 })
     header.current?.removeAttribute('data-scrolled')
-    pageHeading.current?.classList.add('motion-safe:animate-[workspace-title-in_160ms_ease-out_both]')
   }, [page])
   useLayoutEffect(() => {
     const previous = previousSettings.current
@@ -85,7 +82,7 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
   }, [])
 
   return (
-    <div ref={shell} className={`workspace-shell mx-auto flex h-(--workspace-viewport-height,100dvh) min-w-0 max-w-[1760px] flex-col overflow-hidden ${settings ? '' : 'md:grid md:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]'}`}>
+    <div ref={shell} data-slot="workspace-shell" className={`mx-auto flex h-(--workspace-viewport-height,100dvh) min-w-0 max-w-[1760px] flex-col overflow-hidden ${settings ? '' : 'md:grid md:grid-cols-[176px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]'}`}>
       <aside hidden={Boolean(settings)} className="order-last shrink-0 touch-pinch-zoom border-t border-line bg-paper px-1 pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] md:order-0 md:min-h-0 md:touch-auto md:overflow-y-auto md:scroll-edges-y md:border-t-0 md:border-r md:bg-surface md:p-3">
         <div className="hidden md:mb-6 md:block md:px-2 md:pt-2"><Brand /></div>
         <nav aria-label="Разделы" className="grid grid-cols-5 gap-0.5 md:grid-cols-1 md:gap-1">
@@ -119,7 +116,9 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
               </>
             ) : (
               <>
-                <h1 key={page} ref={pageHeading} className="min-w-0 truncate text-xl leading-tight md:text-2xl">{page === 'bills' ? destinations.bills.title : destinations[page].label}</h1>
+                <h1 key={page} className="min-w-0 truncate text-xl leading-tight motion-safe:animate-workspace-title-in md:text-2xl">
+                  {page === 'bills' ? destinations.bills.title : destinations[page].label}
+                </h1>
                 <Button ref={settingsTrigger} id="workspace-actions" variant="secondary" size="icon-sm"
                   className="bg-transparent" aria-label="Настройки" onClick={() => {
                   settingsMenuScroll.current = 0
@@ -133,12 +132,13 @@ export default function WorkspaceShell({ page, children, onNavigate, onOpenSetti
         </header>
 
         {settings && (
-          <main ref={settingsArea} className="settings-main" onScroll={(event) => {
+          <main ref={settingsArea} data-slot="settings-scroll"
+            className="min-h-0 min-w-0 flex-1 has-data-settings-fill:overflow-hidden not-has-data-settings-fill:overflow-x-clip not-has-data-settings-fill:overflow-y-auto not-has-data-settings-fill:overscroll-y-contain not-has-data-settings-fill:scroll-edges-y" onScroll={(event) => {
             const top = event.currentTarget.scrollTop
             if (section === 'menu') settingsMenuScroll.current = top
             header.current?.toggleAttribute('data-scrolled', top > 4)
           }}>
-            <div className="settings-page mx-auto w-full min-w-0 max-w-2xl px-3 pt-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:px-5 md:px-6 md:pt-4">
+            <div className="mx-auto w-full min-w-0 max-w-2xl px-3 pt-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] has-data-settings-fill:h-full sm:px-5 md:px-6 md:pt-4">
               {settings.content}
             </div>
           </main>

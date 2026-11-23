@@ -50,7 +50,7 @@ export default reatomFactoryComponent<JournalProps>(({ initial }) => {
     } : undefined
 
     return (
-      <div className="journal-operations grid min-w-0 gap-2.5 sm:gap-3">
+      <div className="grid min-w-0 gap-2.5 sm:gap-3">
         <div className="grid min-w-0 gap-2 px-3 sm:px-0">
           <Filters model={model} selection={selection} availableBanks={view.possibleBanks}
             availableCategories={view.possibleCategories} reviewCount={view.reviewCount} />
@@ -77,9 +77,9 @@ export default reatomFactoryComponent<JournalProps>(({ initial }) => {
 
         {view.groups.length > 0 && (
           <JournalSwipe onFullSwipe={activateFullSwipe}>
-            <VirtualOperationList groups={view.groups} ariaLabel={reviewOnly ? 'Неопознанные переводы' : transfersOnly ? 'Переводы и компенсации' : 'Операции'}
+            <VirtualOperationList flush groups={view.groups} ariaLabel={reviewOnly ? 'Неопознанные переводы' : transfersOnly ? 'Переводы и компенсации' : 'Операции'}
               resetKey={JSON.stringify([periodKey, selection])}
-              renderEntry={(entry) => <Entry {...entry} onSelect={openDetails} onRefund={openRefund} onChangeCategory={openCategories}
+              renderEntry={(entry) => <Entry {...entry} flush onSelect={openDetails} onRefund={openRefund} onChangeCategory={openCategories}
                 onQuickTransfer={markTransfer} />} />
           </JournalSwipe>
         )}

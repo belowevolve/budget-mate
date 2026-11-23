@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react'
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
-import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogClose, DialogTrigger } from '@ui-sdk/react/dialog'
 import {
-  createSelectController, Select, SelectContent, SelectItem, SelectItemIndicator, SelectLabel, SelectList, SelectTrigger, SelectValue,
+  createSelectController, Select, SelectItemIndicator, SelectLabel, SelectTrigger, SelectValue,
 } from '@ui-sdk/react/select'
-import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
 import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle'
 import { Check, SlidersHorizontal } from 'lucide-react'
 import { useCategoryCatalog } from '../../categories/categoryContext'
@@ -13,13 +12,15 @@ import { categoryDefinition } from '../../categories/catalog'
 import { banks, type Category } from '../../finance'
 import type { BankId } from '../../statements/types'
 import { CategoryIcon } from '../CategoryIcon'
-import { cn } from '../../shared/cn'
+import { DialogBody, DialogSurface } from '../../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../../shared/ui/Button'
 import { ChoiceClear, type ChoiceOption } from '../../shared/ui/Choice'
+import { ChoiceItem, ChoiceList, ChoiceTriggerButton, SelectPopover } from '../../shared/ui/ChoiceParts'
 import { ChoiceTriggerContent } from '../../shared/ui/ChoiceTriggerContent'
 import { DialogHeader } from '../../shared/ui/DialogHeader'
 import SearchField, { SearchToolbar } from '../../shared/ui/SearchField'
 import { SearchSelectList, SelectSearchField } from '../../shared/ui/SearchSelect'
+import { SegmentedControl, SegmentedControlItem } from '../../shared/ui/SegmentedControl'
 import { SheetGrip } from '../../shared/ui/SheetGrip'
 import { useAndroidPopupBack } from '../../shared/ui/popupBack'
 import { useDesktopPicker } from '../../shared/ui/useDesktopPicker'
@@ -46,12 +47,10 @@ function JournalTabs<Value extends string>({ label, value, options, onChange, pe
 }) {
   return (
     <SegmentedControl
-      className="segmented-control"
       aria-label={label}
       value={value}
       onValueChange={wrap((next) => { if (next !== null) onChange(next) })}
     >
-      <SegmentedControlIndicator />
       {options.map(({ value, label, pending }) => (
         <SegmentedControlItem key={value} value={value}
           aria-description={pending && pendingDot ? 'Есть неопознанные переводы' : undefined}
@@ -89,7 +88,7 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
       <div className="grid min-w-0 gap-1">
         <SelectLabel className="text-xs font-bold text-muted">{label}</SelectLabel>
         <div className="flex min-w-0 items-center gap-2">
-          <SelectTrigger className="choice-trigger w-full min-w-0">
+          <SelectTrigger render={<ChoiceTriggerButton />} className="w-full min-w-0">
             <ChoiceTriggerContent>
               <SelectValue className="min-w-0 flex-1 text-start leading-snug whitespace-normal wrap-anywhere">
                 {({ labels }) => summarizeChoices(labels) || placeholder}
@@ -99,8 +98,7 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
           <ChoiceClear label={clearLabel} />
         </div>
       </div>
-      <SelectContent align="start" sideOffset={7} collisionPadding={10}
-        className={search ? 'choice-popover search-select-popover' : 'choice-popover'}>
+      <SelectPopover align="start" sideOffset={7} collisionPadding={10} searchable={Boolean(search)}>
         {search ? (
           <>
             <SelectSearchField label={search} noResults="Категории не найдены" inputRef={searchInput} />
@@ -109,20 +107,20 @@ function MultiChoice<Value extends string>({ label, placeholder, clearLabel, sea
         ) : (
           <>
             <SheetGrip />
-            <SelectList>
+            <ChoiceList>
               {options.map(({ value, label, icon }) => (
-                <SelectItem key={value} value={value} label={label} className="choice-item focus-visible:-outline-offset-2">
+                <ChoiceItem key={value} value={value} label={label} className="focus-visible:-outline-offset-2">
                   <span className="flex min-w-0 items-center gap-2">{icon}<span>{label}</span></span>
                   <SelectItemIndicator className="shrink-0"><Check size={16} aria-hidden="true" /></SelectItemIndicator>
-                </SelectItem>
+                </ChoiceItem>
               ))}
-            </SelectList>
+            </ChoiceList>
           </>
         )}
         <div className="shrink-0 px-0.5 pt-2 pb-3">
           <Button className="w-full" onClick={() => { controller.close() }}>Готово</Button>
         </div>
-      </SelectContent>
+      </SelectPopover>
     </Select>
   )
 }
@@ -170,12 +168,12 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
         <SearchField label="Поиск по операциям" placeholder="Поиск" value={query} onChange={wrap(model.setQuery)} />
         <Dialog presentation="auto">
           <DialogTrigger aria-label="Фильтры" data-active={hasSelections ? '' : undefined}
-            className={cn(buttonVariants({ variant: 'outline', size: 'icon-lg' }), 'rounded-xl')}>
+            className={buttonVariants({ variant: 'outline', size: 'icon-lg', className: 'rounded-xl' })}>
             <SlidersHorizontal aria-hidden="true" />
           </DialogTrigger>
-          <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)_auto]">
+          <DialogSurface initialFocus="content" className="grid-rows-[auto_minmax(0,1fr)_auto]">
             <DialogHeader title="Фильтры" />
-            <div className="dialog-body grid content-start gap-3" data-slot="scroll">
+            <DialogBody className="grid content-start gap-3">
               <div className="grid min-w-0 gap-1">
                 <div className="flex justify-between gap-2 text-xs font-bold text-muted">
                   <span>Типы операций</span>
@@ -198,12 +196,12 @@ export default reatomComponent<FiltersProps>(function Filters({ model, selection
                 <MultiChoice label="Категории" placeholder="Все категории" clearLabel="Сбросить категории" value={categories}
                   searchLabel="Поиск категорий" options={categoryChoices} onChange={wrap(model.setCategories)} />
               )}
-            </div>
+            </DialogBody>
             <div className="flex items-center justify-end gap-2">
               {hasSelections && <Button variant="text" onClick={wrap(model.clearSelections)}>Сбросить фильтры</Button>}
-              <DialogClose className={cn(buttonVariants(), 'grow')} aria-label="Готово, закрыть фильтры">Готово</DialogClose>
+              <DialogClose className={buttonVariants({ className: 'grow' })} aria-label="Готово, закрыть фильтры">Готово</DialogClose>
             </div>
-          </DialogContent>
+          </DialogSurface>
         </Dialog>
       </SearchToolbar>
       {activeLabels && <p className="min-w-0 px-0.5 text-xs leading-snug text-muted wrap-anywhere">{activeLabels}</p>}

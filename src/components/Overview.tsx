@@ -2,20 +2,21 @@ import { FileUp } from 'lucide-react'
 import { isBudgetTransaction, isTechnicalCreditEntry, summarize, transactionAccountingAmount, type Category, type Transaction } from '../finance'
 import type { RefundIndex } from '../refunds'
 import { Button } from '../shared/ui/Button'
-import { Panel } from '../shared/ui/Panel'
+import { EmptyPanel, PanelIcon } from '../shared/ui/Panel'
 import MovementChart from './MovementChart'
 import { BudgetSummary } from './overview/BudgetSummary'
 import { SpendingBreakdown } from './overview/SpendingBreakdown'
+import { SectionHeading } from '../shared/ui/Text'
 
 function EmptyOverview({ hasTransfers, onClick }: { hasTransfers: boolean; onClick: () => void }) {
   return (
-    <Panel className="empty-card">
-      <span className="empty-icon"><FileUp size={27} aria-hidden="true" /></span>
-      <h2 className="section-heading">{hasTransfers ? 'Нет доходов и расходов' : 'Операций пока нет'}</h2>
+    <EmptyPanel>
+      <PanelIcon large><FileUp size={27} aria-hidden="true" /></PanelIcon>
+      <SectionHeading>{hasTransfers ? 'Нет доходов и расходов' : 'Операций пока нет'}</SectionHeading>
       <Button onClick={onClick}>
         {hasTransfers ? 'Открыть переводы' : 'Импортировать PDF'}
       </Button>
-    </Panel>
+    </EmptyPanel>
   )
 }
 

@@ -1,10 +1,10 @@
 import { bindDrag, dragThreshold } from '@ui-sdk/core'
 import { Toast, ToastAction, ToastClose, ToastRegion, ToastTitle, type ToastData } from '@ui-sdk/react/toast'
+import { cn } from 'cn'
 import { X } from 'lucide-react'
 import { useEffect, useRef, type PointerEvent } from 'react'
 import { noticeIcons, type NotificationKind } from '../shared/ui/feedback'
 import type { WorkspaceStore } from './workspaceState'
-import './workspaceToasts.css'
 
 const interactive = 'button, a'
 
@@ -54,7 +54,11 @@ function WorkspaceToast({ item, toaster }: { item: ToastData<React.ReactNode>; t
   }
 
   return (
-    <Toast className="workspace-toast" onPointerDownCapture={startDrag}
+    <Toast className={cn(
+      'absolute inset-x-0 bottom-0 grid min-h-14 touch-none grid-cols-[1rem_minmax(0,1fr)] items-center gap-2 rounded-xl border-0 bg-inverse py-2 ps-3 pe-4 text-on-inverse shadow-popup select-none',
+      'transition-[translate,scale,height,opacity] duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0 data-dragging:transition-none data-[type=error]:bg-danger-strong motion-reduce:transition-none',
+      item.action && 'grid-cols-[1rem_minmax(0,1fr)_auto]',
+    )} onPointerDownCapture={startDrag}
       onClick={(event) => {
         if (!(event.target as Element).closest(interactive)) event.currentTarget.focus({ preventScroll: true })
       }}
@@ -62,13 +66,14 @@ function WorkspaceToast({ item, toaster }: { item: ToastData<React.ReactNode>; t
         <li {...props} inert={state.leaving || (!state.expanded && !state.front) || undefined} />
       )}>
       <Icon size={16} aria-hidden="true" />
-      <ToastTitle className="workspace-toast-title" />
+      <ToastTitle className="min-w-0 text-sm leading-tight font-semibold wrap-anywhere text-on-inverse" />
       {item.action && (
-        <ToastAction className="workspace-toast-action">
+        <ToastAction className="h-8 justify-center rounded-md border-0 bg-on-inverse px-2 text-xs font-bold whitespace-nowrap text-inverse shadow-none hover:bg-on-inverse-muted focus-visible:outline-on-inverse">
           {(state) => state.pending ? 'Выполняем…' : state.error ? 'Повторить' : item.action?.label}
         </ToastAction>
       )}
-      <ToastClose aria-label="Закрыть уведомление" className="workspace-toast-close">
+      <ToastClose aria-label="Закрыть уведомление"
+        className="absolute -inset-e-1 -top-2 z-10 grid size-6 place-items-center rounded-full border border-line bg-paper p-0 text-muted shadow-sm hover:bg-subtle hover:text-ink focus-visible:outline-primary">
         <X size={12} strokeWidth={2} aria-hidden="true" />
       </ToastClose>
     </Toast>
@@ -77,8 +82,11 @@ function WorkspaceToast({ item, toaster }: { item: ToastData<React.ReactNode>; t
 
 export default function WorkspaceToasts({ toaster, fullScreen }: { toaster: WorkspaceStore['toaster']; fullScreen: boolean }) {
   return (
-    <ToastRegion toaster={toaster} side="bottom" align="end" aria-label="Уведомления" data-full-screen={fullScreen || undefined}
-      pendingAnnouncement="Выполняется действие" className="workspace-toast-region">
+    <ToastRegion toaster={toaster} side="bottom" align="end" aria-label="Уведомления" data-workspace=""
+      className={cn(
+        'inset-e-3 m-0 w-[min(23rem,calc(100vw-1.5rem))] max-w-none md:inset-e-5 md:bottom-5',
+        fullScreen ? 'bottom-[calc(.75rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(3.875rem+env(safe-area-inset-bottom))]',
+      )} pendingAnnouncement="Выполняется действие">
       {(item) => <WorkspaceToast item={item} toaster={toaster} />}
     </ToastRegion>
   )

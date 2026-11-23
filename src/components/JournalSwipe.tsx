@@ -1,5 +1,7 @@
 import { createSwipeActions, definePrimitive, live, type SwipeDraft, type SwipeOpen } from '@ui-sdk/core'
 import { createParts } from '@ui-sdk/react/primitive'
+import { cn } from 'cn'
+import type { ComponentProps } from 'react'
 
 type JournalSwipeOptions = {
   onFullSwipe?: (key: string) => boolean
@@ -57,7 +59,39 @@ const journalSwipe = definePrimitive({
   agent: { actions: [] },
 })
 
-export const {
-  Root: JournalSwipe, Row: JournalSwipeRow, Content: JournalSwipeContent,
-  Actions: JournalSwipeActions, Action: JournalSwipeAction,
+const {
+  Root: SwipeRoot, Row: SwipeRow, Content: SwipeContent,
+  Actions: SwipeActions, Action: SwipeAction,
 } = createParts(journalSwipe, { row: 'div', content: 'div', actions: 'div', action: 'button' })
+
+export function JournalSwipe(props: ComponentProps<typeof SwipeRoot>) {
+  return <SwipeRoot {...props} />
+}
+
+export function JournalSwipeRow({ flush, ...props }: ComponentProps<typeof SwipeRow> & { flush?: boolean }) {
+  return <SwipeRow {...props} className={cn(
+    'relative isolate min-w-0 overflow-hidden [touch-action:pan-y_pinch-zoom] data-refund-full:bg-primary data-category-full:bg-selected',
+    !flush && 'rounded-lg',
+  )} />
+}
+
+export function JournalSwipeContent(props: ComponentProps<typeof SwipeContent>) {
+  return <SwipeContent {...props} className="relative bg-paper transform-[translateX(var(--swipe-x,0px))] transition-transform duration-150 data-swiping:transition-none motion-reduce:transition-none" />
+}
+
+export function JournalSwipeActions(props: ComponentProps<typeof SwipeActions>) {
+  return <SwipeActions {...props} className="absolute inset-y-0 inset-e-0 grid w-max auto-cols-21 grid-flow-col sm:auto-cols-24" />
+}
+
+const actionTone = {
+  refund: 'bg-primary text-on-primary hover:bg-primary-hover',
+  transfer: 'bg-transfer-soft text-transfer hover:bg-selected',
+  category: 'bg-selected text-primary hover:bg-subtle',
+}
+
+export function JournalSwipeAction({ tone, ...props }: ComponentProps<typeof SwipeAction> & { tone: keyof typeof actionTone }) {
+  return <SwipeAction {...props} className={cn(
+    'flex h-full min-h-11 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-none border-0 p-1 text-center text-xs leading-tight font-bold whitespace-normal shadow-none [&>svg]:pointer-events-none [&>svg]:size-4 [&>svg]:shrink-0',
+    actionTone[tone],
+  )} />
+}

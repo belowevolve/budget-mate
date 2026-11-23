@@ -1,11 +1,12 @@
 import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react'
-import { Input } from '@ui-sdk/react/input'
 import { ArrowLeft, Fingerprint, KeyRound } from 'lucide-react'
 import { Button } from '../shared/ui/Button'
 import { Panel } from '../shared/ui/Panel'
 import Brand from '../workspace/Brand'
 import { DeviceSetup } from './DeviceSetup'
 import { messageFor, type VaultAccess } from './useVaultSession'
+import { FileField, FieldInput } from '../shared/ui/FieldInput'
+import { BodyText, ErrorText } from '../shared/ui/Text'
 
 export function AccessScreen({ vault }: { vault: VaultAccess }) {
   const { screen, supported } = vault
@@ -69,7 +70,7 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
         <h1 id="access-title" className="text-xl leading-tight wrap-anywhere sm:text-2xl">{title}</h1>
         {setup && !alternate && (
           <>
-            <p className="body-text">Данные зашифрованы и хранятся в этом браузере.</p>
+            <BodyText>Данные зашифрованы и хранятся в этом браузере.</BodyText>
             <DeviceSetup supported={supported} confirm={vault.create} onPendingChange={setPending} showOtherOptions={otherOptions} />
             <div className="flex min-w-0 flex-wrap justify-between gap-x-1">
               {supported && <Button variant="text" size="compact" disabled={pending} aria-expanded={otherOptions}
@@ -81,7 +82,7 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
         {setup && alternate && (
           <>
             <label htmlFor="backup-file" className="text-sm font-bold">Файл резервной копии (.bmvault)</label>
-            <input id="backup-file" type="file" accept=".bmvault" disabled={pending} className="field-input max-w-full truncate py-2 file:mr-2 file:rounded-lg file:border-0 file:bg-subtle file:px-2 file:py-1" onChange={(event) => setBackup(event.currentTarget.files?.[0])} />
+            <FileField id="backup-file" accept=".bmvault" disabled={pending} onChange={(event) => setBackup(event.currentTarget.files?.[0])} />
           </>
         )}
         {locked && screen.methods.device && (
@@ -99,7 +100,7 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
         {passwordForm && (
           <form onSubmit={submit} className="grid gap-2" autoComplete={setup ? 'off' : undefined}>
             <label htmlFor="vault-password" className="text-sm font-bold">{setup ? 'Код или пароль копии' : 'Код или пароль хранилища'}</label>
-            <Input id="vault-password" name="password" type="password" required autoComplete={setup ? 'off' : 'current-password'} data-agent-secret className="field-input text-base" disabled={pending} />
+            <FieldInput id="vault-password" name="password" type="password" required autoComplete={setup ? 'off' : 'current-password'} data-agent-secret className="text-base" disabled={pending} />
             <Button type="submit" disabled={pending}>{setup ? 'Открыть копию' : 'Разблокировать'}</Button>
           </form>
         )}
@@ -110,7 +111,7 @@ export function AccessScreen({ vault }: { vault: VaultAccess }) {
             <span>Назад</span>
           </Button>
         )}
-        {(error || screen.kind === 'unavailable') && <p role="alert" className="error-text">{screen.kind === 'unavailable' ? screen.message : error}</p>}
+        {(error || screen.kind === 'unavailable') && <ErrorText role="alert">{screen.kind === 'unavailable' ? screen.message : error}</ErrorText>}
       </Panel>
     </div>
   )

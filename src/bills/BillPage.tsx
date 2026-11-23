@@ -1,10 +1,9 @@
 import { wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
-import { Input } from '@ui-sdk/react/input'
+import { Dialog, DialogClose, DialogTrigger } from '@ui-sdk/react/dialog'
 import { FilePlus, History, Save } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { cn } from '../shared/cn'
+import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { Button, buttonVariants } from '../shared/ui/Button'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import { money, type Ledger, type Transaction } from '../finance'
@@ -16,21 +15,22 @@ import BillLink from './BillLink'
 import BillParticipant from './BillParticipant'
 import { billTotals, type Bill } from './bill'
 import { reatomBillEditor } from './model'
-import './billPage.css'
+import { FieldInput } from '../shared/ui/FieldInput'
 
 function BillHistory({ bills, selected, onSelect }: { bills: Bill[]; selected: string; onSelect: (bill: Bill) => void }) {
   return (
     <Dialog presentation="auto">
-      <DialogTrigger className={cn(buttonVariants({ variant: 'secondary', size: 'icon' }), 'rounded-xl')}
+      <DialogTrigger className={buttonVariants({ variant: 'secondary', size: 'icon', className: 'rounded-xl' })}
         aria-label="История счетов" disabled={!bills.length}>
         <History aria-hidden="true" />
       </DialogTrigger>
-      <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
+      <DialogSurface initialFocus="content" className="grid-rows-[auto_minmax(0,1fr)]">
         <DialogHeader title="История счетов" />
-        <ul className="dialog-body divide-y divide-line" data-slot="scroll">
+        <DialogBody as="ul" className="divide-y divide-line">
           {bills.map((bill) => (
             <li key={bill.id}>
-              <DialogClose onClick={() => onSelect(bill)} className="bill-history-row"
+              <DialogClose onClick={() => onSelect(bill)}
+                className="flex h-auto min-h-11 w-full min-w-0 justify-between gap-2 rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-sm text-ink shadow-none hover:bg-subtle"
                 aria-current={selected === bill.id ? 'true' : undefined}>
                 <span className="grid min-w-0">
                   <span className="truncate font-bold">{bill.title || 'Счёт'}</span>
@@ -40,8 +40,8 @@ function BillHistory({ bills, selected, onSelect }: { bills: Bill[]; selected: s
               </DialogClose>
             </li>
           ))}
-        </ul>
-      </DialogContent>
+        </DialogBody>
+      </DialogSurface>
     </Dialog>
   )
 }
@@ -77,11 +77,12 @@ export default reatomFactoryComponent<{
     const canSave = saved ? model.changed() : draft.items.length > 0
 
     return (
-      <div className="bill-page">
-        <div ref={scrollArea} className="bill-scroll">
-          <BillDrag key={draft.id} bill={draft} onMove={wrap(model.moveItem)} disabled={!ready} className="bill-content" aria-label="Позиции в счёте">
-            <div className="bill-toolbar">
-              <Input className="field-input text-base font-bold" aria-label="Название счёта" autoComplete="off"
+      <div className="grid h-full min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto]">
+        <div ref={scrollArea} data-slot="scroll" className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-edges-y">
+          <BillDrag key={draft.id} bill={draft} onMove={wrap(model.moveItem)} disabled={!ready}
+            className="mx-auto grid w-full max-w-lg content-start gap-3 px-3 pt-3 pb-5 sm:px-5" aria-label="Позиции в счёте">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-1.5">
+              <FieldInput className="text-base font-bold" aria-label="Название счёта" autoComplete="off"
                 placeholder="Название счёта" maxLength={80} value={draft.title}
                 onValueChange={wrap(model.setTitle)} disabled={!ready} />
               <Button variant="secondary" size="icon" className="rounded-xl" aria-label="Сохранить счёт" disabled={!canSave || !ready}

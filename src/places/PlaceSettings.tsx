@@ -1,31 +1,32 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Button as ButtonPrimitive } from '@ui-sdk/react/button'
-import { Listbox, ListboxItem, ListboxItemIndicator } from '@ui-sdk/react/listbox'
+import { Listbox, ListboxItemIndicator } from '@ui-sdk/react/listbox'
 import { Check, ChevronRight, Link2, Plus, SearchX } from 'lucide-react'
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { categoryDefinition } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { Button } from '../shared/ui/Button'
-import { ListPanel, Panel } from '../shared/ui/Panel'
+import { EmptyState, ListPanel, Panel, PanelIcon, PanelList, PanelListboxBody } from '../shared/ui/Panel'
 import SearchField, { SearchToolbar } from '../shared/ui/SearchField'
 import type { Transaction } from '../finance'
 import { pluralRu } from '../shared/format'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { filterPlaces, indexPlaces, isIndividualPlaceAlias, merchantAlias, placeAliasLabel, PlaceError, savePlace, type Place } from './model'
 import { PlaceFields, type PlaceDraft } from './PlaceFields'
+import { SectionHeading, BodyText, ErrorText } from '../shared/ui/Text'
+import { SettingsListItem, SettingsRow } from '../shared/ui/SettingsRow'
 
 type PlacePanel = { kind: 'create' } | { kind: 'edit'; placeId: string; focusBindings?: boolean } | { kind: 'bindings'; placeId: string }
 
 function PlaceListItem({ value, label, children }: { value: string; label: string; children: ReactNode }) {
   return (
-    <ListboxItem value={value} label={label} className="settings-row">
+    <SettingsListItem value={value} label={label}>
       {children}
       <span className="grid size-4 shrink-0 place-items-center" aria-hidden="true">
         <ListboxItemIndicator><Check size={16} /></ListboxItemIndicator>
       </span>
-    </ListboxItem>
+    </SettingsListItem>
   )
 }
 
@@ -60,17 +61,17 @@ export function PlaceSearchToolbar({ value, onChange, onCreate, disabled }: {
 function EmptyPlaceSearch({ onCreate, disabled }: { onCreate?: () => void; disabled?: boolean }) {
   return (
     <ListPanel className="flex-1">
-      <div className="place-search-empty">
-        <div className="empty-card min-h-full">
-          <span className="empty-icon" aria-hidden="true"><SearchX size={20} /></span>
-          <p role="status" className="section-heading">Места не найдены</p>
+      <div className="@container-size min-h-0 flex-1 overflow-y-auto overscroll-y-contain scroll-edges-y">
+        <EmptyState className="min-h-full [@container(height<11rem)]:py-2">
+          <PanelIcon large className="[@container(height<11rem)]:hidden" aria-hidden="true"><SearchX size={20} /></PanelIcon>
+          <SectionHeading role="status" as="p">Места не найдены</SectionHeading>
           {onCreate && (
             <Button disabled={disabled} onClick={onCreate}>
               <Plus aria-hidden="true" />
               <span>Добавить место</span>
             </Button>
           )}
-        </div>
+        </EmptyState>
       </div>
     </ListPanel>
   )
@@ -89,7 +90,7 @@ export function PlaceOptions({ places, value, onChange, disabled, label, onCreat
 
   return (
     <ListPanel>
-      <Listbox value={value} activation="manual" aria-label={label} disabled={disabled} onValueChange={onChange}>
+      <Listbox render={<PanelListboxBody />} value={value} activation="manual" aria-label={label} disabled={disabled} onValueChange={onChange}>
         {places.map(({ id, name, category }) => (
           <PlaceListItem key={id} value={id} label={name}>
             <PlaceRowLabel title={name} detail={categoryDefinition(catalog, category).label}
@@ -144,9 +145,9 @@ function PlaceBindings({ place, places, transactions, pending, error, onBack, on
   return (
     <section data-settings-fill aria-label="Привязки места" className="flex min-h-0 min-w-0 flex-col gap-3">
       <div className="grid min-w-0 shrink-0 gap-0.5">
-        <h2 ref={heading} tabIndex={-1} className="section-heading outline-none">
+        <SectionHeading ref={heading} tabIndex={-1} className="outline-none">
           {choosingTarget ? 'Куда перенести' : 'Привязки'}
-        </h2>
+        </SectionHeading>
         <p className="text-sm font-semibold wrap-anywhere text-muted">{place.name}</p>
       </div>
       {choosingTarget ? (
@@ -158,12 +159,12 @@ function PlaceBindings({ place, places, transactions, pending, error, onBack, on
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ListPanel>
             {place.aliases.length > 1 && (
-              <ButtonPrimitive className="settings-row shrink-0 border-b border-line text-primary" disabled={pending}
+              <SettingsRow className="shrink-0 border-b border-line text-primary" disabled={pending}
                 onClick={() => setSelected(allSelected ? [] : place.aliases)}>
                 {allSelected ? 'Снять выбор' : 'Выбрать все'}
-              </ButtonPrimitive>
+              </SettingsRow>
             )}
-            <Listbox multiple activation="manual" aria-label="Привязки из выписки" value={selectedAliases} disabled={pending}
+            <Listbox render={<PanelListboxBody />} multiple activation="manual" aria-label="Привязки из выписки" value={selectedAliases} disabled={pending}
               onValueChange={setSelected}>
               {place.aliases.map((alias) => {
                 const count = counts.get(alias) ?? 0
@@ -178,8 +179,8 @@ function PlaceBindings({ place, places, transactions, pending, error, onBack, on
             </Listbox>
           </ListPanel>
         </div>
-      ) : <p className="body-text flex-1">Привязки можно добавить в карточке операции.</p>}
-      {error && <p role="alert" className="error-text shrink-0">{error}</p>}
+      ) : <BodyText className="flex-1">Привязки можно добавить в карточке операции.</BodyText>}
+      {error && <ErrorText role="alert" className="shrink-0">{error}</ErrorText>}
       <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2">
         <Button variant="text" disabled={pending} onClick={choosingTarget ? () => {
           setTargetId(null)
@@ -254,20 +255,20 @@ export default reatomFactoryComponent<{
           )}
           {visiblePlaces.length > 0 ? (
             <ListPanel>
-              <ul key={query}>
+              <PanelList key={query}>
                 {visiblePlaces.map((place) => (
                   <li key={place.id}>
-                    <ButtonPrimitive className="settings-row" onClick={wrap(() => {
+                    <SettingsRow onClick={wrap(() => {
                       setDraft({ name: place.name, category: place.category })
                       showPanel({ kind: 'edit', placeId: place.id })
                     })}>
                       <PlaceRowLabel title={place.name} detail={categoryDefinition(catalog, place.category).label}
                         icon={<CategoryIcon category={place.category} className="size-7 rounded-lg" />} />
                       <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
-                    </ButtonPrimitive>
+                    </SettingsRow>
                   </li>
                 ))}
-              </ul>
+              </PanelList>
             </ListPanel>
           ) : list.length > 0
             ? <EmptyPlaceSearch onCreate={createPlace} disabled={pending} />
@@ -294,12 +295,12 @@ export default reatomFactoryComponent<{
             result: undefined,
           })), () => showPanel(null))
         })}>
-          <h2 ref={editHeading} tabIndex={-1} className="section-heading outline-none">
+          <SectionHeading ref={editHeading} tabIndex={-1} className="outline-none">
             {current ? 'Редактировать место' : 'Новое место'}
-          </h2>
+          </SectionHeading>
           <PlaceFields key={current?.id ?? 'new'} value={draft} onChange={setDraft} disabled={pending}
             autoFocus={panel.kind === 'create'} />
-          {error && <p role="alert" className="error-text">{error}</p>}
+          {error && <ErrorText role="alert">{error}</ErrorText>}
           <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" disabled={pending} onClick={wrap(() => showPanel(null))}>Отмена</Button>
             <Button type="submit" disabled={pending || !draft.name.trim()}>Сохранить</Button>
@@ -307,13 +308,13 @@ export default reatomFactoryComponent<{
         </Panel>
         {current && (
           <Panel as="div" className="overflow-hidden">
-            <ButtonPrimitive className="settings-row" disabled={pending} autoFocus={panel.kind === 'edit' && panel.focusBindings}
+            <SettingsRow disabled={pending} autoFocus={panel.kind === 'edit' && panel.focusBindings}
               onClick={wrap(() => showPanel({ kind: 'bindings', placeId: current.id }))}>
               <Link2 size={17} className="shrink-0 text-primary" aria-hidden="true" />
               <span>Привязки</span>
               <span className="text-xs text-muted">{current.aliases.length}</span>
               <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
-            </ButtonPrimitive>
+            </SettingsRow>
           </Panel>
         )}
       </>

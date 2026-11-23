@@ -3,6 +3,7 @@ import { Fingerprint, KeyRound } from 'lucide-react'
 import { Button } from '../shared/ui/Button'
 import { deviceUnlockAvailable, prepareDeviceUnlock, type DeviceKeyMode, type DeviceUnlockConfirmation } from '../vault'
 import { messageFor } from './useVaultSession'
+import { BodyText, ErrorText } from '../shared/ui/Text'
 
 export function DeviceSetup({ supported, confirm, onPendingChange, showOtherOptions = false }: {
   supported?: boolean
@@ -63,7 +64,7 @@ export function DeviceSetup({ supported, confirm, onPendingChange, showOtherOpti
     <div className="grid min-w-0 gap-2">
       {stage ? (
         <>
-          {!stage.verifiedOnCreate && <p className="body-text">Подтверди вход на устройстве.</p>}
+          {!stage.verifiedOnCreate && <BodyText>Подтверди вход на устройстве.</BodyText>}
           <Button disabled={pending} onClick={finish}>{stage.verifiedOnCreate ? 'Продолжить' : 'Подтвердить вход'}</Button>
           <Button variant="text" disabled={pending} onClick={() => { setStage(undefined); setError('') }}>Выбрать другой ключ</Button>
         </>
@@ -79,14 +80,14 @@ export function DeviceSetup({ supported, confirm, onPendingChange, showOtherOpti
               <span>Использовать USB- или NFC-ключ</span>
             </Button>
           )}
-          {supported === false && !external && <p className="body-text">Для настройки входа открой приложение через HTTPS или localhost в браузере с поддержкой ключей доступа.</p>}
+          {supported === false && !external && <BodyText>Для настройки входа открой приложение через HTTPS или localhost в браузере с поддержкой ключей доступа.</BodyText>}
         </>
       )}
       {error && (
         <div role="alert" className="grid gap-2">
-          <p className="error-text">{error}</p>
+          <ErrorText>{error}</ErrorText>
           {android && mode === 'platform' && (
-            <p className="body-text">Если Bitwarden выдаёт ошибку, выбери Google как провайдера ключей доступа в настройках Android.</p>
+            <BodyText>Если Bitwarden выдаёт ошибку, выбери Google как провайдера ключей доступа в настройках Android.</BodyText>
           )}
         </div>
       )}

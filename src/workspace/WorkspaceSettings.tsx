@@ -1,17 +1,17 @@
 import { useState, type ReactNode } from 'react'
 import { useAtom } from '@reatom/react'
-import { Button } from '@ui-sdk/react/button'
-import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
-import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
+import { Dialog } from '@ui-sdk/react/dialog'
 import { Archive, Bell, ChevronRight, Fingerprint, LockKeyhole, MapPin, Phone, SunMoon, Tags, type LucideIcon } from 'lucide-react'
 import CategoryEditor from '../categories/CategoryEditor'
+import { DialogSurface } from '../shared/ui/DialogSurface'
 import { DialogHeader } from '../shared/ui/DialogHeader'
 import BrowserReminderSettings from '../credits/BrowserReminderSettings'
 import type { Ledger } from '../finance'
 import type { Notify } from '../shared/ui/feedback'
 import type { Place } from '../places/model'
 import PlaceSettings from '../places/PlaceSettings'
-import { Panel } from '../shared/ui/Panel'
+import { Panel, PanelIcon } from '../shared/ui/Panel'
+import { SegmentedControl, SegmentedControlItem } from '../shared/ui/SegmentedControl'
 import { currentThemePreference, isThemePreference, saveThemePreference, themeLabels } from '../theme'
 import type { VaultUnlockMethods } from '../vault'
 import { AccessSettings } from '../vault-ui/AccessSettings'
@@ -19,6 +19,8 @@ import BackupSettings from '../vault-ui/BackupSettings'
 import type { VaultAccess } from '../vault-ui/useVaultSession'
 import TransferSettings from './TransferSettings'
 import type { SettingsView } from './workspaceState'
+import { SectionHeading } from '../shared/ui/Text'
+import { SettingsRow, SettingsDialogTrigger } from '../shared/ui/SettingsRow'
 
 const links = [
   { view: 'categories', label: 'Категории', icon: Tags },
@@ -29,10 +31,10 @@ const links = [
 function SettingsCard({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
   return (
     <Panel padded className="grid gap-2.5" aria-label={title}>
-      <h2 className="section-heading flex items-center gap-2.5">
-        <span className="dialog-icon"><Icon size={17} aria-hidden="true" /></span>
+      <SectionHeading className="flex items-center gap-2.5">
+        <PanelIcon><Icon size={17} aria-hidden="true" /></PanelIcon>
         {title}
-      </h2>
+      </SectionHeading>
       {children}
     </Panel>
   )
@@ -56,7 +58,7 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
   if (!view) return null
 
   return (
-    <div className="settings-content mx-auto grid w-full max-w-2xl min-w-0 content-start gap-3">
+    <div className="mx-auto grid w-full max-w-2xl min-w-0 content-start gap-3 has-[>[data-settings-fill]]:h-full has-[>[data-settings-fill]]:min-h-0 has-[>[data-settings-fill]]:grid-rows-[minmax(0,1fr)]">
       {view === 'menu' && (
         <>
           <SettingsCard title="Тема" icon={SunMoon}>
@@ -64,8 +66,7 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
               if (!isThemePreference(next)) return
               saveThemePreference(next)
               setTheme(next)
-            }} className="segmented-control">
-              <SegmentedControlIndicator />
+            }}>
               {Object.entries(themeLabels).map(([value, label]) => (
                 <SegmentedControlItem key={value} value={value}>
                   {label}
@@ -83,31 +84,31 @@ export default function WorkspaceSettings({ view, onView, ledger, places, vault,
             <ul className="list-none divide-y divide-line">
               {links.map(({ view, label, icon: Icon }) => (
                 <li key={view}>
-                  <Button id={`settings-${view}`} className="settings-row" onClick={() => onView(view)}>
+                  <SettingsRow id={`settings-${view}`} onClick={() => onView(view)}>
                     <Icon size={18} className="shrink-0 text-primary" aria-hidden="true" />
                     <span className="min-w-0 wrap-anywhere">{label}</span>
                     <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
-                  </Button>
+                  </SettingsRow>
                 </li>
               ))}
               <li>
                 <Dialog presentation="auto" dismissible={!restorePending}>
-                  <DialogTrigger className="settings-row" id="settings-backup">
+                  <SettingsDialogTrigger id="settings-backup">
                     <Archive size={18} className="shrink-0 text-primary" aria-hidden="true" />
                     <span className="min-w-0 wrap-anywhere">Резервная копия</span>
                     <ChevronRight size={15} className="shrink-0 text-muted" aria-hidden="true" />
-                  </DialogTrigger>
-                  <DialogContent initialFocus="content" className="compact-dialog grid-rows-[auto_minmax(0,1fr)]">
+                  </SettingsDialogTrigger>
+                  <DialogSurface initialFocus="content" className="grid-rows-[auto_minmax(0,1fr)]">
                     <DialogHeader title="Резервная копия" closeLabel="Закрыть резервную копию" closeDisabled={restorePending > 0} />
                     <BackupSettings vault={vault} />
-                  </DialogContent>
+                  </DialogSurface>
                 </Dialog>
               </li>
               <li>
-                <Button className="settings-row" onClick={vault.lock}>
+                <SettingsRow onClick={vault.lock}>
                   <LockKeyhole size={18} className="shrink-0 text-primary" aria-hidden="true" />
                   <span className="min-w-0 wrap-anywhere">Заблокировать</span>
-                </Button>
+                </SettingsRow>
               </li>
             </ul>
           </Panel>

@@ -1,19 +1,20 @@
 import { defaultRangeExtractor, measureElement, useVirtualizer, type Range } from '@tanstack/react-virtual'
+import { cn } from 'cn'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { formatDate, formatDayHeading } from '../../shared/format'
 import type { JournalEntry, JournalGroups } from './model'
-import './operationList.css'
 
 type ListItem =
   | { key: string; date: string; entry?: never }
   | { key: string; entry: JournalEntry; groupStart: boolean; groupEnd: boolean }
 
-export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey, scrollRef }: {
+export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey, scrollRef, flush }: {
   groups: JournalGroups
   renderEntry: (entry: JournalEntry) => ReactNode
   ariaLabel: string
   resetKey: string
   scrollRef?: RefObject<HTMLElement | null>
+  flush?: boolean
 }) {
   const listRef = useRef<HTMLUListElement>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -79,14 +80,16 @@ export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey,
   const year = new Date().getFullYear()
 
   return (
-    <ul ref={listRef} className="operation-list" aria-label={ariaLabel} style={{ height: virtualizer.getTotalSize() }}
+    <ul ref={listRef} className={cn('relative min-w-0 list-none [overflow-anchor:none]', flush && 'mx-3 sm:mx-0')}
+      aria-label={ariaLabel} style={{ height: virtualizer.getTotalSize() }}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocusedKey(undefined) }}>
       {virtualizer.getVirtualItems().map(({ index, key, start }) => {
         const item = items[index]
         const style = { top: start - scrollMargin }
         if (!item.entry) {
           return (
-            <li key={key} ref={virtualizer.measureElement} data-index={index} className="operation-list-heading" style={style}
+            <li key={key} ref={virtualizer.measureElement} data-index={index}
+              className="absolute inset-x-0 flex items-end px-0.5 pt-2 pb-1 text-xs font-extrabold tracking-normal text-muted first-letter:uppercase" style={style}
               aria-setsize={items.length} aria-posinset={index + 1}>
               <h2 className="first-letter:uppercase">
                 <time dateTime={item.date} title={formatDate(item.date)}>
@@ -97,7 +100,10 @@ export function VirtualOperationList({ groups, renderEntry, ariaLabel, resetKey,
           )
         }
         return (
-          <li key={key} ref={virtualizer.measureElement} data-index={index} className="operation-list-row" style={style}
+          <li key={key} ref={virtualizer.measureElement} data-index={index} className={cn(
+            'absolute inset-x-0 min-w-0 border-x border-b border-line bg-paper data-group-start:rounded-t-xl data-group-start:border-t data-group-end:rounded-b-xl',
+            flush ? 'overflow-clip p-0' : 'p-0.5',
+          )} style={style}
             data-group-start={item.groupStart ? '' : undefined} data-group-end={item.groupEnd ? '' : undefined}
             aria-setsize={items.length} aria-posinset={index + 1} onFocus={() => setFocusedKey(item.key)}>
             {renderEntry(item.entry)}

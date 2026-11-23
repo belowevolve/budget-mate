@@ -1,13 +1,15 @@
 import { action, withAsync, wrap } from '@reatom/core'
 import { reatomFactoryComponent } from '@reatom/react'
-import { Dialog, DialogContent, DialogTrigger } from '@ui-sdk/react/dialog'
+import { Dialog, DialogTrigger } from '@ui-sdk/react/dialog'
 import { MapPin, Plus, Unlink } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { categoryDefinition } from '../categories/catalog'
 import { useCategoryCatalog } from '../categories/categoryContext'
 import { CategoryIcon } from '../components/CategoryIcon'
 import type { Transaction } from '../finance'
+import { DialogBody, DialogSurface } from '../shared/ui/DialogSurface'
 import { Button } from '../shared/ui/Button'
+import { ChoiceTriggerButton } from '../shared/ui/ChoiceParts'
 import { ChoiceTriggerContent } from '../shared/ui/ChoiceTriggerContent'
 import { DialogActions } from '../shared/ui/DialogActions'
 import { DialogHeader } from '../shared/ui/DialogHeader'
@@ -18,6 +20,7 @@ import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import { assignPlace, filterPlaces, indexPlaces, isIndividualPlaceAlias, merchantAlias, placeAliasLabel, PlaceError, savePlace, unassignPlace, type Place } from './model'
 import { PlaceFields, type PlaceDraft } from './PlaceFields'
 import { PlaceOptions, PlaceSearchToolbar } from './PlaceSettings'
+import { ErrorText } from '../shared/ui/Text'
 
 type Props = {
   row: Transaction
@@ -146,7 +149,7 @@ export default reatomFactoryComponent<Props>(() => {
             }
             footer={
               <>
-                {error && <p role="alert" className="error-text">{error}</p>}
+                {error && <ErrorText role="alert">{error}</ErrorText>}
                 <DialogActions>
                   {current && (
                     <Button variant="secondary" size="small" disabled={pending}
@@ -164,13 +167,13 @@ export default reatomFactoryComponent<Props>(() => {
               </>
             } />
         ) : (
-          <DialogTrigger ref={trigger} className="choice-trigger w-full min-w-0 text-start" disabled={disabled}>
+          <DialogTrigger ref={trigger} render={<ChoiceTriggerButton />} className="w-full min-w-0 text-start" disabled={disabled}>
             <ChoiceTriggerContent icon={placeIcon} direction="next">{placeLabel}</ChoiceTriggerContent>
           </DialogTrigger>
         )}
-        <DialogContent key={back.contentKey} initialFocus="content"
+        <DialogSurface key={back.contentKey} initialFocus="content"
           finalFocus={desktop ? () => trigger.current : undefined}
-          className={`compact-dialog grid-rows-[auto_minmax(0,1fr)] ${isNew ? '' : 'h-dvh'}`}>
+          className={`grid-rows-[auto_minmax(0,1fr)] ${isNew ? '' : 'h-dvh'}`}>
           <DialogHeader title={isNew ? 'Новое место' : 'Место расхода'} closeDisabled={pending} description={(
             <span className="grid gap-0.5">
               <span>{placeAliasLabel(alias)}</span>
@@ -190,13 +193,13 @@ export default reatomFactoryComponent<Props>(() => {
                 {!isNew && (
                   <PlaceSearchToolbar value={query} onChange={setQuery} onCreate={createPlace} disabled={pending} />
                 )}
-                {error && <p role="alert" className="error-text">{error}</p>}
+                {error && <ErrorText role="alert">{error}</ErrorText>}
               </div>
             )}
             {isNew ? (
-              <div data-slot="scroll" className="dialog-body">
+              <DialogBody>
                 <PlaceFields value={draft} onChange={setDraft} disabled={pending} autoFocus={mode === 'create'} />
-              </div>
+              </DialogBody>
             ) : (
               <PlaceOptions key={query} places={visiblePlaces} value={visibleChoiceId}
                 onChange={setChosenId} disabled={pending} label="Места" onCreate={createPlace} />
@@ -217,7 +220,7 @@ export default reatomFactoryComponent<Props>(() => {
               </Button>
             </div>
           </form>
-        </DialogContent>
+        </DialogSurface>
       </Dialog>
     )
   }

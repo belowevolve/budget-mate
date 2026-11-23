@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 import { Button } from '@ui-sdk/react/button'
-import { cn } from '../cn'
+import { cn } from 'cn'
 
 type RowActionProps = Omit<ComponentProps<typeof Button>, 'className'> & { className?: string }
 

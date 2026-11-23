@@ -2,6 +2,8 @@
 
 import { createTransfer, definePrimitive, keepFocus, live, type TransferDraft, type TransferLists, type TransferMessage } from '@ui-sdk/core'
 import { createParts } from '@ui-sdk/react/primitive'
+import { cn } from 'cn'
+import type { ComponentProps } from 'react'
 import { billItemGroup, type Bill } from './bill'
 
 type BillDragOptions = {
@@ -99,5 +101,43 @@ const billDrag = definePrimitive({
   agent: { actions: ['move'] },
 })
 
-export const { Root: BillDrag, List: BillDragList, Item: BillDragItem, Surface: BillDragSurface } =
+const { Root: DragRoot, List: DragList, Item: DragItem, Surface: DragSurface } =
   createParts(billDrag, { root: 'div', list: 'section', item: 'li', surface: 'span' })
+
+export function BillDrag(props: ComponentProps<typeof DragRoot>) {
+  return <DragRoot {...props} />
+}
+
+function DropLine({ before }: { before?: boolean }) {
+  return <span aria-hidden="true" className={cn(
+    'pointer-events-none absolute inset-x-2 hidden h-0.5 rounded-full bg-primary',
+    before ? '-top-1 group-data-drop-before/bill-item:block' : '-bottom-1 group-data-drop-at-end/bill-list:block',
+  )} />
+}
+
+export function BillDragList({ children, ...props }: Omit<ComponentProps<typeof DragList>, 'children'> & { children: React.ReactNode }) {
+  return (
+    <DragList {...props} className="group/bill-list relative grid min-w-0 gap-1.5 rounded-xl data-drop-target:bg-subtle data-drop-target:outline-1 data-drop-target:outline-offset-2 data-drop-target:outline-primary">
+      {children}
+      <DropLine />
+    </DragList>
+  )
+}
+
+export function BillDragItem({ children, ...props }: Omit<ComponentProps<typeof DragItem>, 'children'> & { children: React.ReactNode }) {
+  return (
+    <DragItem {...props} className={cn(
+      'group/bill-item relative isolate grid min-w-0 gap-1.5 rounded-xl border border-line bg-paper p-2',
+      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+      'data-moving:border-dashed data-moving:border-primary data-drag-preview:border-primary data-drag-preview:shadow-popup',
+      'has-[>[data-slot=bill-drag-surface]]:[&_:is(button,input)]:relative has-[>[data-slot=bill-drag-surface]]:[&_:is(button,input)]:z-1',
+    )}>
+      {children}
+      <DropLine before />
+    </DragItem>
+  )
+}
+
+export function BillDragSurface(props: ComponentProps<typeof DragSurface>) {
+  return <DragSurface {...props} className="absolute inset-0 touch-pinch-zoom cursor-grab rounded-[inherit] group-data-moving/bill-item:cursor-grabbing" />
+}
