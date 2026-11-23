@@ -81,14 +81,14 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   const description = [caption ?? details, date].filter(Boolean).join(' ')
   const OffsetIcon = refundTarget ? Link2 : ArrowLeftRight
   const categoryIcon = refundTarget || review
-    ? <span className="grid size-7 place-items-center rounded-lg bg-transfer-soft text-transfer sm:size-8"><OffsetIcon size={16} aria-hidden="true" /></span>
-    : <CategoryIcon category={row.category} className="size-7 rounded-lg sm:size-8" />
+    ? <span className="grid size-8 place-items-center rounded-lg bg-transfer-soft text-transfer"><OffsetIcon size={16} aria-hidden="true" /></span>
+    : <CategoryIcon category={row.category} className="rounded-lg" />
   const changeCategory = !counterpart && !refundTarget && !selection ? onChangeCategory : undefined
   const body = (
     <>
       <span className="grid min-w-0">
-        <strong className="block truncate text-sm leading-tight font-bold">{title}</strong>
-        <small className={cn('flex min-w-0 items-center gap-1 text-xs leading-tight font-medium text-muted', route && 'flex-wrap')}>
+        <strong className="block truncate text-sm/4 font-bold">{title}</strong>
+        <small className={cn('flex min-w-0 items-center gap-1 text-xs/4 font-medium text-muted', route && 'flex-wrap')}>
           {route ? (
             <>
               <TransferRoute row={row} counterpart={route} />
@@ -121,7 +121,7 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   const layout = cn(
     'grid h-auto min-h-12 w-full min-w-0 items-center gap-2 px-2 text-start',
     flush ? 'rounded-none py-0' : 'rounded-lg py-1',
-    changeCategory ? 'ps-11 sm:ps-12' : '',
+    changeCategory && 'ps-12',
     changeCategory
       ? onSelect ? 'grid-cols-[minmax(0,1fr)_minmax(0,auto)_1rem]' : 'grid-cols-[minmax(0,1fr)_minmax(0,auto)]'
       : onSelect ? 'grid-cols-[auto_minmax(0,1fr)_minmax(0,auto)_1rem]' : 'grid-cols-[auto_minmax(0,1fr)_minmax(0,auto)]',
@@ -129,7 +129,7 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   const entry = changeCategory ? (
     <div className="relative min-w-0">
       <Button
-        className="peer/category absolute inset-s-2 top-1/2 z-1 grid size-7 min-h-0 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 shadow-none hover:[&>span]:bg-selected focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary sm:size-8"
+        className="peer/category absolute inset-s-2 top-1/2 z-1 grid size-8 min-h-0 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent p-0 shadow-none hover:[&>span]:bg-selected focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
         aria-label={`Изменить категорию: ${title}`}
         data-operation-category-trigger={row.id} onClick={() => changeCategory(row)}>{categoryIcon}</Button>
       {onSelect

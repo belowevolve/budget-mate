@@ -16,6 +16,7 @@ import { Panel, PanelIcon, EmptyPanel } from '../shared/ui/Panel'
 import { messageFor, type VaultWrite } from '../vault-ui/vaultModel'
 import Notice from '../shared/ui/Notice'
 import { SectionHeading } from '../shared/ui/Text'
+import { BankIcon } from './BankIcon'
 
 function CreditFact({ label, children }: { label: ReactNode; children: ReactNode }) {
   return (
@@ -93,10 +94,10 @@ function CreditCardDetails({ account, today, write, notify }: {
     <Panel padded className="grid grid-rows-[minmax(0,1fr)_auto] gap-3">
       <div className="grid min-w-0 content-start gap-2.5">
         <div className="flex min-w-0 items-center gap-2">
-          <PanelIcon><CreditCard size={17} aria-hidden="true" /></PanelIcon>
+          <BankIcon bank={account.bank} decorative className="size-9 rounded-lg text-lg/none sm:size-10 sm:text-xl/none" />
           <div className="min-w-0 flex-1">
-            <SectionHeading>{bank}</SectionHeading>
-            {label && label !== bank && <p className="text-xs text-muted wrap-anywhere">{label}</p>}
+            <SectionHeading className="leading-5 sm:leading-6">{bank}</SectionHeading>
+            {label && label !== bank && <p className="text-xs leading-4 text-muted wrap-anywhere">{label}</p>}
           </div>
         </div>
         {(snapshot?.gracePeriodEnd || snapshot?.gracePaymentAmountMinor !== undefined ||
