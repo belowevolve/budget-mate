@@ -1,0 +1,16 @@
+diff --git a/dist/foundation/popups/sheet-scroll-snap.js b/dist/foundation/popups/sheet-scroll-snap.js
+index b338f7cceb8fff9b4dc12f343fb7fbfbe3c9b3d6..7890e5fe8ff9ba330c9d5ad1a49b858ac7e06134 100644
+--- a/dist/foundation/popups/sheet-scroll-snap.js
++++ b/dist/foundation/popups/sheet-scroll-snap.js
+@@ -70,7 +70,10 @@ function createScrollSnapDriver(options) {
+   ];
+   const visibility = new IntersectionObserver(onVisibility, {
+     root: host,
+-    rootMargin: "0px 0px -1px 0px",
++    // Android's visible edge is above the extra track for Safari's floating toolbar.
++    rootMargin: view.navigator.userAgent.includes("Android")
++        ? `0px 0px -${toolbarBleed + 1}px 0px`
++        : "0px 0px -1px 0px",
+     threshold: 0
+   });
+   visibility.observe(sheet);

@@ -14,29 +14,23 @@ import { JournalSwipeAction, JournalSwipeActions, JournalSwipeContent, JournalSw
 import { PendingStatus } from '../../shared/ui/PendingStatus'
 import type { JournalEntry } from './model'
 
-function endpoint(row: Transaction) {
+function TransferEndpoint({ row, incoming }: { row: Transaction; incoming?: boolean }) {
   const digits = /[•*]\s*(\d{4})$/.exec(row.accountLabel)?.[1]
-  return digits ? `••${digits}` : row.accountLabel.split(' · ')[1]
+  const label = digits ? `•${digits}` : row.accountLabel.split(' · ')[1]
+  return (
+    <span className="inline-flex min-w-0 items-center gap-0.5">
+      {incoming && <span className="shrink-0">→</span>}
+      <BankIcon bank={row.bank} />
+      {label && <span className="truncate">{label}</span>}
+    </span>
+  )
 }
 
 function TransferRoute({ row, counterpart }: { row: Transaction; counterpart: Transaction }) {
-  const source = endpoint(row)
-  const target = endpoint(counterpart)
-  const sameBank = row.bank === counterpart.bank
-
   return (
     <>
-      <span className="inline-flex min-w-0 items-center gap-1">
-        <BankIcon bank={row.bank} />
-        {source && <span className="truncate">{source}</span>}
-      </span>
-      {(!sameBank || target) && (
-        <span className="inline-flex min-w-0 items-center gap-1">
-          <span className="shrink-0">→</span>
-          {!sameBank && <BankIcon bank={counterpart.bank} />}
-          {target && <span className="truncate">{target}</span>}
-        </span>
-      )}
+      <TransferEndpoint row={row} />
+      <TransferEndpoint row={counterpart} incoming />
     </>
   )
 }
@@ -155,19 +149,19 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
       data-category-full={openCategories && !openRefund && !review ? '' : undefined}>
       <JournalSwipeActions value={row.id}>
         {openRefund && (
-          <JournalSwipeAction value={row.id} tone="refund" onAction={() => openRefund(row)}>
+          <JournalSwipeAction rowId={row.id} tone="refund" onAction={() => openRefund(row)}>
             <Link2 aria-hidden="true" />
             К расходу
           </JournalSwipeAction>
         )}
         {markTransfer && (
-          <JournalSwipeAction value={row.id} tone="transfer" onAction={() => { void markTransfer(row) }}>
+          <JournalSwipeAction rowId={row.id} tone="transfer" onAction={() => { void markTransfer(row) }}>
             <ArrowLeftRight aria-hidden="true" />
             Свой перевод
           </JournalSwipeAction>
         )}
         {openCategories && (
-          <JournalSwipeAction value={row.id} tone="category" onAction={() => openCategories(row)}>
+          <JournalSwipeAction rowId={row.id} tone="category" onAction={() => openCategories(row)}>
             <Tag aria-hidden="true" />
             Категория
           </JournalSwipeAction>

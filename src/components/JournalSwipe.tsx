@@ -44,13 +44,13 @@ const journalSwipe = definePrimitive({
       attrs: (state, { api, key }) => api.swipe.actionsAttrs(state, key, 'end'),
       bind: (el, { api, key }) => api.swipe.bindActions(el, key, 'end'),
     }),
-    action: slot<{ value: string; onAction: () => void }>({
-      props: { value: 'string', onAction: 'callback' },
+    action: slot<{ value: string; rowId: string; onAction: () => void }>({
+      props: { value: 'string', rowId: 'string', onAction: 'callback' },
       role: 'button',
       focus: 'native',
       attrs: () => ({ type: 'button' }),
-      press: ({ api, key, props }) => {
-        if (api.swipe.open()?.key !== key) return
+      press: ({ api, props }) => {
+        if (api.swipe.open()?.key !== props.rowId) return
         props.onAction()
         api.swipe.close()
       },
@@ -89,8 +89,8 @@ const actionTone = {
   category: 'bg-selected text-primary hover:bg-subtle',
 }
 
-export function JournalSwipeAction({ tone, ...props }: ComponentProps<typeof SwipeAction> & { tone: keyof typeof actionTone }) {
-  return <SwipeAction {...props} className={cn(
+export function JournalSwipeAction({ tone, rowId, ...props }: Omit<ComponentProps<typeof SwipeAction>, 'value'> & { tone: keyof typeof actionTone }) {
+  return <SwipeAction {...props} rowId={rowId} value={`${rowId}:${tone}`} className={cn(
     'flex h-full min-h-11 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-none border-0 p-1 text-center text-xs leading-tight font-bold whitespace-normal shadow-none [&>svg]:pointer-events-none [&>svg]:size-4 [&>svg]:shrink-0',
     actionTone[tone],
   )} />
