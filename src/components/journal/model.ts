@@ -3,6 +3,7 @@ import { categoryDefinition, defaultCategoryCatalog, kindForAmount } from '../..
 import { banks, isTechnicalCreditEntry, needsTransferReview, summarize, transactionAccountingAmount, type Category, type Transaction } from '../../finance'
 import { operationTitle } from '../../operationPresentation'
 import type { RefundIndex } from '../../refunds'
+import { normalizeSearch, parseOperationSearch } from '../../shared/operationSearch'
 import type { BankId } from '../../statements/types'
 
 export const journalTabs = [
@@ -111,15 +112,9 @@ function groupEntries(rows: Transaction[], refunds: RefundIndex) {
   return groupJournalEntries(entries)
 }
 
-function normalizeSearch(text: string) {
-  return text.normalize('NFC').toLowerCase().replaceAll('ё', 'е')
-}
-
 export function selectJournalRows(rows: Transaction[], selection: JournalSelection, refunds: RefundIndex, catalog = defaultCategoryCatalog) {
   const { kinds, banks: selectedBanks, categories, transferScope, query } = selection
-  const search = normalizeSearch(query.trim())
-  const numericSearch = search.replace(/[\s₽]/g, '').replace(',', '.').replace(/^[-+−]/, '')
-  const searchByAmount = /^\d+(?:\.\d{0,2})?$/.test(numericSearch)
+  const { text: search, amount: numericSearch } = parseOperationSearch(query)
   const bankIds = new Set(selectedBanks)
   const categoryIds = new Set(categories)
   const possibleBankIds = new Set(selectedBanks)
@@ -142,7 +137,7 @@ export function selectJournalRows(rows: Transaction[], selection: JournalSelecti
     if ((scope === 'review' && !review) || (scope === 'own' && review)) continue
     if (categoryIds.size && !categoryIds.has(category)) continue
 
-    if (!search || (searchByAmount && [row.amountMinor, transactionAccountingAmount(row, refunds)].some((amount) => {
+    if (!search || (numericSearch !== undefined && [row.amountMinor, transactionAccountingAmount(row, refunds)].some((amount) => {
       const units = Math.abs(amount) / 100
       return units.toFixed(2).startsWith(numericSearch)
         || (!numericSearch.includes('.') && String(Math.round(units)).startsWith(numericSearch))

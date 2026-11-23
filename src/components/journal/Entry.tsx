@@ -3,11 +3,12 @@ import { cn } from 'cn'
 import { ArrowLeftRight, Check, ChevronRight, Link2, Tag } from 'lucide-react'
 import { useCategoryCatalog } from '../../categories/categoryContext'
 import { categoryDefinition } from '../../categories/catalog'
-import { banks, money, needsTransferReview, type Transaction } from '../../finance'
+import { money, needsTransferReview, type Transaction } from '../../finance'
 import { operationTitle } from '../../operationPresentation'
 import { isRefundIncome } from '../../refunds'
 import { formatDate } from '../../shared/format'
 import { RowAction } from '../../shared/ui/RowAction'
+import { BankIcon } from '../BankIcon'
 import { CategoryIcon } from '../CategoryIcon'
 import { JournalSwipeAction, JournalSwipeActions, JournalSwipeContent, JournalSwipeRow } from '../JournalSwipe'
 import { PendingStatus } from '../../shared/ui/PendingStatus'
@@ -18,15 +19,26 @@ function endpoint(row: Transaction) {
   return digits ? `••${digits}` : row.accountLabel.split(' · ')[1]
 }
 
-function transferRoute(row: Transaction, counterpart: Transaction) {
+function TransferRoute({ row, counterpart }: { row: Transaction; counterpart: Transaction }) {
   const source = endpoint(row)
   const target = endpoint(counterpart)
-  const sourceBank = banks[row.bank]
-  const targetBank = banks[counterpart.bank]
-  if (row.bank === counterpart.bank) {
-    return source && target ? `${sourceBank} · ${source} → ${target}` : sourceBank
-  }
-  return `${[sourceBank, source].filter(Boolean).join(' ')} → ${[targetBank, target].filter(Boolean).join(' ')}`
+  const sameBank = row.bank === counterpart.bank
+
+  return (
+    <>
+      <span className="inline-flex min-w-0 items-center gap-1">
+        <BankIcon bank={row.bank} />
+        {source && <span className="truncate">{source}</span>}
+      </span>
+      {(!sameBank || target) && (
+        <span className="inline-flex min-w-0 items-center gap-1">
+          <span className="shrink-0">→</span>
+          {!sameBank && <BankIcon bank={counterpart.bank} />}
+          {target && <span className="truncate">{target}</span>}
+        </span>
+      )}
+    </>
+  )
 }
 
 type EntryProps = JournalEntry & {
@@ -49,13 +61,12 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
   const transferAmount = transfer || review || Boolean(refundTarget)
   const gain = row.amountMinor > 0 && !transferAmount
   let title = operationTitle(row)
-  let details = `${categoryDefinition(catalog, row.category, row.amountMinor > 0 ? 'income' : 'expense').label} · ${banks[row.bank]}`
+  let details = categoryDefinition(catalog, row.category, row.amountMinor > 0 ? 'income' : 'expense').label
   if (counterpart) {
     title = /погашение кредита/i.test(counterpart.description) ? 'Погашение кредита' : 'Между счетами'
-    details = transferRoute(row, counterpart)
   } else if (review) {
     title = row.amountMinor > 0 ? 'Поступление по СБП' : 'Перевод по СБП'
-    details = banks[row.bank]
+    details = ''
   } else if (refundTarget) {
     title = 'Компенсация расхода'
     details = operationTitle(refundTarget)
@@ -65,8 +76,9 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
 
   const displayedAmount = selection?.amountMinor ?? (counterpart ? Math.abs(row.amountMinor) : row.amountMinor + (refundMinor ?? 0))
   const amount = `${gain || refundTarget ? '+' : ''}${money(displayedAmount, row.currency, exactAmount)}`
-  const description = caption ?? details
-  const secondaryText = showDate ? `${description} · ${formatDate(row.date)}` : description
+  const route = counterpart && caption === undefined ? counterpart : undefined
+  const date = showDate ? formatDate(row.date) : ''
+  const description = [caption ?? details, date].filter(Boolean).join(' ')
   const OffsetIcon = refundTarget ? Link2 : ArrowLeftRight
   const categoryIcon = refundTarget || review
     ? <span className="grid size-7 place-items-center rounded-lg bg-transfer-soft text-transfer sm:size-8"><OffsetIcon size={16} aria-hidden="true" /></span>
@@ -76,9 +88,18 @@ export default function Entry({ row, counterpart, refundTarget, refundMinor, sho
     <>
       <span className="grid min-w-0">
         <strong className="block truncate text-sm leading-tight font-bold">{title}</strong>
-        <small className={cn('text-xs leading-tight font-medium text-muted',
-          counterpart ? 'line-clamp-2 whitespace-normal wrap-anywhere' : 'block truncate')}>
-          {secondaryText}
+        <small className={cn('flex min-w-0 items-center gap-1 text-xs leading-tight font-medium text-muted', route && 'flex-wrap')}>
+          {route ? (
+            <>
+              <TransferRoute row={row} counterpart={route} />
+              {date && <span className="truncate">{date}</span>}
+            </>
+          ) : (
+            <>
+              <BankIcon bank={row.bank} />
+              {description && <span className="truncate">{description}</span>}
+            </>
+          )}
         </small>
       </span>
       <strong className={cn(

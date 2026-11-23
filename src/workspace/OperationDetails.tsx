@@ -103,7 +103,9 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
     const compensation = refunds.byExpense.get(row.id)
     const requiresReview = !refundTarget && needsTransferReview(row)
     const title = refundTarget ? 'Компенсация расхода' : operationTitle(row)
-    const account = row.accountLabel || banks[row.bank]
+    const bankName = banks[row.bank]
+    const account = row.accountLabel || bankName
+    const accountCaption = account === bankName ? '' : account.replace(`${bankName} · `, '').replaceAll(' · ', ' ')
     const canEditCategory = !refundTarget
     const canMarkTransfer = row.category !== 'transfer' && !compensation && !refundTarget
     const canRefund = isRefundIncome(row)
@@ -157,7 +159,7 @@ export default reatomFactoryComponent<OperationDetailsProps>(() => {
                 <div className="min-w-0">
                   <DialogTitle className="sr-only">{title}</DialogTitle>
                   <DialogDescription className="sr-only">{account} · {formatDate(row.date)}</DialogDescription>
-                  <Entry row={row} caption={account} showDate exactAmount refundTarget={refundTarget} refundMinor={compensation?.totalMinor}
+                  <Entry row={row} caption={accountCaption} showDate exactAmount refundTarget={refundTarget} refundMinor={compensation?.totalMinor}
                     onChangeCategory={canEditCategory ? () => openCategory(content.current?.querySelector('[data-operation-category-trigger]') ?? null) : undefined} />
                 </div>
               </DialogHeaderFrame>

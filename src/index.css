@@ -51,6 +51,10 @@
   --color-shadow: light-dark(#26372a, #0a100b);
   --color-chart-income: light-dark(#5e8668, #81b68c);
   --color-chart-expense: light-dark(#866eb0, #b39bd7);
+  --color-bank-alfa: #b32232;
+  --color-bank-vtb: #154683;
+  --color-bank-ozon: #4233bf;
+  --color-on-bank: #fff;
   --color-category-groceries: light-dark(#477254, #81b68c);
   --color-category-dining: light-dark(#8d75c4, #baa5ec);
   --color-category-shopping: light-dark(#cd8d56, #e0ab7b);
